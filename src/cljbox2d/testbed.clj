@@ -1,61 +1,51 @@
 (ns cljbox2d.testbed
   (:use cljbox2d.core)
   (:require [quil.core :as quil])
-  (:import (org.jbox2d.common Vec2)
-           (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
-           (org.jbox2d.dynamics.joints DistanceJoint RevoluteJoint)
-           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType MassData)))
+  (:require [quil.helpers.drawing :as quild]))
 
-; (load-file "/home/felix/devel/cljbox2d/src/cljbox2d/testbed.clj")
+(def ^:dynamic *world-view*
+  {:width 60 :height 40 :x-middle 0 :y-bottom -2})
 
-;; for now, just one specific test
+(defn world-to-pixels
+  "Convert a point in Box2d world coordinates to quil pixels.
+Fits the *world-view* bounds into the window, expanding the
+bounds if necessary to ensure an isometric aspect ratio."
+  ([pt]
+     (world-to-pixels pt (quil/width) (quil/height)))
+  ([[x y] px-width px-height]
+     (let [wv *world-view*
+           xscale (/ px-width (:width wv))
+           yscale (/ px-height (:height wv))
+           scale (min xscale yscale)
+           x-left (- (:x-middle wv) (/ (:width wv) 2))
+           y-bottom (:y-bottom wv)]
+       [(* (- x x-left) scale)
+        (- px-height ;; quil is flipped y
+           (* (- y y-bottom) scale))])))
 
-;;; adapted from org.jbox2d.testbed.tests.VaryingRestitution
-
-(def things (atom {}))
-
-(defn setup-world! []
-  (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
-        restns [0.0 0.1 0.3 0.5 0.75 0.9 1.0]
-        balls (doall (for [[i r] (map-indexed list restns)]
-                       (body! (body-def :position [(+ 10 (* 3 i)) 20])
-                              (fixture-def (circle 1) :restitution r))))]
-    {:ground ground :balls balls}))
+(defn world-dist-to-pixels
+  "Convert a distance in Box2d world coordinates to quil pixels."
+  ([d]
+     (- (first (world-to-pixels [d 0]))
+        (first (world-to-pixels [0 0])))))
 
 (defn draw-world
   "Draw all shapes (fixtures) from the Box2D world"
   []
   (doseq [fx (fixtureseq)
-          :let [pts (world-coords fx)
-                pt0 (first pts)
-                typ (shape-type fx)]]
+          :let [typ (shape-type fx)
+                pts (world-coords fx)
+                px-pts (map world-to-pixels pts)
+                [x0 y0] (first px-pts)
+                radius-px (world-dist-to-pixels (radius fx))]]
     (case typ
-      :circle (quil/ellipse (* 10 (pt0 0))
-                            (- (quil/height) (* 10 (pt0 1)))
-                            (* 10 (* 2 (radius fx)))
-                            (* 10 (* 2 (radius fx))))
-      :polygon (do
-                 (quil/begin-shape) 
-                 (doall (map #(apply quil/vertex %) pts))
-                 (quil/end-shape)))))
+      :circle (quil/ellipse x0 y0 radius-px radius-px)
+      :polygon (doseq [coords (quild/line-join-points px-pts)]
+                 (apply quil/line coords)))))
 
-(defn setup []
+(defn setup-style []
   (quil/frame-rate 30)
-  (swap! things (fn [_] (setup-world!)))
-)
-
-(defn draw []
-  (step! (/ 1 30))
-  (quil/stroke 0)
+  (quil/stroke 128)
   (quil/stroke-weight 1)
-  (quil/fill 64)
-  (quil/background 200)
-  (draw-world))
-
-(quil/defsketch test-sketch
-  :title "cljbox2d test"
-  :setup setup
-  :draw draw
-  :size [800 600])
+  (quil/fill 255 64)
+  (quil/background 0))
