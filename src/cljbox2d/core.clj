@@ -16,12 +16,20 @@
 (def body-keywords
   (zipmap (vals body-types) (keys body-types)))
 
+(defn body-type
+  [body]
+  (body-keywords (.getType body)))
+
 (def shape-types
   {:circle ShapeType/CIRCLE
    :polygon ShapeType/POLYGON})
 
 (def shape-keywords
   (zipmap (vals shape-types) (keys shape-types)))
+
+(defn shape-type
+  [fixt]
+  (shape-keywords (.getType fixt)))
 
 ;; BASIC DATA
 
@@ -38,6 +46,8 @@
   [vec2]
   [(.x vec2) (.y vec2)])
 
+(defonce PI (. Math PI))
+
 ;; WORLD
 
 (def ^:dynamic *world*)
@@ -52,7 +62,7 @@
 (defn step!
   "Simulate the world for a time step given in seconds"
   ([dt]
-     (step! dt 5 5))
+     (step! dt 8 3))
   ([dt velocity-iterations position-iterations]
      (.step *world* dt velocity-iterations position-iterations)))
 
@@ -128,10 +138,13 @@
 (defn body-def
   "Creates a Body definition, which holds properties but not shapes."
   [& {:keys [type position angle bullet fixed-rotation
-             angular-damping linear-damping user-data]
+             angular-damping linear-damping
+             angular-velocity linear-velocity
+             user-data]
       :or {type :dynamic, position [0 0], angle 0,
            bullet false, fixed-rotation false,
-           angular-damping 0, linear-damping 0}}]
+           angular-damping 0, linear-damping 0
+           angular-velocity 0, linear-velocity [0 0]}}]
   (let [bd (BodyDef.)]
     (set! (.type bd) (body-types type))
     (set! (.position bd) (vec2 position))
@@ -140,6 +153,8 @@
     (set! (.fixedRotation bd) fixed-rotation)
     (set! (.angularDamping bd) angular-damping)
     (set! (.linearDamping bd) linear-damping)
+    (set! (.angularVelocity bd) angular-velocity)
+    (set! (.linearVelocity bd) (vec2 linear-velocity))
     (set! (.userData bd) user-data)
     bd))
 
@@ -171,14 +186,6 @@
      (fixtureseq* (.getFixtureList body)))
   ([]
      (mapcat fixtureseq (bodyseq))))
-
-(defn shape-type
-  [fixt]
-  (shape-keywords (.getType fixt)))
-
-(defn body-type
-  [body]
-  (body-keywords (.getType body)))
 
 ;; COORDINATES
 
@@ -230,9 +237,3 @@
   (.getAngle body))
 
 ;; TODO get-mass get-inertia get-user-data
-
-
-(defn -main
-  "I don't do a whole lot."
-  [& args]
-  (println "Hello, World!"))

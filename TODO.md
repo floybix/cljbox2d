@@ -1,9 +1,16 @@
 
 == Short-term ==
 
-* eliminate reflection
 * more testbed tests
+  * Chain
+  * TheoJansenWalker
+  * BlobJoint
+  * Web
+  * CollisionProcessing
+  * Raycast
 * joints
+* box2d thread
+* eliminate reflection
 * figure out effective debugging
 
 == Long-term ==

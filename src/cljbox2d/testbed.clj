@@ -1,5 +1,5 @@
 (ns cljbox2d.testbed
-  (:use cljbox2d.core)
+  (:use [cljbox2d core joints])
   (:require [quil.core :as quil])
   (:require [quil.helpers.drawing :as quild]))
 
@@ -32,6 +32,18 @@ bounds if necessary to ensure an isometric aspect ratio."
 (defn draw-world
   "Draw all shapes (fixtures) from the Box2D world"
   []
+  (doseq [jt (jointseq)
+          :let [typ (joint-type jt)
+                body-a (.getBodyA jt)
+                body-b (.getBodyB jt)]]
+    (case typ
+      :revolute (let [anch (anchor-a jt)
+                      center-a (world-center body-a)
+                      center-b (world-center body-b)]
+                  (quil/line (world-to-pixels anch) (world-to-pixels center-a))
+                  (quil/line (world-to-pixels anch) (world-to-pixels center-b)))
+      :otherwise-ignore-it
+      ))
   (doseq [fx (fixtureseq)
           :let [typ (shape-type fx)
                 pts (world-coords fx)
