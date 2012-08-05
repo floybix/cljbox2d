@@ -51,6 +51,9 @@ bounds if necessary to ensure an isometric aspect ratio."
                       center-b (world-center body-b)]
                   (quil/line (world-to-pixels anch) (world-to-pixels center-a))
                   (quil/line (world-to-pixels anch) (world-to-pixels center-b)))
+      :distance (let [anch-a (anchor-a jt)
+                      anch-b (anchor-b jt)]
+                  (quil/line (world-to-pixels anch-a) (world-to-pixels anch-b)))
       :otherwise-ignore-it
       ))
   (doseq [fx (fixtureseq)
@@ -61,7 +64,9 @@ bounds if necessary to ensure an isometric aspect ratio."
                 radius-px (world-dist-to-pixels (radius fx))]]
     (case typ
       :circle (quil/ellipse x0 y0 radius-px radius-px)
-      :polygon (doseq [coords (quild/line-join-points px-pts)]
-                 (apply quil/line coords))))
+      :polygon (do
+                 (quil/begin-shape)
+                 (doseq [[x y] px-pts] (quil/vertex x y))
+                 (quil/end-shape :close))))
   (quil/fill 255)
   (quil/text @info-text 10 10))

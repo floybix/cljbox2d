@@ -49,6 +49,27 @@ forces are not generated."
     (set! (.userData jd) user-data)
     jd))
 
+(defn distance-joint-def
+  "Distance joint definition. This requires defining an anchor point
+on both bodies and the non-zero length of the distance joint. The
+definition uses local anchor points so that the initial configuration
+can violate the constraint slightly. This helps when saving and
+loading a game.
+Note however that this initialisation uses world points.
+For :damping-ratio 0 = no damping; 1 = critical damping."
+  [body1 body2 anchor1 anchor2
+   & {:keys [frequency-hz damping-ratio
+             collide-connected user-data]
+      :or {frequency-hz 0 damping-ratio 0
+           collide-connected false}}]
+  (let [jd (DistanceJointDef.)]
+    (.initialize jd body1 body2 (vec2 anchor1) (vec2 anchor2))
+    (set! (.frequencyHz jd) frequency-hz)
+    (set! (.dampingRatio jd) damping-ratio)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    jd))
+
 (defn joint!
   "Creates a Joint from a JointDef."
   [jd]
