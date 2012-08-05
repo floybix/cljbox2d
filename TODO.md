@@ -2,13 +2,19 @@
 == Short-term ==
 
 * more testbed tests
-  * Chain
-  * TheoJansenWalker
-  * BlobJoint
   * Web
+  * TheoJansenWalker
+  * Breakable
+  * OneSided
   * CollisionProcessing
+  * Chain
+  * SliderCrank
   * Raycast
+  * SensorTest
+* testbed mouse interaction / mouse joint?
 * joints
+* AABB for bodies
+* query for bodies within an AABB
 * box2d thread
 * eliminate reflection
 * figure out effective debugging

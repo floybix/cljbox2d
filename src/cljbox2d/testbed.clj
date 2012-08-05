@@ -6,6 +6,8 @@
 (def ^:dynamic *world-view*
   {:width 60 :height 40 :x-middle 0 :y-bottom -2})
 
+(def info-text (atom ""))
+
 (defn world-to-pixels
   "Convert a point in Box2d world coordinates to quil pixels.
 Fits the *world-view* bounds into the window, expanding the
@@ -29,9 +31,16 @@ bounds if necessary to ensure an isometric aspect ratio."
      (- (first (world-to-pixels [d 0]))
         (first (world-to-pixels [0 0])))))
 
+(defn setup-style []
+  (quil/stroke 128)
+  (quil/stroke-weight 1)
+  (quil/fill 255 64)
+  (quil/background 0))
+
 (defn draw-world
   "Draw all shapes (fixtures) from the Box2D world"
   []
+  (setup-style)
   (doseq [jt (jointseq)
           :let [typ (joint-type jt)
                 body-a (.getBodyA jt)
@@ -53,11 +62,6 @@ bounds if necessary to ensure an isometric aspect ratio."
     (case typ
       :circle (quil/ellipse x0 y0 radius-px radius-px)
       :polygon (doseq [coords (quild/line-join-points px-pts)]
-                 (apply quil/line coords)))))
-
-(defn setup-style []
-  (quil/frame-rate 30)
-  (quil/stroke 128)
-  (quil/stroke-weight 1)
-  (quil/fill 255 64)
-  (quil/background 0))
+                 (apply quil/line coords))))
+  (quil/fill 255)
+  (quil/text @info-text 10 10))
