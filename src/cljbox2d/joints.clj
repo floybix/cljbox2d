@@ -84,6 +84,16 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
   ([joint]
      (lazy-seq (if joint (cons joint (jointseq (.getNext joint)))))))
 
+(defn body-a
+  "Return bodyA for a joint"
+  [jt]
+  (.getBodyA jt))
+
+(defn body-b
+  "Return bodyB for a joint"
+  [jt]
+  (.getBodyB jt))
+
 (defn anchor-a
   "The anchor point on bodyA in world coordinates"
   [jt]

@@ -4,7 +4,7 @@
   (:require [quil.helpers.drawing :as quild]))
 
 (def ^:dynamic *world-view*
-  {:width 60 :height 40 :x-middle 0 :y-bottom -2})
+  {:width 60 :height 40 :x-middle 0 :y-bottom -10})
 
 (def info-text (atom ""))
 
@@ -32,15 +32,29 @@ bounds if necessary to ensure an isometric aspect ratio."
         (first (world-to-pixels [0 0])))))
 
 (defn setup-style []
-  (quil/stroke 128)
-  (quil/stroke-weight 1)
-  (quil/fill 255 64)
-  (quil/background 0))
+  (quil/background 0)
+  (quil/stroke-weight 1))
+
+(defn body-style []
+  (let [clr (quil/color 255 200 200)]
+    (quil/stroke clr)
+    (quil/fill clr 127)))
+
+(defn joint-style []
+  (let [blue (quil/color 150 150 240)]
+    (quil/stroke blue)
+    (quil/fill blue 127)))
+
+(defn static-style []
+  (let [green (quil/color 100 255 100)]
+    (quil/stroke green)
+    (quil/fill green 127)))
 
 (defn draw-world
   "Draw all shapes (fixtures) from the Box2D world"
   []
   (setup-style)
+  (joint-style)
   (doseq [jt (jointseq)
           :let [typ (joint-type jt)
                 body-a (.getBodyA jt)
@@ -57,12 +71,17 @@ bounds if necessary to ensure an isometric aspect ratio."
       :otherwise-ignore-it
       ))
   (doseq [fx (fixtureseq)
-          :let [typ (shape-type fx)
+          :let [body (body fx)
+                body-typ (body-type body)
+                shp-typ (shape-type fx)
                 pts (world-coords fx)
                 px-pts (map world-to-pixels pts)
                 [x0 y0] (first px-pts)
                 radius-px (world-dist-to-pixels (radius fx))]]
-    (case typ
+    (case body-typ
+      :static (static-style)
+      :dynamic (body-style))
+    (case shp-typ
       :circle (quil/ellipse x0 y0 radius-px radius-px)
       :polygon (do
                  (quil/begin-shape)

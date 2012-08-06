@@ -58,15 +58,14 @@
   (let [jt (:joint things)]
     (case (quil/raw-key)
       \b (let [dyna (filter #(= (body-type %) :dynamic) (bodyseq))
-               bd (first dyna)]
+               bd (rand-nth dyna)]
            (.destroyBody *world* bd))
-      \j (let [jt (first (jointseq))]
+      \j (let [jt (rand-nth (jointseq))]
            (.destroyJoint *world* jt))
       :otherwise-ignore-it))
   (update-info-text))
 
 (defn setup []
-  (setup-style)
   (setup-world!)
   (update-info-text))
 

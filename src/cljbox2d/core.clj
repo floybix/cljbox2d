@@ -168,6 +168,11 @@
 
 ;; QUERY OF OBJECTS
 
+(defn body
+  "Get the body to which a fixture belongs"
+  [fixt]
+  (.getBody fixt))
+
 (defn bodyseq
   "Seq of all bodies in the world, or a body list"
   ([]
@@ -215,10 +220,11 @@
 (defn local-coords
   "Local coordinates for a polygon (vertices) or circle (center)."
   [fixt]
-  (let [shp (.getShape fixt)]
+  (let [shp (.getShape fixt)
+        nvert (.getVertexCount shp)]
     (case (shape-type fixt)
       :circle (map xy [(.getVertex shp 0)]) ;[(.m_p shp)])
-      :polygon (map xy (.getVertices shp)))))
+      :polygon (take nvert (map xy (.getVertices shp))))))
 
 (defn world-coords
   "World coordinates for a polygon (vertices) or circle (center)."
