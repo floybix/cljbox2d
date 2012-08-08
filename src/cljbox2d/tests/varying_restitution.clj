@@ -33,4 +33,5 @@
     :title "Varying Restitution"
     :setup setup
     :draw draw
+    :mouse-dragged mouse-dragged
     :size [600 500]))

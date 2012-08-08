@@ -55,9 +55,13 @@
   (quil/background 0)
   (draw-world))
 
-(quil/defsketch test-sketch
-  :title "Revolute"
-  :setup setup
-  :draw draw
-  :key-typed key-press
-  :size [600 500])
+(defn -main
+  "Run the test sketch."
+  [& args]
+  (quil/defsketch test-sketch
+    :title "Revolute"
+    :setup setup
+    :draw draw
+    :key-typed key-press
+    :mouse-dragged mouse-dragged
+    :size [600 500]))
