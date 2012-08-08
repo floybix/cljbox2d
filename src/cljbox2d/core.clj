@@ -2,7 +2,9 @@
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.dynamics.joints DistanceJoint RevoluteJoint)
-           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)))
+           (org.jbox2d.collision AABB)
+           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
+           (org.jbox2d.callbacks QueryCallback)))
 
 ;(set! *warn-on-reflection* true)
 
@@ -178,12 +180,12 @@
   ([]
      (bodyseq (.getBodyList *world*)))
   ([body]
-     (lazy-seq (if body (cons body (bodyseq (.getNext body)))))))
+     (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))
 
 (defn fixtureseq*
   "Seq of fixtures from a Fixture list."
   [fixt]
-  (lazy-seq (if fixt (cons fixt (fixtureseq* (.getNext fixt))))))
+  (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))
 
 (defn fixtureseq
   "Seq of fixtures on a body or (concatenated) all in the world"
@@ -237,9 +239,72 @@
   [fixt]
   (.m_radius (.getShape fixt)))
 
+;; axis-aligned bounding boxes
+
+(defn aabb
+  "Axis-Aligned Bounding Box"
+  ([[x0 y0] [x1 y1]]
+     (AABB. (vec2 [(min x0 x1) (min y0 y1)])
+            (vec2 [(max x0 x1) (max y0 y1)])))
+  ([fixt]
+     (.getAABB fixt)))
+
+(defn query-aabb
+  "Return a vector of (up to a given number of) fixtures overlapping
+an Axis-Aligned Bounding Box"
+  ([bb]
+     (query-aabb bb 1000000))
+  ([bb max-take]
+     (let [fxx (atom [])
+           cb (reify QueryCallback
+                (reportFixture [_ fixt]
+                  (swap! fxx conj fixt)
+                  ;; return false to end search
+                  (< (count @fxx) max-take)))]
+       (.queryAABB *world* cb bb)
+       @fxx)))
+
+(defn query-at-point
+  "Return a vector of fixtures overlapping the given point. The point
+is tested to be inside each shape, not just within its bounding box."
+  ([pt]
+     (query-at-point pt 1000000))
+  ([[x y] max-take]
+     (let [bb (aabb [(- x 0.001) (- y 0.001)]
+                    [(+ x 0.001) (+ y 0.001)])
+           fxx (atom [])
+           pt-vec2 (vec2 [x y])
+           cb (reify QueryCallback
+                (reportFixture [_ fixt]
+                  (if (.testPoint fixt pt-vec2)
+                    (swap! fxx conj fixt))
+                  ;; return false to end search
+                  (< (count @fxx) max-take)))]
+       (.queryAABB *world* cb bb)
+       @fxx)))
+
 (defn angle
   "Angle of a body in radians"
   [body]
   (.getAngle body))
 
-;; TODO get-mass get-inertia get-user-data
+(defn mass
+  "Mass of a body in kg"
+  [body]
+  (.getMass body))
+
+(defn linear-velocity
+  [body]
+  (xy (.getLinearVelocity body)))
+
+(defn apply-force!
+  [body force pt]
+  (.applyForce body (vec2 force) (vec2 pt)))
+
+(defn apply-torque!
+  [body torque]
+  (.applyTorque body torque))
+
+(defn user-data
+  [body]
+  (.getUserData body))

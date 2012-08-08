@@ -2,16 +2,18 @@
   (:use cljbox2d.core)
   (:import (org.jbox2d.dynamics Body World)
            (org.jbox2d.dynamics.joints JointType
+                                       ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
-                                       RevoluteJoint RevoluteJointDef
-                                       ConstantVolumeJoint ConstantVolumeJointDef)))
+                                       MouseJoint MouseJointDef
+                                       RevoluteJoint RevoluteJointDef)))
 
 ;; ENUMS
 
 (def joint-types
-  {:distance JointType/DISTANCE
-   :revolute JointType/REVOLUTE
-   :constant-volume JointType/CONSTANT_VOLUME})
+  {:constant-volume JointType/CONSTANT_VOLUME
+   :distance JointType/DISTANCE
+   :mouse JointType/MOUSE
+   :revolute JointType/REVOLUTE})
 
 (def joint-keywords
   (zipmap (vals joint-types) (keys joint-types)))
@@ -70,6 +72,26 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
     (set! (.userData jd) user-data)
     jd))
 
+(defn mouse-joint-def
+  "Mouse joint definition."
+  [body1 body2 target
+   & {:keys [max-force
+             frequency-hz damping-ratio
+             collide-connected user-data]
+      :or {max-force 1000
+           frequency-hz 5 damping-ratio 0.7
+           collide-connected false}}]
+  (let [jd (MouseJointDef.)]
+    (set! (.bodyA jd) body1)
+    (set! (.bodyB jd) body2)
+    (.set (.target jd) (vec2 target))
+    (set! (.maxForce jd) max-force)
+    (set! (.frequencyHz jd) frequency-hz)
+    (set! (.dampingRatio jd) damping-ratio)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    jd))
+
 (defn joint!
   "Creates a Joint from a JointDef."
   [jd]
@@ -82,7 +104,7 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
   ([]
      (jointseq (.getJointList *world*)))
   ([joint]
-     (lazy-seq (if joint (cons joint (jointseq (.getNext joint)))))))
+     (lazy-seq (when joint (cons joint (jointseq (.getNext joint)))))))
 
 (defn body-a
   "Return bodyA for a joint"

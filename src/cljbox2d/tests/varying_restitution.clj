@@ -5,7 +5,7 @@
 ;;; A translation of
 ;;; org.jbox2d.testbed.tests.VaryingRestitution
 
-(def things)
+(def things (atom {}))
 
 (defn setup-world! []
   (create-world!)
@@ -15,15 +15,14 @@
         balls (doall (for [[i r] (map-indexed list restns)]
                        (body! (body-def :position [(+ -10 (* 3 i)) 20])
                               (fixture-def (circle 1) :restitution r))))]
-    (def things {:ground ground :balls balls})))
+    (reset! things {:ground ground :balls balls})
+    (reset! ground-body ground)))
 
 (defn setup []
-  (setup-style)
   (setup-world!))
 
 (defn draw []
   (step! (/ 1 (quil/current-frame-rate)))
-  (quil/background 0)
   (draw-world))
 
 (defn -main
@@ -33,5 +32,7 @@
     :title "Varying Restitution"
     :setup setup
     :draw draw
+    :mouse-pressed mouse-pressed
+    :mouse-released mouse-released
     :mouse-dragged mouse-dragged
     :size [600 500]))

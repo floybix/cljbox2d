@@ -2,26 +2,24 @@
 == Short-term ==
 
 * more testbed tests
-  * Web
-  * TheoJansenWalker
-  * Breakable
-  * OneSided
   * CollisionProcessing
+  * SensorTest
+  * Raycast
+  * TheoJansenWalker
+  * OneSided
   * Chain
   * SliderCrank
-  * Raycast
-  * SensorTest
-* testbed mouse interaction / mouse joint?
-* joints
-* AABB for bodies
-* query for bodies within an AABB
-* box2d thread
+* testbed pause
+* testbed restart 'r'
+* scroll to zoom in/out
+* testbed bomb (space)
+* box2d thread?
 * eliminate reflection
-* figure out effective debugging
 
 == Long-term ==
 
-* collision filters
+* creature movement strategies
+* creature senses (positions, motor states, contacts, sensors/raycast)
 * allow creatures to decide whether to pass through things or not
   * but some things are not passable
   * both creatures must agree to pass each other

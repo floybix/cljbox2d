@@ -5,7 +5,7 @@
 ;;; A translation of
 ;;; org.jbox2d.testbed.tests.RevoluteTest
 
-(def things)
+(def things (atom {}))
 
 (def is-left (atom false))
 
@@ -25,10 +25,11 @@
                                           :upper-angle (/ PI 2)
                                           :enable-limit true
                                           :collide-connected true))]
-    (def things {:ground ground :ball body :joint joint})))
+    (reset! things {:ground ground :ball body :joint joint})
+    (reset! ground-body ground)))
 
 (defn update-info-text []
-  (let [jt (:joint things)]
+  (let [jt (:joint @things)]
     (reset! info-text
             (str "Limits " (if (.isLimitEnabled jt) "on" "off")
                  ", Motor " (if (.isMotorEnabled jt) "on " "off ")
@@ -36,7 +37,7 @@
                  "Keys: (l) limits, (m) motor, (a) left, (d) right"))))
 
 (defn key-press []
-  (let [jt (:joint things)]
+  (let [jt (:joint @things)]
     (case (quil/raw-key)
       \l (.enableLimit jt (not (.isLimitEnabled jt)))
       \m (.enableMotor jt (not (.isMotorEnabled jt)))
@@ -46,13 +47,11 @@
   (update-info-text))
 
 (defn setup []
-  (setup-style)
   (setup-world!)
   (update-info-text))
 
 (defn draw []
   (step! (/ 1 (quil/current-frame-rate)))
-  (quil/background 0)
   (draw-world))
 
 (defn -main
@@ -63,5 +62,7 @@
     :setup setup
     :draw draw
     :key-typed key-press
+    :mouse-pressed mouse-pressed
+    :mouse-released mouse-released
     :mouse-dragged mouse-dragged
     :size [600 500]))

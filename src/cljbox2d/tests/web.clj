@@ -5,9 +5,7 @@
 ;;; A translation of
 ;;; org.jbox2d.testbed.tests.Web
 
-(def things)
-
-(def is-left (atom false))
+(def things (atom {}))
 
 (defn setup-world! []
   (create-world!)
@@ -44,9 +42,11 @@
                                                    [(- x2 off-x1) (- y2 off-y1)]
                                                    :frequency-hz 4
                                                    :damping-ratio 0.5)))]
-    (def things {:ground ground :nodes (doall nodes)
-                 :ground-joints (doall ground-joints)
-                 :inner-joints (doall inner-joints)})))
+    (reset! things {:ground ground
+                    :nodes (doall nodes)
+                    :ground-joints (doall ground-joints)
+                    :inner-joints (doall inner-joints)})
+    (reset! ground-body ground)))
 
 (defn update-info-text []
   (reset! info-text
@@ -54,13 +54,14 @@
                "Press: (b) to delete a body, (j) to delete a joint")))
 
 (defn key-press []
-  ;; TODO: remove references from things after they are destroyed
-  (let [jt (:joint things)]
+  (let [jts (:inner-joints @things)
+        nodes (:nodes @things)]
     (case (quil/raw-key)
-      \b (let [dyna (filter #(= (body-type %) :dynamic) (bodyseq))
-               bd (rand-nth dyna)]
-           (.destroyBody *world* bd))
-      \j (let [jt (rand-nth (jointseq))]
+      \b (when-let [bod (first nodes)]
+           (swap! things update-in [:nodes] next)
+           (.destroyBody *world* bod))
+      \j (when-let [jt (first jts)]
+           (swap! things update-in [:inner-joints] next)
            (.destroyJoint *world* jt))
       :otherwise-ignore-it))
   (update-info-text))
@@ -71,7 +72,6 @@
 
 (defn draw []
   (step! (/ 1 (quil/current-frame-rate)))
-  (quil/background 0)
   (draw-world))
 
 (defn -main
@@ -82,5 +82,7 @@
     :setup setup
     :draw draw
     :key-typed key-press
+    :mouse-pressed mouse-pressed
+    :mouse-released mouse-released
     :mouse-dragged mouse-dragged
     :size [600 500]))

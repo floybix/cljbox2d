@@ -1,11 +1,14 @@
 (ns cljbox2d.testbed
   (:use [cljbox2d core joints])
-  (:require [quil.core :as quil])
-  (:require [quil.helpers.drawing :as quild]))
+  (:require [quil.core :as quil]))
 
 (def info-text (atom ""))
 
 (def camera (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))
+
+(def mousej (atom nil))
+
+(def ground-body (atom nil))
 
 (defn world-to-px-scale
   "A scaling factor on world coordinates to give pixels.
@@ -47,8 +50,13 @@ bounds if necessary to ensure an isometric aspect ratio."
   (quil/background 0)
   (quil/stroke-weight 1))
 
-(defn body-style []
+(defn dynamic-style []
   (let [clr (quil/color 255 200 200)]
+    (quil/stroke clr)
+    (quil/fill clr 127)))
+
+(defn sleeping-style []
+  (let [clr (quil/color 150 150 150)]
     (quil/stroke clr)
     (quil/fill clr 127)))
 
@@ -80,11 +88,15 @@ bounds if necessary to ensure an isometric aspect ratio."
       :distance (let [anch-a (anchor-a jt)
                       anch-b (anchor-b jt)]
                   (quil/line (world-to-px anch-a) (world-to-px anch-b)))
+      :mouse (let [anch-b (anchor-b jt)
+                   targ (xy (.getTarget jt))]
+               (quil/line (world-to-px anch-b) (world-to-px targ)))
       :otherwise-ignore-it
       ))
   (doseq [fx (fixtureseq)
           :let [body (body fx)
                 body-typ (body-type body)
+                awake (.isAwake body)
                 shp-typ (shape-type fx)
                 pts (world-coords fx)
                 px-pts (map world-to-px pts)
@@ -92,7 +104,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                 radius-px (* (radius fx) (world-to-px-scale))]]
     (case body-typ
       :static (static-style)
-      :dynamic (body-style))
+      :dynamic (if awake (dynamic-style) (sleeping-style)))
     (case shp-typ
       :circle (quil/ellipse x0 y0 radius-px radius-px)
       :polygon (do
@@ -104,16 +116,45 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 ;; event handling
 
+(defn mouse-world []
+  (px-to-world [(quil/mouse-x) (quil/mouse-y)]))
+
+(defn pmouse-world []
+  (px-to-world [(quil/pmouse-x) (quil/pmouse-y)]))
+
+(defn left-mouse-pressed []
+  (when-not @mousej
+    (let [pt (mouse-world)
+          fixt (first (query-at-point pt 1))]
+      (when fixt
+        (let [bod (body fixt)
+              mjd (mouse-joint-def @ground-body bod pt
+                                   :max-force (* 1000 (mass bod)))]
+          (reset! mousej (joint! mjd))
+          (.setAwake bod true))))))
+
+(defn mouse-pressed []
+  (case (quil/mouse-button)
+    :left (left-mouse-pressed)
+    :otherwise-ignore-it))
+
+(defn mouse-released []
+  (when @mousej
+    (do (.destroyJoint *world* @mousej)
+        (reset! mousej nil))))
+
+(defn left-mouse-dragged []
+  (when @mousej
+    (let [pt (mouse-world)]
+      (.setTarget @mousej (vec2 pt)))))
+
 (defn right-mouse-dragged []
-  (let [[x y] (px-to-world [(quil/mouse-x) (quil/mouse-y)])
-        [ox oy] (px-to-world [(quil/pmouse-x) (quil/pmouse-y)])
+  (let [[x y] (mouse-world)
+        [ox oy] (pmouse-world)
         dx (- x ox)
         dy (- y oy)]
-    (swap! camera
-           (fn [old] (merge old {:x-left (+ (:x-left old) (- dx))
-                                 :y-bottom (+ (:y-bottom old) (- dy))})))))
-
-(defn left-mouse-dragged [] )
+    (swap! camera (partial merge-with +)
+           {:x-left (- dx) :y-bottom (- dy)})))
 
 (defn mouse-dragged []
   (case (quil/mouse-button)
