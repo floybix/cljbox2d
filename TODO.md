@@ -1,8 +1,11 @@
 
 == Short-term ==
 
+* review borneo for how to do vars properly
+* need a library of shape functions?
+  * e.g. transform polygons
+  * counter-clockwise, convex construction
 * more testbed tests
-  * CollisionProcessing
   * SensorTest
   * Raycast
   * TheoJansenWalker

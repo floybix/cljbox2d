@@ -1,5 +1,7 @@
 (ns cljbox2d.testbed
   (:use [cljbox2d core joints])
+  (:import (org.jbox2d.callbacks ContactListener)
+           (org.jbox2d.collision WorldManifold))
   (:require [quil.core :as quil]))
 
 (def info-text (atom ""))
@@ -106,7 +108,7 @@ bounds if necessary to ensure an isometric aspect ratio."
       :static (static-style)
       :dynamic (if awake (dynamic-style) (sleeping-style)))
     (case shp-typ
-      :circle (quil/ellipse x0 y0 radius-px radius-px)
+      :circle (quil/ellipse x0 y0 (* 2 radius-px) (* 2 radius-px))
       :polygon (do
                  (quil/begin-shape)
                  (doseq [[x y] px-pts] (quil/vertex x y))
@@ -114,6 +116,33 @@ bounds if necessary to ensure an isometric aspect ratio."
   (quil/fill 255)
   (quil/text @info-text 10 10))
 
+;; contact / collision handling
+
+(def contact-buffer (atom []))
+
+(defn set-buffering-contact-listener!
+  []
+  (let [world-manifold (WorldManifold.)
+        lstnr (reify ContactListener
+                (beginContact [_ _])
+                (endContact [_ _])
+                (postSolve [_ _ _])
+                (preSolve [_ contact _]
+                  (let [manifold (.getManifold contact)
+                        pcount (.pointCount manifold)]
+                    (when (pos? pcount)
+                      ;; mutates its argument:
+                      (.getWorldManifold contact world-manifold)
+                      (let [fixt-a (.getFixtureA contact)
+                            fixt-b (.getFixtureB contact)
+                            -points (.points world-manifold)
+                            pts (map xy (take pcount -points))
+                            normal (xy (.normal world-manifold))]
+                        (swap! contact-buffer conj
+                               [fixt-a fixt-b pts normal])
+                        )))))]
+    (.setContactListener *world* lstnr)))
+    
 ;; event handling
 
 (defn mouse-world []

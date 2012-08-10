@@ -87,7 +87,7 @@
     shape))
 
 (defn box
-  "Create a box shape"
+  "Create a box shape from half-width, half-height"
   ([hx hy]
      (let [shape (PolygonShape.)]
        (.setAsBox shape hx hy)
@@ -105,8 +105,8 @@
    i.e. vertices go counter-clockwise."
   [vertices]
   (let [shape (PolygonShape.)
-        vv (to-array (map vec2 vertices))]
-    (.set shape vv (count vertices))
+        va (into-array Vec2 (map vec2 vertices))]
+    (.set shape va (count vertices))
     shape))
 
 ;; FIXTURES

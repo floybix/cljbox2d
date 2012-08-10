@@ -2,7 +2,7 @@
   (:use [cljbox2d core joints testbed])
   (:require [quil.core :as quil]))
 
-;;; A translation of
+;;; A translation of Daniel Murphy's
 ;;; org.jbox2d.testbed.tests.Web
 
 (def things (atom {}))
