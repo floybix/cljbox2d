@@ -36,8 +36,8 @@ forces are not generated."
    & {:keys [enable-motor motor-speed max-torque
              enable-limit lower-angle upper-angle
              collide-connected user-data]
-      :or {enable-motor false motor-speed 0 max-torque 10000
-           enable-limit false lower-angle 0 upper-angle 360
+      :or {enable-motor false, motor-speed 0, max-torque 10000,
+           enable-limit false, lower-angle 0, upper-angle 360,
            collide-connected false}}]
   (let [jd (RevoluteJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor))
@@ -62,7 +62,7 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
   [body1 body2 anchor1 anchor2
    & {:keys [frequency-hz damping-ratio
              collide-connected user-data]
-      :or {frequency-hz 0 damping-ratio 0
+      :or {frequency-hz 0, damping-ratio 0,
            collide-connected false}}]
   (let [jd (DistanceJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor1) (vec2 anchor2))
@@ -78,8 +78,8 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
    & {:keys [max-force
              frequency-hz damping-ratio
              collide-connected user-data]
-      :or {max-force 1000
-           frequency-hz 5 damping-ratio 0.7
+      :or {max-force 1000,
+           frequency-hz 5, damping-ratio 0.7,
            collide-connected false}}]
   (let [jd (MouseJointDef.)]
     (set! (.bodyA jd) body1)

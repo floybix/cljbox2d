@@ -48,8 +48,6 @@
   [vec2]
   [(.x vec2) (.y vec2)])
 
-(defonce PI (. Math PI))
-
 ;; WORLD
 
 (def ^:dynamic *world*)
@@ -74,10 +72,13 @@
 
 (defn circle
   "Create a circle shape"
-  [radius]
-  (let [shape (CircleShape.)]
-    (set! (. shape m_radius) radius)
-    shape))
+  ([radius]
+     (circle radius [0 0]))
+  ([radius center]
+     (let [shape (CircleShape.)]
+       (set! (. shape m_radius) radius)
+       (.set (. shape m_p) (vec2 center))
+       shape)))
 
 (defn edge
   "Create an edge shape"
@@ -114,13 +115,16 @@
 (defn fixture-def
   "Create a Fixture definition: a shape with some physical properties"
   ;; TODO: filter (contact filtering)
-  [shape & {:keys [density friction restitution user-data]
-            :or {density 1, friction 0.3, restitution 0.3}}]
+  [shape & {:keys [density friction restitution is-sensor
+                   user-data]
+            :or {density 1, friction 0.3, restitution 0.3,
+                 is-sensor false}}]
   (let [fd (FixtureDef.)]
     (set! (.shape fd) shape)
     (set! (.density fd) density)
     (set! (.friction fd) friction)
     (set! (.restitution fd) restitution)
+    (set! (.isSensor fd) is-sensor)
     (set! (.userData fd) user-data)
     fd))
 
@@ -145,7 +149,7 @@
              user-data]
       :or {type :dynamic, position [0 0], angle 0,
            bullet false, fixed-rotation false,
-           angular-damping 0, linear-damping 0
+           angular-damping 0, linear-damping 0,
            angular-velocity 0, linear-velocity [0 0]}}]
   (let [bd (BodyDef.)]
     (set! (.type bd) (body-types type))
@@ -308,3 +312,21 @@ is tested to be inside each shape, not just within its bounding box."
 (defn user-data
   [body]
   (.getUserData body))
+
+;; utils
+
+(defonce PI (. Math PI))
+
+(defn mag-v
+  "Magnitude of a vector"
+  [[x y]]
+  (Math/sqrt (+ (* x x) (* y y))))
+
+(defn scale-v
+  "Multiply elements of a vector by a scalar;
+Default is to normalise to unit length."
+  ([v]
+     (scale-v v (/ 1 (mag-v v))))
+  ([[x y] s]
+     [(* x s) (* y s)]))
+

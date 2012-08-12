@@ -1,23 +1,27 @@
 
 == Short-term ==
 
+* eliminate reflection
 * review borneo for how to do vars properly
-* need a library of shape functions?
-  * e.g. transform polygons
-  * counter-clockwise, convex construction
+* how to provide arbitrary contact handlers?
+* testbed: set a default handler that
+  * buffers contacts (preSolve)
+  * stores touching status for sensors (beginContact) (endContact)
 * more testbed tests
-  * SensorTest
+  * OneSided
   * Raycast
   * TheoJansenWalker
-  * OneSided
   * Chain
   * SliderCrank
 * testbed pause
 * testbed restart 'r'
+* GUI widgets to pause, step, restart etc
+* need a library of shape functions?
+  * e.g. transform polygons
+  * counter-clockwise, convex construction
 * scroll to zoom in/out
 * testbed bomb (space)
 * box2d thread?
-* eliminate reflection
 
 == Long-term ==
 
