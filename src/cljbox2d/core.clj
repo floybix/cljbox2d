@@ -6,8 +6,6 @@
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
            (org.jbox2d.callbacks QueryCallback)))
 
-;(set! *warn-on-reflection* true)
-
 ;; ENUMS
 
 (def body-types
@@ -19,7 +17,7 @@
   (zipmap (vals body-types) (keys body-types)))
 
 (defn body-type
-  [body]
+  [^Body body]
   (body-keywords (.getType body)))
 
 (def shape-types
@@ -30,7 +28,7 @@
   (zipmap (vals shape-types) (keys shape-types)))
 
 (defn shape-type
-  [fixt]
+  [^Fixture fixt]
   (shape-keywords (.getType fixt)))
 
 ;; BASIC DATA
@@ -45,12 +43,12 @@
 
 (defn xy
   "Gets a vector [x y] from a Vec2"
-  [vec2]
+  [^Vec2 vec2]
   [(.x vec2) (.y vec2)])
 
 ;; WORLD
 
-(def ^:dynamic *world*)
+(def ^:dynamic ^World *world*)
 
 (defn create-world!
   "Create a new Box2D world. Gravity defaults to -10 m/s^2."
@@ -130,13 +128,13 @@
 
 (defn fixture-from-def
   "Creates a Fixture on an existing Body from a FixtureDef."
-  [body fd]
+  [^Body body fd]
   (.createFixture body fd))
 
 (defn fixture!
   "Creates a Fixture on an existing Body.
    A convenience wrapper for (fixture-from-def body (fixture-def ...))"
-  [body shape & opts]
+  [^Body body shape & opts]
   (fixture-from-def body (apply fixture-def shape opts)))
 
 ;; BODIES
@@ -174,26 +172,26 @@
 
 ;; QUERY OF OBJECTS
 
-(defn body
+(defn ^Body body
   "Get the body to which a fixture belongs"
-  [fixt]
+  [^Fixture fixt]
   (.getBody fixt))
 
 (defn bodyseq
   "Seq of all bodies in the world, or a body list"
   ([]
      (bodyseq (.getBodyList *world*)))
-  ([body]
+  ([^Body body]
      (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))
 
 (defn fixtureseq*
   "Seq of fixtures from a Fixture list."
-  [fixt]
+  [^Fixture fixt]
   (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))
 
 (defn fixtureseq
   "Seq of fixtures on a body or (concatenated) all in the world"
-  ([body]
+  ([^Body body]
      (fixtureseq* (.getFixtureList body)))
   ([]
      (mapcat fixtureseq (bodyseq))))
@@ -202,45 +200,45 @@
 
 (defn local-point
   "Return body-local coordinates for a given world point"
-  [body pt]
+  [^Body body pt]
   (xy (.getLocalPoint body (vec2 pt))))
 
 (defn world-point
   "Return world coordinates for a point in body-local coordinates,
    or for a body origin point"
-  ([body]
+  ([^Body body]
      (xy (.getPosition body)))
-  ([body pt]
+  ([^Body body pt]
      (xy (.getWorldPoint body (vec2 pt)))))
 
 (defn local-center
   "Center of mass of a body in local coordinates"
-  [body]
+  [^Body body]
   (xy (.getLocalCenter body)))
 
 (defn world-center
   "Center of mass of a body in world coordinates"
-  [body]
+  [^Body body]
   (xy (.getWorldCenter body)))
 
 (defn local-coords
   "Local coordinates for a polygon (vertices) or circle (center)."
-  [fixt]
-  (let [shp (.getShape fixt)
-        nvert (.getVertexCount shp)]
+  [^Fixture fixt]
+  (let [shp (.getShape fixt)]
     (case (shape-type fixt)
-      :circle (map xy [(.getVertex shp 0)]) ;[(.m_p shp)])
-      :polygon (take nvert (map xy (.getVertices shp))))))
+      :circle (map xy [(.getVertex ^CircleShape shp 0)])
+      :polygon (let [n (.getVertexCount ^PolygonShape shp)]
+                 (take n (map xy (.getVertices ^PolygonShape shp)))))))
 
 (defn world-coords
   "World coordinates for a polygon (vertices) or circle (center)."
-  [fixt]
+  [^Fixture fixt]
   (let [body (.getBody fixt)]
     (map (partial world-point body) (local-coords fixt))))
 
 (defn radius
   "Radius of a Fixture's shape."
-  [fixt]
+  [^Fixture fixt]
   (.m_radius (.getShape fixt)))
 
 ;; axis-aligned bounding boxes
@@ -250,15 +248,15 @@
   ([[x0 y0] [x1 y1]]
      (AABB. (vec2 [(min x0 x1) (min y0 y1)])
             (vec2 [(max x0 x1) (max y0 y1)])))
-  ([fixt]
+  ([^Fixture fixt]
      (.getAABB fixt)))
 
 (defn query-aabb
   "Return a vector of (up to a given number of) fixtures overlapping
 an Axis-Aligned Bounding Box"
-  ([bb]
+  ([^AABB bb]
      (query-aabb bb 1000000))
-  ([bb max-take]
+  ([^AABB bb max-take]
      (let [fxx (atom [])
            cb (reify QueryCallback
                 (reportFixture [_ fixt]
@@ -289,28 +287,28 @@ is tested to be inside each shape, not just within its bounding box."
 
 (defn angle
   "Angle of a body in radians"
-  [body]
+  [^Body body]
   (.getAngle body))
 
 (defn mass
   "Mass of a body in kg"
-  [body]
+  [^Body body]
   (.getMass body))
 
 (defn linear-velocity
-  [body]
+  [^Body body]
   (xy (.getLinearVelocity body)))
 
 (defn apply-force!
-  [body force pt]
+  [^Body body force pt]
   (.applyForce body (vec2 force) (vec2 pt)))
 
 (defn apply-torque!
-  [body torque]
+  [^Body body torque]
   (.applyTorque body torque))
 
 (defn user-data
-  [body]
+  [^Body body]
   (.getUserData body))
 
 ;; utils

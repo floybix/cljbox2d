@@ -79,8 +79,8 @@ bounds if necessary to ensure an isometric aspect ratio."
   (joint-style)
   (doseq [jt (jointseq)
           :let [typ (joint-type jt)
-                body-a (.getBodyA jt)
-                body-b (.getBodyB jt)]]
+                body-a (body-a jt)
+                body-b (body-b jt)]]
     (case typ
       :revolute (let [anch (anchor-a jt)
                       center-a (world-center body-a)

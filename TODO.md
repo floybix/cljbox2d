@@ -1,10 +1,9 @@
 
 == Short-term ==
 
-* eliminate reflection
-* review borneo for how to do vars properly
+* functions for joints' limits and motors etc
 * how to provide arbitrary contact handlers?
-* testbed: set a default handler that
+* testbed: set a default contact handler that:
   * buffers contacts (preSolve)
   * stores touching status for sensors (beginContact) (endContact)
 * more testbed tests

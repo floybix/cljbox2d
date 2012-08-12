@@ -1,7 +1,7 @@
 (ns cljbox2d.joints
   (:use cljbox2d.core)
   (:import (org.jbox2d.dynamics Body World)
-           (org.jbox2d.dynamics.joints JointType
+           (org.jbox2d.dynamics.joints Joint JointType
                                        ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
                                        MouseJoint MouseJointDef
@@ -19,7 +19,7 @@
   (zipmap (vals joint-types) (keys joint-types)))
 
 (defn joint-type
-  [joint]
+  [^Joint joint]
   (joint-keywords (.getType joint)))
 
 ;; JOINTS
@@ -103,22 +103,22 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
   "Seq of all bodies in the world, or a joint list"
   ([]
      (jointseq (.getJointList *world*)))
-  ([joint]
+  ([^Joint joint]
      (lazy-seq (when joint (cons joint (jointseq (.getNext joint)))))))
 
 (defn body-a
   "Return bodyA for a joint"
-  [jt]
+  [^Joint jt]
   (.getBodyA jt))
 
 (defn body-b
   "Return bodyB for a joint"
-  [jt]
+  [^Joint jt]
   (.getBodyB jt))
 
 (defn anchor-a
   "The anchor point on bodyA in world coordinates"
-  [jt]
+  [^Joint jt]
   ;; yuck, the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorA jt v0)
@@ -126,7 +126,7 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
 
 (defn anchor-b
   "The anchor point on bodyB in world coordinates"
-  [jt]
+  [^Joint jt]
   ;; yuck, the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorB jt v0)
