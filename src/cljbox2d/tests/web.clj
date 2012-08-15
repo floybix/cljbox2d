@@ -44,8 +44,7 @@
                                                    :damping-ratio 0.5)))]
     (reset! things {:ground ground
                     :nodes (doall nodes)
-                    :ground-joints (doall ground-joints)
-                    :inner-joints (doall inner-joints)})
+                    :joints (doall (concat ground-joints inner-joints))})
     (reset! ground-body ground)))
 
 (defn update-info-text []
@@ -54,15 +53,15 @@
                "Press: (b) to delete a body, (j) to delete a joint")))
 
 (defn key-press []
-  (let [jts (:inner-joints @things)
+  (let [jts (:joints @things)
         nodes (:nodes @things)]
     (case (quil/raw-key)
       \b (when-let [bod (first nodes)]
            (swap! things update-in [:nodes] next)
-           (.destroyBody *world* bod))
+           (destroy! bod))
       \j (when-let [jt (first jts)]
-           (swap! things update-in [:inner-joints] next)
-           (.destroyJoint *world* jt))
+           (swap! things update-in [:joints] next)
+           (destroy! jt))
       :otherwise-ignore-it))
   (update-info-text))
 

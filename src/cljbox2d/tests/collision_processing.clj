@@ -52,7 +52,7 @@
                     (when (and (pos? mass-a) (pos? mass-b))
                       (if (< mass-a mass-b) body-a body-b))))]
     (doseq [b (remove nil? (distinct to-nuke))]
-      (.destroyBody *world* b)))
+      (destroy! b)))
   (reset! contact-buffer [])
   (draw-world))
 

@@ -1,10 +1,10 @@
 (ns cljbox2d.core
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
-           (org.jbox2d.dynamics.joints DistanceJoint RevoluteJoint)
            (org.jbox2d.collision AABB)
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
-           (org.jbox2d.callbacks QueryCallback)))
+           (org.jbox2d.callbacks QueryCallback)
+           (org.jbox2d.dynamics.joints Joint)))
 
 ;; ENUMS
 
@@ -311,6 +311,18 @@ is tested to be inside each shape, not just within its bounding box."
   [^Body body]
   (.getUserData body))
 
+(defprotocol Destroyable
+  "For JBox2D objects which can be destroyed"
+  (destroy! [this]))
+
+(extend-protocol Destroyable
+  Body
+  (destroy! [this] (.destroyBody *world* this))
+  Joint
+  (destroy! [this] (.destroyJoint *world* this))
+  Fixture
+  (destroy! [this] (.destroyFixture (body this) this)))
+    
 ;; utils
 
 (defonce PI (. Math PI))

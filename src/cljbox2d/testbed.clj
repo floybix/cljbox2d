@@ -169,7 +169,7 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 (defn mouse-released []
   (when @mousej
-    (do (.destroyJoint *world* @mousej)
+    (do (destroy! @mousej)
         (reset! mousej nil))))
 
 (defn left-mouse-dragged []
