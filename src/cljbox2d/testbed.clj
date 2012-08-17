@@ -1,8 +1,22 @@
 (ns cljbox2d.testbed
+  "Provides the scaffolding to run Box2D simulations with visual
+  animation and interactive inputs (via mouse and keyboard). This is
+  built on the Processing framework through the clojure wrapper
+  [quil](https://github.com/quil/quil). Box2D timesteps are run
+  synchronously with Processing (draw) timesteps: in this way we take
+  advantage of Processing's queuing of inputs to avoid concurrency
+  issues. In a real application you might want to run the drawing and
+  physics in separate threads.
+
+  In this namespace we have drawing functions, some vars/atoms for
+  hooking in to the testbed, a default contact listener, and default
+  input event handlers."
   (:use [cljbox2d core joints])
   (:import (org.jbox2d.callbacks ContactListener)
            (org.jbox2d.collision WorldManifold))
   (:require [quil.core :as quil]))
+
+;; ## Atoms acting as hooks
 
 (def info-text (atom ""))
 
@@ -11,6 +25,8 @@
 (def mousej (atom nil))
 
 (def ground-body (atom nil))
+
+;; ## Drawing
 
 (defn world-to-px-scale
   "A scaling factor on world coordinates to give pixels.
@@ -116,7 +132,7 @@ bounds if necessary to ensure an isometric aspect ratio."
   (quil/fill 255)
   (quil/text @info-text 10 10))
 
-;; contact / collision handling
+;; ## contact / collision handling
 
 (def contact-buffer (atom []))
 
@@ -143,7 +159,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                         )))))]
     (.setContactListener *world* lstnr)))
     
-;; event handling
+;; ## input event handling
 
 (defn mouse-world []
   (px-to-world [(quil/mouse-x) (quil/mouse-y)]))

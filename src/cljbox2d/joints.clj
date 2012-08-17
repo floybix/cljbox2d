@@ -1,4 +1,5 @@
 (ns cljbox2d.joints
+  "Core API for joints."
   (:use cljbox2d.core)
   (:import (org.jbox2d.dynamics Body World)
            (org.jbox2d.dynamics.joints Joint JointType
@@ -7,22 +8,25 @@
                                        MouseJoint MouseJointDef
                                        RevoluteJoint RevoluteJointDef)))
 
-;; ENUMS
+;; ## Enums
 
-(def joint-types
+(def ^{:private true}
+  joint-types
   {:constant-volume JointType/CONSTANT_VOLUME
    :distance JointType/DISTANCE
    :mouse JointType/MOUSE
    :revolute JointType/REVOLUTE})
 
-(def joint-keywords
+(def ^{:private true}
+  joint-keywords
   (zipmap (vals joint-types) (keys joint-types)))
 
 (defn joint-type
+  "The joint type as a keyword."
   [^Joint joint]
   (joint-keywords (.getType joint)))
 
-;; JOINTS
+;; ## Creation of joints
 
 (defn revolute-joint-def
   "A revolute joint constrains two bodies to share a common point
@@ -57,8 +61,8 @@ on both bodies and the non-zero length of the distance joint. The
 definition uses local anchor points so that the initial configuration
 can violate the constraint slightly. This helps when saving and
 loading a game.
-Note however that this initialisation uses world points.
-For :damping-ratio 0 = no damping; 1 = critical damping."
+*Note* however that this initialisation function uses world points.
+For `:damping-ratio` 0 = no damping; 1 = critical damping."
   [body1 body2 anchor1 anchor2
    & {:keys [frequency-hz damping-ratio
              collide-connected user-data]
@@ -73,7 +77,8 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
     jd))
 
 (defn mouse-joint-def
-  "Mouse joint definition."
+  "Mouse joint definition.
+   By convention `body1` is ground and `body2` is the selection"
   [body1 body2 target
    & {:keys [max-force
              frequency-hz damping-ratio
@@ -97,7 +102,7 @@ For :damping-ratio 0 = no damping; 1 = critical damping."
   [jd]
   (.createJoint *world* jd))
 
-;; QUERY OF OBJECTS
+;; ## Query of objects
 
 (defn jointseq
   "Seq of all bodies in the world, or a joint list"

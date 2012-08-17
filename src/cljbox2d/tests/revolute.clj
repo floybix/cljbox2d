@@ -1,9 +1,8 @@
 (ns cljbox2d.tests.revolute
+  "A translation of Daniel Murphy's
+   org.jbox2d.testbed.tests.RevoluteTest"
   (:use [cljbox2d core joints testbed])
   (:require [quil.core :as quil]))
-
-;;; A translation of Daniel Murphy's
-;;; org.jbox2d.testbed.tests.RevoluteTest
 
 (def things (atom {}))
 

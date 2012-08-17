@@ -1,10 +1,9 @@
 (ns cljbox2d.tests.sensor-test
+  "A translation of Daniel Murphy's
+   org.jbox2d.testbed.tests.SensorTest"
   (:use [cljbox2d core testbed])
   (:import (org.jbox2d.callbacks ContactListener))
   (:require [quil.core :as quil]))
-
-;;; A translation of Daniel Murphy's
-;;; org.jbox2d.testbed.tests.SensorTest
 
 (def sensor (atom nil))
 

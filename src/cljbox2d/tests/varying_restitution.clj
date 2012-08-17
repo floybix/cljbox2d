@@ -1,9 +1,8 @@
 (ns cljbox2d.tests.varying-restitution
+  "A translation of Daniel Murphy's
+   org.jbox2d.testbed.tests.VaryingRestitution"
   (:use [cljbox2d core testbed])
   (:require [quil.core :as quil]))
-
-;;; A translation of Daniel Murphy's
-;;; org.jbox2d.testbed.tests.VaryingRestitution
 
 (def things (atom {}))
 

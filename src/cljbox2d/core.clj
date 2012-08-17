@@ -1,4 +1,12 @@
 (ns cljbox2d.core
+  "This is [cljbox2d](https://github.com/floybix/cljbox2d/).
+
+   A Clojure wrapper for [JBox2D](http://www.jbox2d.org/), which is a
+   close Java port of Erin Catto's excellent C++
+   [Box2D](http://www.box2d.org/) physics engine.
+
+   In this namespace we have the core API for fixtures, bodies and the
+   World."
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB)
@@ -6,49 +14,25 @@
            (org.jbox2d.callbacks QueryCallback)
            (org.jbox2d.dynamics.joints Joint)))
 
-;; ENUMS
-
-(def body-types
-  {:dynamic BodyType/DYNAMIC
-   :static BodyType/STATIC
-   :kinematic BodyType/KINEMATIC})
-
-(def body-keywords
-  (zipmap (vals body-types) (keys body-types)))
-
-(defn body-type
-  [^Body body]
-  (body-keywords (.getType body)))
-
-(def shape-types
-  {:circle ShapeType/CIRCLE
-   :polygon ShapeType/POLYGON})
-
-(def shape-keywords
-  (zipmap (vals shape-types) (keys shape-types)))
-
-(defn shape-type
-  [^Fixture fixt]
-  (shape-keywords (.getType fixt)))
-
-;; BASIC DATA
+;; ## Basic data
 
 (defn vec2
-  "Make a org.jbox2d.common.Vec2 from a clojure vector or two numbers.
-  If v is already a Vec2, return it."
+  "Make a `Vec2` object from given (`x`, `y`).
+  If the argument is already a Vec2, return it."
   ([v] (if (isa? (class v) Vec2)
          v
-         (Vec2. (v 0) (v 1))))
+         (Vec2. (first v) (second v))))
   ([x y] (Vec2. x y)))
 
 (defn xy
-  "Gets a vector [x y] from a Vec2"
+  "Makes a vector [x y] from a Vec2"
   [^Vec2 vec2]
   [(.x vec2) (.y vec2)])
 
-;; WORLD
+;; ## World
 
-(def ^:dynamic ^World *world*)
+(def ^{:doc "The current Box2D World: see `create-world`."}
+  ^:dynamic ^World *world*)
 
 (defn create-world!
   "Create a new Box2D world. Gravity defaults to -10 m/s^2."
@@ -58,18 +42,50 @@
      (alter-var-root (var *world*) (fn [_] (World. (vec2 gravity) true)))))
 
 (defn step!
-  "Simulate the world for a time step given in seconds"
+  "Simulate the world for a time step given in seconds.
+   Note that Box2D objects are locked during simulation."
   ([dt]
      (step! dt 8 3))
   ([dt velocity-iterations position-iterations]
      (.step *world* dt velocity-iterations position-iterations)))
 
-;; CREATION OF OBJECTS
+;; ## Enums
 
-;; SHAPES
+(def ^{:private true}
+  body-types
+  {:dynamic BodyType/DYNAMIC
+   :static BodyType/STATIC
+   :kinematic BodyType/KINEMATIC})
+
+(def ^{:private true}
+  body-keywords
+  (zipmap (vals body-types) (keys body-types)))
+
+(defn body-type
+  "The body type as a keyword `:dynamic` `:static` or `:kinematic`."
+  [^Body body]
+  (body-keywords (.getType body)))
+
+(def ^{:private true}
+  shape-types
+  {:circle ShapeType/CIRCLE
+   :polygon ShapeType/POLYGON})
+
+(def ^{:private true}
+  shape-keywords
+  (zipmap (vals shape-types) (keys shape-types)))
+
+(defn shape-type
+  "The shape type of a Fixture as a keyword `:circle` or `:polygon`."
+  [^Fixture fixt]
+  (shape-keywords (.getType fixt)))
+
+;; ## Creation of objects
+
+;; ### Shapes
 
 (defn circle
-  "Create a circle shape"
+  "Create a circle shape, by default centered at [0 0]"
   ([radius]
      (circle radius [0 0]))
   ([radius center]
@@ -79,14 +95,16 @@
        shape)))
 
 (defn edge
-  "Create an edge shape"
+  "Create an edge shape. Good for static bodies but seems to behave
+strangely in dynamic ones."
   [pt1 pt2]
   (let [shape (PolygonShape.)]
     (.setAsEdge shape (vec2 pt1) (vec2 pt2))
     shape))
 
 (defn box
-  "Create a box shape from half-width, half-height"
+  "Create a box shape from half-width, half-height,
+by default centered at [0 0]"
   ([hx hy]
      (let [shape (PolygonShape.)]
        (.setAsBox shape hx hy)
@@ -108,7 +126,7 @@
     (.set shape va (count vertices))
     shape))
 
-;; FIXTURES
+;; ### Fixtures
 
 (defn fixture-def
   "Create a Fixture definition: a shape with some physical properties"
@@ -133,11 +151,11 @@
 
 (defn fixture!
   "Creates a Fixture on an existing Body.
-   A convenience wrapper for (fixture-from-def body (fixture-def ...))"
+   A convenience wrapper for `(fixture-from-def body (fixture-def ...))`"
   [^Body body shape & opts]
   (fixture-from-def body (apply fixture-def shape opts)))
 
-;; BODIES
+;; ### Bodies
 
 (defn body-def
   "Creates a Body definition, which holds properties but not shapes."
@@ -170,7 +188,7 @@
       (fixture-from-def bod fd))
     bod))
 
-;; QUERY OF OBJECTS
+;; ## Query of objects
 
 (defn ^Body body
   "Get the body to which a fixture belongs"
@@ -196,7 +214,7 @@
   ([]
      (mapcat fixtureseq (bodyseq))))
 
-;; COORDINATES
+;; ## Coordinates
 
 (defn local-point
   "Return body-local coordinates for a given world point"
@@ -241,7 +259,7 @@
   [^Fixture fixt]
   (.m_radius (.getShape fixt)))
 
-;; axis-aligned bounding boxes
+;; ## Query and Axis-aligned bounding boxes
 
 (defn aabb
   "Axis-Aligned Bounding Box"
@@ -285,6 +303,8 @@ is tested to be inside each shape, not just within its bounding box."
        (.queryAABB *world* cb bb)
        @fxx)))
 
+;; ## Body properties
+
 (defn angle
   "Angle of a body in radians"
   [^Body body]
@@ -312,7 +332,7 @@ is tested to be inside each shape, not just within its bounding box."
   (.getUserData body))
 
 (defprotocol Destroyable
-  "For JBox2D objects which can be destroyed"
+  "Abstraction for JBox2D objects which can be destroyed"
   (destroy! [this]))
 
 (extend-protocol Destroyable
@@ -323,9 +343,9 @@ is tested to be inside each shape, not just within its bounding box."
   Fixture
   (destroy! [this] (.destroyFixture (body this) this)))
     
-;; utils
+;; ## Utilities
 
-(defonce PI (. Math PI))
+(defonce ^{:doc "Pi."} PI (. Math PI))
 
 (defn mag-v
   "Magnitude of a vector"
