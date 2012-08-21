@@ -10,21 +10,21 @@
 
 (defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
         w 100
-        body (body! (body-def :position [0 20]
-                              :angular-velocity w
-                              :linear-velocity [(* -8 w) 0])
-                    (fixture-def (circle 0.5) :density 5))
-        joint (joint! (revolute-joint-def ground body [0 12]
-                                          :motor-speed (- PI)
-                                          :motor-torque 10000
-                                          :lower-angle (/ (- PI) 4)
-                                          :upper-angle (/ PI 2)
-                                          :enable-limit true
-                                          :collide-connected true))]
-    (reset! things {:ground ground :ball body :joint joint})
+        ball (body! {:position [0 20]
+                     :angular-velocity w
+                     :linear-velocity [(* -8 w) 0]}
+                    {:shape (circle 0.5) :density 5})
+        joint (revolute-joint! ground ball [0 12]
+                               {:motor-speed (- PI)
+                                :motor-torque 10000
+                                :lower-angle (/ (- PI) 4)
+                                :upper-angle (/ PI 2)
+                                :enable-limit true
+                                :collide-connected true})]
+    (reset! things {:ball ball :joint joint})
     (reset! ground-body ground)))
 
 (defn update-info-text []

@@ -11,15 +11,15 @@
 
 (defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
-        sens (fixture! ground (circle 5 [0 10])
-                       :is-sensor true)
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
+        sens (fixture! ground {:shape (circle 5 [0 10])
+                               :is-sensor true})
         ballseq (for [i (range 7)
                       :let [x (+ -10 (* i 3))]]
-                  (body! (body-def :position [x 20]
-                                   :user-data (atom {:touching false}))
-                         (fixture-def (circle 1))))]
+                  (body! {:position [x 20]
+                          :user-data (atom {:touching false})}
+                         {:shape (circle 1)}))]
     (reset! sensor sens)
     (reset! balls (doall ballseq))
     (reset! ground-body ground)))

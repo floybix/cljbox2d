@@ -8,12 +8,12 @@
 
 (defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
         nodeshape (box 0.5 0.5)
         nodes (for [pt [[-5 5] [5 5] [5 15] [-5 15]]]
-                (body! (body-def :position pt)
-                       (fixture-def nodeshape :density 5)))
+                (body! {:position pt}
+                       {:shape nodeshape :density 5}))
         x-middle 0
         y-middle 10
         ground-joints (for [nd nodes
@@ -24,11 +24,11 @@
                                   ground-y (if is-top 20 0)
                                   off-x (if is-right 0.5 -0.5)
                                   off-y (if is-top 0.5 -0.5)]]
-                        (joint! (distance-joint-def ground nd
-                                                    [ground-x ground-y]
-                                                    [(+ x off-x) (+ y off-y)]
-                                                    :frequency-hz 4
-                                                    :damping-ratio 0.5)))
+                        (distance-joint! ground nd
+                                         [ground-x ground-y]
+                                         [(+ x off-x) (+ y off-y)]
+                                         {:frequency-hz 4
+                                          :damping-ratio 0.5}))
         inner-joints (for [i (range 4)
                            :let [n1 (nth nodes i)
                                  n2 (nth nodes (mod (inc i) 4))
@@ -36,13 +36,12 @@
                                  [x2 y2] (world-point n2)
                                  off-x1 (* -0.5 (compare x1 x2))
                                  off-y1 (* -0.5 (compare y1 y2))]]
-                       (joint! (distance-joint-def n1 n2
-                                                   [(+ x1 off-x1) (+ y1 off-y1)]
-                                                   [(- x2 off-x1) (- y2 off-y1)]
-                                                   :frequency-hz 4
-                                                   :damping-ratio 0.5)))]
-    (reset! things {:ground ground
-                    :nodes (doall nodes)
+                       (distance-joint! n1 n2
+                                        [(+ x1 off-x1) (+ y1 off-y1)]
+                                        [(- x2 off-x1) (- y2 off-y1)]
+                                        {:frequency-hz 4
+                                         :damping-ratio 0.5}))]
+    (reset! things {:nodes (doall nodes)
                     :joints (doall (concat ground-joints inner-joints))})
     (reset! ground-body ground)))
 

@@ -4,17 +4,14 @@
   (:use [cljbox2d core testbed])
   (:require [quil.core :as quil]))
 
-(def things (atom {}))
-
 (defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
         restns [0.0 0.1 0.3 0.5 0.75 0.9 1.0]
         balls (doall (for [[i r] (map-indexed list restns)]
-                       (body! (body-def :position [(+ -10 (* 3 i)) 20])
-                              (fixture-def (circle 1) :restitution r))))]
-    (reset! things {:ground ground :balls balls})
+                       (body! {:position [(+ -10 (* 3 i)) 20]}
+                              {:shape (circle 1), :restitution r})))]
     (reset! ground-body ground)))
 
 (defn setup []

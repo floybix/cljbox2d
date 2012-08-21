@@ -1,7 +1,7 @@
 (ns cljbox2d.core
   "This is [cljbox2d](https://github.com/floybix/cljbox2d/).
 
-   A Clojure wrapper for [JBox2D](http://www.jbox2d.org/), which is a
+   A clojure wrapper for [JBox2D](http://www.jbox2d.org/), which is a
    close Java port of Erin Catto's excellent C++
    [Box2D](http://www.box2d.org/) physics engine.
 
@@ -25,14 +25,18 @@
   ([x y] (Vec2. x y)))
 
 (defn xy
-  "Makes a vector [x y] from a Vec2"
-  [^Vec2 vec2]
-  [(.x vec2) (.y vec2)])
+  "Makes a vector [x y] from a Vec2, or convert polar coordinates [mag
+angle] (radians) to [x y]."
+  ([^Vec2 v]
+     [(.x v) (.y v)])
+  ([mag angle]
+     [(* mag (Math/cos angle))
+      (* mag (Math/sin angle))]))
 
 ;; ## World
 
-(def ^{:doc "The current Box2D World: see `create-world`."}
-  ^:dynamic ^World *world*)
+(def ^:dynamic ^World *world*
+  "The current Box2D World: see `create-world`.")
 
 (defn create-world!
   "Create a new Box2D world. Gravity defaults to -10 m/s^2."
@@ -95,8 +99,8 @@
        shape)))
 
 (defn edge
-  "Create an edge shape. Good for static bodies but seems to behave
-strangely in dynamic ones."
+  "Create an edge shape, a line between two points. Good for static
+bodies but seems to behave strangely in dynamic ones."
   [pt1 pt2]
   (let [shape (PolygonShape.)]
     (.setAsEdge shape (vec2 pt1) (vec2 pt2))
@@ -129,12 +133,13 @@ by default centered at [0 0]"
 ;; ### Fixtures
 
 (defn fixture-def
-  "Create a Fixture definition: a shape with some physical properties"
+  "A FixtureDef: a shape with some physical properties. Do not call
+this directly, instead use `(body!)` or `(fixture!)`"
   ;; TODO: filter (contact filtering)
-  [shape & {:keys [density friction restitution is-sensor
-                   user-data]
-            :or {density 1, friction 0.3, restitution 0.3,
-                 is-sensor false}}]
+  [{:keys [shape density friction restitution is-sensor
+           user-data]
+    :or {density 1, friction 0.3, restitution 0.3,
+         is-sensor false}}]
   (let [fd (FixtureDef.)]
     (set! (.shape fd) shape)
     (set! (.density fd) density)
@@ -144,29 +149,25 @@ by default centered at [0 0]"
     (set! (.userData fd) user-data)
     fd))
 
-(defn fixture-from-def
-  "Creates a Fixture on an existing Body from a FixtureDef."
-  [^Body body fd]
-  (.createFixture body fd))
-
 (defn fixture!
-  "Creates a Fixture on an existing Body.
-   A convenience wrapper for `(fixture-from-def body (fixture-def ...))`"
-  [^Body body shape & opts]
-  (fixture-from-def body (apply fixture-def shape opts)))
+  "Creates a Fixture on an existing Body. The second argument is a
+fixture specification map to be passed to the `fixture-def` function."
+  [^Body body fixture-spec]
+  (.createFixture body (fixture-def fixture-spec)))
 
 ;; ### Bodies
 
 (defn body-def
-  "Creates a Body definition, which holds properties but not shapes."
-  [& {:keys [type position angle bullet fixed-rotation
-             angular-damping linear-damping
-             angular-velocity linear-velocity
-             user-data]
-      :or {type :dynamic, position [0 0], angle 0,
-           bullet false, fixed-rotation false,
-           angular-damping 0, linear-damping 0,
-           angular-velocity 0, linear-velocity [0 0]}}]
+  "A BodyDef, which holds properties but not shapes. Do not call this
+directly, instead use `(body!)`"
+  [{:keys [type position angle bullet fixed-rotation
+           angular-damping linear-damping
+           angular-velocity linear-velocity
+           user-data]
+    :or {type :dynamic, position [0 0], angle 0,
+         bullet false, fixed-rotation false,
+         angular-damping 0, linear-damping 0,
+         angular-velocity 0, linear-velocity [0 0]}}]
   (let [bd (BodyDef.)]
     (set! (.type bd) (body-types type))
     (set! (.position bd) (vec2 position))
@@ -181,11 +182,15 @@ by default centered at [0 0]"
     bd))
 
 (defn body!
-  "Creates a Body from a BodyDef and optional FixtureDefs."
-  [bd & fixture-defs]
-  (let [bod (.createBody *world* bd)]
-    (doseq [fd fixture-defs]
-      (fixture-from-def bod fd))
+  "Creates a Body together with some Fixtures.
+  The first argument is a body specification map to be passed to the
+`body-def` function. Any remaining arguments are fixture specification
+maps to be passed to the `fixture-def` function."
+  [body-spec & fixture-specs]
+  (let [bd (body-def body-spec)
+        bod (.createBody *world* bd)]
+    (doseq [fspec fixture-specs]
+      (fixture! bod fspec))
     bod))
 
 ;; ## Query of objects
@@ -196,25 +201,31 @@ by default centered at [0 0]"
   (.getBody fixt))
 
 (defn bodyseq
-  "Seq of all bodies in the world, or a body list"
+  "Lazy seq of all bodies in the world, or a body list"
   ([]
      (bodyseq (.getBodyList *world*)))
   ([^Body body]
      (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))
 
 (defn fixtureseq*
-  "Seq of fixtures from a Fixture list."
+  "Lazy seq of fixtures from a Fixture list."
   [^Fixture fixt]
   (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))
 
 (defn fixtureseq
-  "Seq of fixtures on a body or (concatenated) all in the world"
+  "Lazy seq of fixtures on a body or (concatenated) all in the world"
   ([^Body body]
      (fixtureseq* (.getFixtureList body)))
   ([]
      (mapcat fixtureseq (bodyseq))))
 
-;; ## Coordinates
+(defn fixture
+  "Often a body will only have one fixture. This is a convenience
+function to pull out the first fixture from a body."
+  [^Body body]
+  (first (fixtureseq body)))
+
+;; ### Coordinates
 
 (defn local-point
   "Return body-local coordinates for a given world point"
@@ -259,7 +270,7 @@ by default centered at [0 0]"
   [^Fixture fixt]
   (.m_radius (.getShape fixt)))
 
-;; ## Query and Axis-aligned bounding boxes
+;; ### Spatial queries
 
 (defn aabb
   "Axis-Aligned Bounding Box"
@@ -311,19 +322,31 @@ is tested to be inside each shape, not just within its bounding box."
   (.getAngle body))
 
 (defn mass
-  "Mass of a body in kg"
+  "Total mass of a body in kg"
   [^Body body]
   (.getMass body))
 
 (defn linear-velocity
+  "Linear velocity of the center of mass of a body. In m/s?"
   [^Body body]
   (xy (.getLinearVelocity body)))
 
+(defn angular-velocity
+  "Angular velocity of a body in radians/second."
+  [^Body body]
+  (xy (.getAngularVelocity body)))
+
 (defn apply-force!
+  "Apply a force in Newtons to body at a world point. If the force
+is not applied at the center of mass, it will generate a torque and
+affect the angular velocity. This wakes up the body."
   [^Body body force pt]
   (.applyForce body (vec2 force) (vec2 pt)))
 
 (defn apply-torque!
+  "Apply a torque in N-m, i.e. about the z-axis (out of the
+screen). This affects the angular velocity without affecting the
+linear velocity of the center of mass. This wakes up the body."
   [^Body body torque]
   (.applyTorque body torque))
 
@@ -346,6 +369,11 @@ is tested to be inside each shape, not just within its bounding box."
 ;; ## Utilities
 
 (defonce ^{:doc "Pi."} PI (. Math PI))
+
+(defn angle-v
+  "Angle of a vector in radians"
+  [[x y]]
+  (Math/atan2 y x))
 
 (defn mag-v
   "Magnitude of a vector"

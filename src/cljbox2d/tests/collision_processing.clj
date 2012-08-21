@@ -13,25 +13,24 @@
 
 (defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-50 0] [50 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-50 0] [50 0])})
         rand-pos (fn [] [(+ -5 (rand 10))
                          (+ 2 (rand 33))])
         tri-vv [[-1 0] [1 0] [0 2]]
-        tri-small (body! (body-def :position (rand-pos))
-                         (fixture-def (polygon tri-vv)))
-        tri-big (body! (body-def :position (rand-pos))
-                       (fixture-def (polygon (scale-vv tri-vv 2))))
-        rect-small (body! (body-def :position (rand-pos))
-                          (fixture-def (box 1 0.5)))
-        rect-big (body! (body-def :position (rand-pos))
-                        (fixture-def (box 2 1)))
-        circ-small (body! (body-def :position (rand-pos))
-                          (fixture-def (circle 1)))
-        circ-big (body! (body-def :position (rand-pos))
-                        (fixture-def (circle 2)))]
-    (reset! things {:ground ground
-                    :objs [tri-small tri-big
+        tri-small (body! {:position (rand-pos)}
+                         {:shape (polygon tri-vv)})
+        tri-big (body! {:position (rand-pos)}
+                       {:shape (polygon (scale-vv tri-vv 2))})
+        rect-small (body! {:position (rand-pos)}
+                          {:shape (box 1 0.5)})
+        rect-big (body! {:position (rand-pos)}
+                        {:shape (box 2 1)})
+        circ-small (body! {:position (rand-pos)}
+                          {:shape (circle 1)})
+        circ-big (body! {:position (rand-pos)}
+                        {:shape (circle 2)})]
+    (reset! things {:objs [tri-small tri-big
                            rect-small rect-big
                            circ-small circ-big]})
     (reset! ground-body ground)))
