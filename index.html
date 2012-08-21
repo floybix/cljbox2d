@@ -3028,10 +3028,10 @@ net.brehaut.ClojureTools = (function (SH) {
     build_tree: build_tree
   };
 })(SyntaxHighlighter);
-</script><title>cljbox2d -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">cljbox2d</h1><h2 class="project-version">0.1.0</h2><br /><p>A clojure wrapper for JBox2D, for 2D physics simulation.</p>
+</script><title>cljbox2d -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">cljbox2d</h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>A clojure wrapper for JBox2D, for 2D physics simulation.</p>
 </div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>This is <a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>.</p>
 
-<p>   A Clojure wrapper for <a href="http://www.jbox2d.org/">JBox2D</a>, which is a
+<p>   A clojure wrapper for <a href="http://www.jbox2d.org/">JBox2D</a>, which is a
    close Java port of Erin Catto's excellent C++
    <a href="http://www.box2d.org/">Box2D</a> physics engine.</p>
 
@@ -3050,13 +3050,17 @@ net.brehaut.ClojureTools = (function (SH) {
   ([v] (if (isa? (class v) Vec2)
          v
          (Vec2. (first v) (second v))))
-  ([x y] (Vec2. x y)))</pre></td></tr><tr><td class="docs"><p>Makes a vector [x y] from a Vec2</p>
+  ([x y] (Vec2. x y)))</pre></td></tr><tr><td class="docs"><p>Makes a vector [x y] from a Vec2, or convert polar coordinates [mag
+angle] (radians) to [x y].</p>
 </td><td class="codes"><pre class="brush: clojure">(defn xy
-  [^Vec2 vec2]
-  [(.x vec2) (.y vec2)])</pre></td></tr><tr><td class="docs"><h2>World</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>The current Box2D World: see <code>create-world</code>.</p>
-</td><td class="codes"><pre class="brush: clojure">(def 
-  ^:dynamic ^World *world*)</pre></td></tr><tr><td class="docs"><p>Create a new Box2D world. Gravity defaults to -10 m/s^2.</p>
+  ([^Vec2 v]
+     [(.x v) (.y v)])
+  ([mag angle]
+     [(* mag (Math/cos angle))
+      (* mag (Math/sin angle))]))</pre></td></tr><tr><td class="docs"><h2>World</h2>
+</td><td class="codes"></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def ^:dynamic ^World *world*
+  &quot;The current Box2D World: see `create-world`.&quot;)</pre></td></tr><tr><td class="docs"><p>Create a new Box2D world. Gravity defaults to -10 m/s^2.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn create-world!
   ([]
      (create-world! [0 -10]))
@@ -3099,8 +3103,8 @@ net.brehaut.ClojureTools = (function (SH) {
      (let [shape (CircleShape.)]
        (set! (. shape m_radius) radius)
        (.set (. shape m_p) (vec2 center))
-       shape)))</pre></td></tr><tr><td class="docs"><p>Create an edge shape. Good for static bodies but seems to behave
-strangely in dynamic ones.</p>
+       shape)))</pre></td></tr><tr><td class="docs"><p>Create an edge shape, a line between two points. Good for static
+bodies but seems to behave strangely in dynamic ones.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn edge
   [pt1 pt2]
   (let [shape (PolygonShape.)]
@@ -3126,13 +3130,14 @@ by default centered at [0 0]</p>
         va (into-array Vec2 (map vec2 vertices))]
     (.set shape va (count vertices))
     shape))</pre></td></tr><tr><td class="docs"><h3>Fixtures</h3>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Create a Fixture definition: a shape with some physical properties</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>A FixtureDef: a shape with some physical properties. Do not call
+this directly, instead use <code>(body!)</code> or <code>(fixture!)</code></p>
 </td><td class="codes"><pre class="brush: clojure">(defn fixture-def
   ;; TODO: filter (contact filtering)
-  [shape &amp; {:keys [density friction restitution is-sensor
-                   user-data]
-            :or {density 1, friction 0.3, restitution 0.3,
-                 is-sensor false}}]
+  [{:keys [shape density friction restitution is-sensor
+           user-data]
+    :or {density 1, friction 0.3, restitution 0.3,
+         is-sensor false}}]
   (let [fd (FixtureDef.)]
     (set! (.shape fd) shape)
     (set! (.density fd) density)
@@ -3140,24 +3145,22 @@ by default centered at [0 0]</p>
     (set! (.restitution fd) restitution)
     (set! (.isSensor fd) is-sensor)
     (set! (.userData fd) user-data)
-    fd))</pre></td></tr><tr><td class="docs"><p>Creates a Fixture on an existing Body from a FixtureDef.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn fixture-from-def
-  [^Body body fd]
-  (.createFixture body fd))</pre></td></tr><tr><td class="docs"><p>Creates a Fixture on an existing Body.
-   A convenience wrapper for <code>(fixture-from-def body (fixture-def ...))</code></p>
+    fd))</pre></td></tr><tr><td class="docs"><p>Creates a Fixture on an existing Body. The second argument is a
+fixture specification map to be passed to the <code>fixture-def</code> function.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn fixture!
-  [^Body body shape &amp; opts]
-  (fixture-from-def body (apply fixture-def shape opts)))</pre></td></tr><tr><td class="docs"><h3>Bodies</h3>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Creates a Body definition, which holds properties but not shapes.</p>
+  [^Body body fixture-spec]
+  (.createFixture body (fixture-def fixture-spec)))</pre></td></tr><tr><td class="docs"><h3>Bodies</h3>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>A BodyDef, which holds properties but not shapes. Do not call this
+directly, instead use <code>(body!)</code></p>
 </td><td class="codes"><pre class="brush: clojure">(defn body-def
-  [&amp; {:keys [type position angle bullet fixed-rotation
-             angular-damping linear-damping
-             angular-velocity linear-velocity
-             user-data]
-      :or {type :dynamic, position [0 0], angle 0,
-           bullet false, fixed-rotation false,
-           angular-damping 0, linear-damping 0,
-           angular-velocity 0, linear-velocity [0 0]}}]
+  [{:keys [type position angle bullet fixed-rotation
+           angular-damping linear-damping
+           angular-velocity linear-velocity
+           user-data]
+    :or {type :dynamic, position [0 0], angle 0,
+         bullet false, fixed-rotation false,
+         angular-damping 0, linear-damping 0,
+         angular-velocity 0, linear-velocity [0 0]}}]
   (let [bd (BodyDef.)]
     (set! (.type bd) (body-types type))
     (set! (.position bd) (vec2 position))
@@ -3169,30 +3172,38 @@ by default centered at [0 0]</p>
     (set! (.angularVelocity bd) angular-velocity)
     (set! (.linearVelocity bd) (vec2 linear-velocity))
     (set! (.userData bd) user-data)
-    bd))</pre></td></tr><tr><td class="docs"><p>Creates a Body from a BodyDef and optional FixtureDefs.</p>
+    bd))</pre></td></tr><tr><td class="docs"><p>Creates a Body together with some Fixtures.
+  The first argument is a body specification map to be passed to the
+<code>body-def</code> function. Any remaining arguments are fixture specification
+maps to be passed to the <code>fixture-def</code> function.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn body!
-  [bd &amp; fixture-defs]
-  (let [bod (.createBody *world* bd)]
-    (doseq [fd fixture-defs]
-      (fixture-from-def bod fd))
+  [body-spec &amp; fixture-specs]
+  (let [bd (body-def body-spec)
+        bod (.createBody *world* bd)]
+    (doseq [fspec fixture-specs]
+      (fixture! bod fspec))
     bod))</pre></td></tr><tr><td class="docs"><h2>Query of objects</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Get the body to which a fixture belongs</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ^Body body
   [^Fixture fixt]
-  (.getBody fixt))</pre></td></tr><tr><td class="docs"><p>Seq of all bodies in the world, or a body list</p>
+  (.getBody fixt))</pre></td></tr><tr><td class="docs"><p>Lazy seq of all bodies in the world, or a body list</p>
 </td><td class="codes"><pre class="brush: clojure">(defn bodyseq
   ([]
      (bodyseq (.getBodyList *world*)))
   ([^Body body]
-     (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))</pre></td></tr><tr><td class="docs"><p>Seq of fixtures from a Fixture list.</p>
+     (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of fixtures from a Fixture list.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn fixtureseq*
   [^Fixture fixt]
-  (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))</pre></td></tr><tr><td class="docs"><p>Seq of fixtures on a body or (concatenated) all in the world</p>
+  (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of fixtures on a body or (concatenated) all in the world</p>
 </td><td class="codes"><pre class="brush: clojure">(defn fixtureseq
   ([^Body body]
      (fixtureseq* (.getFixtureList body)))
   ([]
-     (mapcat fixtureseq (bodyseq))))</pre></td></tr><tr><td class="docs"><h2>Coordinates</h2>
+     (mapcat fixtureseq (bodyseq))))</pre></td></tr><tr><td class="docs"><p>Often a body will only have one fixture. This is a convenience
+function to pull out the first fixture from a body.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn fixture
+  [^Body body]
+  (first (fixtureseq body)))</pre></td></tr><tr><td class="docs"><h3>Coordinates</h3>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Return body-local coordinates for a given world point</p>
 </td><td class="codes"><pre class="brush: clojure">(defn local-point
   [^Body body pt]
@@ -3222,7 +3233,7 @@ by default centered at [0 0]</p>
     (map (partial world-point body) (local-coords fixt))))</pre></td></tr><tr><td class="docs"><p>Radius of a Fixture's shape.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn radius
   [^Fixture fixt]
-  (.m_radius (.getShape fixt)))</pre></td></tr><tr><td class="docs"><h2>Query and Axis-aligned bounding boxes</h2>
+  (.m_radius (.getShape fixt)))</pre></td></tr><tr><td class="docs"><h3>Spatial queries</h3>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Axis-Aligned Bounding Box</p>
 </td><td class="codes"><pre class="brush: clojure">(defn aabb
   ([[x0 y0] [x1 y1]]
@@ -3263,16 +3274,23 @@ is tested to be inside each shape, not just within its bounding box.</p>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Angle of a body in radians</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angle
   [^Body body]
-  (.getAngle body))</pre></td></tr><tr><td class="docs"><p>Mass of a body in kg</p>
+  (.getAngle body))</pre></td></tr><tr><td class="docs"><p>Total mass of a body in kg</p>
 </td><td class="codes"><pre class="brush: clojure">(defn mass
   [^Body body]
-  (.getMass body))</pre></td></tr><tr><td class="docs">
+  (.getMass body))</pre></td></tr><tr><td class="docs"><p>Linear velocity of the center of mass of a body. In m/s?</p>
 </td><td class="codes"><pre class="brush: clojure">(defn linear-velocity
   [^Body body]
-  (xy (.getLinearVelocity body)))</pre></td></tr><tr><td class="docs">
+  (xy (.getLinearVelocity body)))</pre></td></tr><tr><td class="docs"><p>Angular velocity of a body in radians/second.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn angular-velocity
+  [^Body body]
+  (xy (.getLinearVelocity body)))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
+is not applied at the center of mass, it will generate a torque and
+affect the angular velocity. This wakes up the body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn apply-force!
   [^Body body force pt]
-  (.applyForce body (vec2 force) (vec2 pt)))</pre></td></tr><tr><td class="docs">
+  (.applyForce body (vec2 force) (vec2 pt)))</pre></td></tr><tr><td class="docs"><p>Apply a torque in N-m, i.e. about the z-axis (out of the
+screen). This affects the angular velocity without affecting the
+linear velocity of the center of mass. This wakes up the body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn apply-torque!
   [^Body body torque]
   (.applyTorque body torque))</pre></td></tr><tr><td class="docs">
@@ -3289,7 +3307,10 @@ is tested to be inside each shape, not just within its bounding box.</p>
   Fixture
   (destroy! [this] (.destroyFixture (body this) this)))</pre></td></tr><tr><td class="docs"><h2>Utilities</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Pi.</p>
-</td><td class="codes"><pre class="brush: clojure">(defonce  PI (. Math PI))</pre></td></tr><tr><td class="docs"><p>Magnitude of a vector</p>
+</td><td class="codes"><pre class="brush: clojure">(defonce  PI (. Math PI))</pre></td></tr><tr><td class="docs"><p>Angle of a vector in radians</p>
+</td><td class="codes"><pre class="brush: clojure">(defn angle-v
+  [[x y]]
+  (Math/atan2 y x))</pre></td></tr><tr><td class="docs"><p>Magnitude of a vector</p>
 </td><td class="codes"><pre class="brush: clojure">(defn mag-v
   [[x y]]
   (Math/sqrt (+ (* x x) (* y y))))</pre></td></tr><tr><td class="docs"><p>Multiply elements of a vector by a scalar;
@@ -3327,14 +3348,14 @@ rotation with a joint limit that specifies a lower and upper
 angle. You can use a motor to drive the relative rotation about the
 shared point. A maximum motor torque is provided so that infinite
 forces are not generated.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn revolute-joint-def
+</td><td class="codes"><pre class="brush: clojure">(defn revolute-joint!
   [body1 body2 anchor
-   &amp; {:keys [enable-motor motor-speed max-torque
-             enable-limit lower-angle upper-angle
-             collide-connected user-data]
-      :or {enable-motor false, motor-speed 0, max-torque 10000,
-           enable-limit false, lower-angle 0, upper-angle 360,
-           collide-connected false}}]
+   {:keys [enable-motor motor-speed max-torque
+           enable-limit lower-angle upper-angle
+           collide-connected user-data]
+    :or {enable-motor false, motor-speed 0, max-torque 10000,
+         enable-limit false, lower-angle 0, upper-angle 360,
+         collide-connected false}}]
   (let [jd (RevoluteJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor))
     (set! (.enableMotor jd) enable-motor)
@@ -3345,35 +3366,35 @@ forces are not generated.</p>
     (set! (.upperAngle jd) upper-angle)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    jd))</pre></td></tr><tr><td class="docs"><p>Distance joint definition. This requires defining an anchor point
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Distance joint definition. This requires defining an anchor point
 on both bodies and the non-zero length of the distance joint. The
 definition uses local anchor points so that the initial configuration
 can violate the constraint slightly. This helps when saving and
 loading a game.
 <em>Note</em> however that this initialisation function uses world points.
 For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn distance-joint-def
+</td><td class="codes"><pre class="brush: clojure">(defn distance-joint!
   [body1 body2 anchor1 anchor2
-   &amp; {:keys [frequency-hz damping-ratio
-             collide-connected user-data]
-      :or {frequency-hz 0, damping-ratio 0,
-           collide-connected false}}]
+   {:keys [frequency-hz damping-ratio
+           collide-connected user-data]
+    :or {frequency-hz 0, damping-ratio 0,
+         collide-connected false}}]
   (let [jd (DistanceJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor1) (vec2 anchor2))
     (set! (.frequencyHz jd) frequency-hz)
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    jd))</pre></td></tr><tr><td class="docs"><p>Mouse joint definition.
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Mouse joint definition.
    By convention <code>body1</code> is ground and <code>body2</code> is the selection</p>
-</td><td class="codes"><pre class="brush: clojure">(defn mouse-joint-def
+</td><td class="codes"><pre class="brush: clojure">(defn mouse-joint!
   [body1 body2 target
-   &amp; {:keys [max-force
-             frequency-hz damping-ratio
-             collide-connected user-data]
-      :or {max-force 1000,
-           frequency-hz 5, damping-ratio 0.7,
-           collide-connected false}}]
+   {:keys [max-force
+           frequency-hz damping-ratio
+           collide-connected user-data]
+    :or {max-force 1000,
+         frequency-hz 5, damping-ratio 0.7,
+         collide-connected false}}]
   (let [jd (MouseJointDef.)]
     (set! (.bodyA jd) body1)
     (set! (.bodyB jd) body2)
@@ -3383,16 +3404,16 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    jd))</pre></td></tr><tr><td class="docs"><p>Creates a Joint from a JointDef.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn joint!
-  [jd]
-  (.createJoint *world* jd))</pre></td></tr><tr><td class="docs"><h2>Query of objects</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Seq of all bodies in the world, or a joint list</p>
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><h2>Query of joints</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Lazy seq of joints in a joint list</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- jointseq*
+  [^Joint joint]
+  (lazy-seq (when joint (cons joint (jointseq* (.getNext joint))))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of all joints in the world or connected to a body</p>
 </td><td class="codes"><pre class="brush: clojure">(defn jointseq
   ([]
-     (jointseq (.getJointList *world*)))
-  ([^Joint joint]
-     (lazy-seq (when joint (cons joint (jointseq (.getNext joint)))))))</pre></td></tr><tr><td class="docs"><p>Return bodyA for a joint</p>
+     (jointseq* (.getJointList *world*)))
+  ([^Body body]
+     (jointseq* (.getJointList body))))</pre></td></tr><tr><td class="docs"><p>Return bodyA for a joint</p>
 </td><td class="codes"><pre class="brush: clojure">(defn body-a
   [^Joint jt]
   (.getBodyA jt))</pre></td></tr><tr><td class="docs"><p>Return bodyB for a joint</p>
@@ -3427,11 +3448,15 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
   (:import (org.jbox2d.callbacks ContactListener)
            (org.jbox2d.collision WorldManifold))
   (:require [quil.core :as quil]))</pre></td></tr><tr><td class="docs"><h2>Atoms acting as hooks</h2>
-</td><td class="codes"></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def info-text (atom ))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def camera (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def mousej (atom nil))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def ground-body (atom nil))</pre></td></tr><tr><td class="docs"><h2>Drawing</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Text to draw in the corner of the sketch</p>
+</td><td class="codes"><pre class="brush: clojure">(def info-text
+  (atom &quot;&quot;))</pre></td></tr><tr><td class="docs"><p>Defines the current view (location and scale) in world coordinates</p>
+</td><td class="codes"><pre class="brush: clojure">(def camera
+  (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))</pre></td></tr><tr><td class="docs"><p>Current mouse joint; see <code>left-mouse-pressed</code> etc.</p>
+</td><td class="codes"><pre class="brush: clojure">(def mousej
+  (atom nil))</pre></td></tr><tr><td class="docs"><p>A static body, used as a reference for e.g. mouse joints</p>
+</td><td class="codes"><pre class="brush: clojure">(def ground-body
+  (atom nil))</pre></td></tr><tr><td class="docs"><h2>Drawing</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>A scaling factor on world coordinates to give pixels.
 Fits the camera bounds into the window, expanding these
 bounds if necessary to ensure an isometric aspect ratio.</p>
@@ -3462,26 +3487,32 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
            y-top (+ y-bottom (:height cam))]
        [(+ (/ xp scale) x-left)
         ;; quil has flipped y (0px at top)
-        (- y-top (/ yp scale))])))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn setup-style []
+        (- y-top (/ yp scale))])))</pre></td></tr><tr><td class="docs"><p>Set common drawing style attributes</p>
+</td><td class="codes"><pre class="brush: clojure">(defn setup-style
+  []
   (quil/background 0)
-  (quil/stroke-weight 1))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn dynamic-style []
+  (quil/stroke-weight 1))</pre></td></tr><tr><td class="docs"><p>Set drawing style for awake dynamic bodies.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn dynamic-style
+  []
   (let [clr (quil/color 255 200 200)]
     (quil/stroke clr)
-    (quil/fill clr 127)))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn sleeping-style []
+    (quil/fill clr 127)))</pre></td></tr><tr><td class="docs"><p>Set drawing style for sleeping dynamic bodies.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn sleeping-style
+  []
   (let [clr (quil/color 150 150 150)]
     (quil/stroke clr)
-    (quil/fill clr 127)))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn joint-style []
+    (quil/fill clr 127)))</pre></td></tr><tr><td class="docs"><p>Set drawing style for joints</p>
+</td><td class="codes"><pre class="brush: clojure">(defn joint-style
+  []
   (let [blue (quil/color 155 155 255)]
     (quil/stroke blue)
-    (quil/fill blue 127)))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn static-style []
+    (quil/fill blue 127)))</pre></td></tr><tr><td class="docs"><p>Set drawing style for static bodies.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn static-style
+  []
   (let [green (quil/color 100 255 100)]
     (quil/stroke green)
-    (quil/fill green 127)))</pre></td></tr><tr><td class="docs"><p>Draw all shapes (fixtures) from the Box2D world</p>
+    (quil/fill green 127)))</pre></td></tr><tr><td class="docs"><p>Draw all shapes (fixtures) and joints in the Box2D world.
+   Also draws @info-text.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn draw-world
   []
   (setup-style)
@@ -3523,8 +3554,10 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                  (quil/end-shape :close))))
   (quil/fill 255)
   (quil/text @info-text 10 10))</pre></td></tr><tr><td class="docs"><h2>contact / collision handling</h2>
-</td><td class="codes"></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def contact-buffer (atom []))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Holds a sequence of contacts for the last time step, each
+represented as <code>[fixture-a fixture-b points normal]</code>.</p>
+</td><td class="codes"><pre class="brush: clojure">(def contact-buffer
+  (atom []))</pre></td></tr><tr><td class="docs"><p>A ContactListener which populates <code>contact-buffer</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn set-buffering-contact-listener!
   []
   (let [world-manifold (WorldManifold.)
@@ -3546,41 +3579,51 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                         (swap! contact-buffer conj
                                [fixt-a fixt-b pts normal]))))))]
     (.setContactListener *world* lstnr)))</pre></td></tr><tr><td class="docs"><h2>input event handling</h2>
-</td><td class="codes"></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn mouse-world []
-  (px-to-world [(quil/mouse-x) (quil/mouse-y)]))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn pmouse-world []
-  (px-to-world [(quil/pmouse-x) (quil/pmouse-y)]))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn left-mouse-pressed []
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Current mouse position in world coordinates.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn mouse-world
+  []
+  (px-to-world [(quil/mouse-x) (quil/mouse-y)]))</pre></td></tr><tr><td class="docs"><p>Previous time-step mouse position in world coordinates.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn pmouse-world
+  []
+  (px-to-world [(quil/pmouse-x) (quil/pmouse-y)]))</pre></td></tr><tr><td class="docs"><p>Checks for fixtures at the mouse position. If one is found, creates
+a mouse joint attached to its body, which allows it to be dragged
+around.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn left-mouse-pressed
+  []
   (when-not @mousej
     (let [pt (mouse-world)
           fixt (first (query-at-point pt 1))]
       (when fixt
         (let [bod (body fixt)
-              mjd (mouse-joint-def @ground-body bod pt
-                                   :max-force (* 1000 (mass bod)))]
-          (reset! mousej (joint! mjd))
-          (.setAwake bod true))))))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn mouse-pressed []
+              mj (mouse-joint! @ground-body bod pt
+                               {:max-force (* 1000 (mass bod))})]
+          (reset! mousej mj)
+          (.setAwake bod true))))))</pre></td></tr><tr><td class="docs"><p>Dispatches according to the mouse button.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn mouse-pressed
+  []
   (case (quil/mouse-button)
     :left (left-mouse-pressed)
-    :otherwise-ignore-it))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn mouse-released []
+    :otherwise-ignore-it))</pre></td></tr><tr><td class="docs"><p>Destroys the active mouse joint if it exists.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn mouse-released
+  []
   (when @mousej
     (do (destroy! @mousej)
-        (reset! mousej nil))))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn left-mouse-dragged []
+        (reset! mousej nil))))</pre></td></tr><tr><td class="docs"><p>Updates the mouse joint target point.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn left-mouse-dragged
+  []
   (when @mousej
     (let [pt (mouse-world)]
-      (.setTarget @mousej (vec2 pt)))))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn right-mouse-dragged []
+      (.setTarget @mousej (vec2 pt)))))</pre></td></tr><tr><td class="docs"><p>Shifts the current view (camera)</p>
+</td><td class="codes"><pre class="brush: clojure">(defn right-mouse-dragged
+  []
   (let [[x y] (mouse-world)
         [ox oy] (pmouse-world)
         dx (- x ox)
         dy (- y oy)]
     (swap! camera (partial merge-with +)
-           {:x-left (- dx) :y-bottom (- dy)})))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn mouse-dragged []
+           {:x-left (- dx) :y-bottom (- dy)})))</pre></td></tr><tr><td class="docs"><p>Dispatches according to the mouse button.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn mouse-dragged
+  []
   (case (quil/mouse-button)
     :right (right-mouse-dragged)
     :left (left-mouse-dragged)
@@ -3595,25 +3638,24 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
   (map (fn [[x y]] [(* x s) (* y s)]) vv))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-50 0] [50 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-50 0] [50 0])})
         rand-pos (fn [] [(+ -5 (rand 10))
                          (+ 2 (rand 33))])
         tri-vv [[-1 0] [1 0] [0 2]]
-        tri-small (body! (body-def :position (rand-pos))
-                         (fixture-def (polygon tri-vv)))
-        tri-big (body! (body-def :position (rand-pos))
-                       (fixture-def (polygon (scale-vv tri-vv 2))))
-        rect-small (body! (body-def :position (rand-pos))
-                          (fixture-def (box 1 0.5)))
-        rect-big (body! (body-def :position (rand-pos))
-                        (fixture-def (box 2 1)))
-        circ-small (body! (body-def :position (rand-pos))
-                          (fixture-def (circle 1)))
-        circ-big (body! (body-def :position (rand-pos))
-                        (fixture-def (circle 2)))]
-    (reset! things {:ground ground
-                    :objs [tri-small tri-big
+        tri-small (body! {:position (rand-pos)}
+                         {:shape (polygon tri-vv)})
+        tri-big (body! {:position (rand-pos)}
+                       {:shape (polygon (scale-vv tri-vv 2))})
+        rect-small (body! {:position (rand-pos)}
+                          {:shape (box 1 0.5)})
+        rect-big (body! {:position (rand-pos)}
+                        {:shape (box 2 1)})
+        circ-small (body! {:position (rand-pos)}
+                          {:shape (circle 1)})
+        circ-big (body! {:position (rand-pos)}
+                        {:shape (circle 2)})]
+    (reset! things {:objs [tri-small tri-big
                            rect-small rect-big
                            circ-small circ-big]})
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
@@ -3652,21 +3694,21 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
 </td><td class="codes"><pre class="brush: clojure">(def is-left (atom false))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
         w 100
-        body (body! (body-def :position [0 20]
-                              :angular-velocity w
-                              :linear-velocity [(* -8 w) 0])
-                    (fixture-def (circle 0.5) :density 5))
-        joint (joint! (revolute-joint-def ground body [0 12]
-                                          :motor-speed (- PI)
-                                          :motor-torque 10000
-                                          :lower-angle (/ (- PI) 4)
-                                          :upper-angle (/ PI 2)
-                                          :enable-limit true
-                                          :collide-connected true))]
-    (reset! things {:ground ground :ball body :joint joint})
+        ball (body! {:position [0 20]
+                     :angular-velocity w
+                     :linear-velocity [(* -8 w) 0]}
+                    {:shape (circle 0.5) :density 5})
+        joint (revolute-joint! ground ball [0 12]
+                               {:motor-speed (- PI)
+                                :motor-torque 10000
+                                :lower-angle (/ (- PI) 4)
+                                :upper-angle (/ PI 2)
+                                :enable-limit true
+                                :collide-connected true})]
+    (reset! things {:ball ball :joint joint})
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn update-info-text []
   (let [jt (:joint @things)]
@@ -3710,15 +3752,15 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
 </td><td class="codes"><pre class="brush: clojure">(def balls (atom []))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
-        sens (fixture! ground (circle 5 [0 10])
-                       :is-sensor true)
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
+        sens (fixture! ground {:shape (circle 5 [0 10])
+                               :is-sensor true})
         ballseq (for [i (range 7)
                       :let [x (+ -10 (* i 3))]]
-                  (body! (body-def :position [x 20]
-                                   :user-data (atom {:touching false}))
-                         (fixture-def (circle 1))))]
+                  (body! {:position [x 20]
+                          :user-data (atom {:touching false})}
+                         {:shape (circle 1)}))]
     (reset! sensor sens)
     (reset! balls (doall ballseq))
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
@@ -3772,16 +3814,14 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.varying-restitution
   (:use [cljbox2d core testbed])
   (:require [quil.core :as quil]))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def things (atom {}))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
         restns [0.0 0.1 0.3 0.5 0.75 0.9 1.0]
         balls (doall (for [[i r] (map-indexed list restns)]
-                       (body! (body-def :position [(+ -10 (* 3 i)) 20])
-                              (fixture-def (circle 1) :restitution r))))]
-    (reset! things {:ground ground :balls balls})
+                       (body! {:position [(+ -10 (* 3 i)) 20]}
+                              {:shape (circle 1), :restitution r})))]
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup []
   (setup-world!))</pre></td></tr><tr><td class="docs">
@@ -3805,12 +3845,12 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
 </td><td class="codes"><pre class="brush: clojure">(def things (atom {}))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
   (create-world!)
-  (let [ground (body! (body-def :type :static)
-                      (fixture-def (edge [-40 0] [40 0])))
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
         nodeshape (box 0.5 0.5)
         nodes (for [pt [[-5 5] [5 5] [5 15] [-5 15]]]
-                (body! (body-def :position pt)
-                       (fixture-def nodeshape :density 5)))
+                (body! {:position pt}
+                       {:shape nodeshape :density 5}))
         x-middle 0
         y-middle 10
         ground-joints (for [nd nodes
@@ -3821,11 +3861,11 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                                   ground-y (if is-top 20 0)
                                   off-x (if is-right 0.5 -0.5)
                                   off-y (if is-top 0.5 -0.5)]]
-                        (joint! (distance-joint-def ground nd
-                                                    [ground-x ground-y]
-                                                    [(+ x off-x) (+ y off-y)]
-                                                    :frequency-hz 4
-                                                    :damping-ratio 0.5)))
+                        (distance-joint! ground nd
+                                         [ground-x ground-y]
+                                         [(+ x off-x) (+ y off-y)]
+                                         {:frequency-hz 4
+                                          :damping-ratio 0.5}))
         inner-joints (for [i (range 4)
                            :let [n1 (nth nodes i)
                                  n2 (nth nodes (mod (inc i) 4))
@@ -3833,13 +3873,12 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                                  [x2 y2] (world-point n2)
                                  off-x1 (* -0.5 (compare x1 x2))
                                  off-y1 (* -0.5 (compare y1 y2))]]
-                       (joint! (distance-joint-def n1 n2
-                                                   [(+ x1 off-x1) (+ y1 off-y1)]
-                                                   [(- x2 off-x1) (- y2 off-y1)]
-                                                   :frequency-hz 4
-                                                   :damping-ratio 0.5)))]
-    (reset! things {:ground ground
-                    :nodes (doall nodes)
+                       (distance-joint! n1 n2
+                                        [(+ x1 off-x1) (+ y1 off-y1)]
+                                        [(- x2 off-x1) (- y2 off-y1)]
+                                        {:frequency-hz 4
+                                         :damping-ratio 0.5}))]
+    (reset! things {:nodes (doall nodes)
                     :joints (doall (concat ground-joints inner-joints))})
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn update-info-text []
