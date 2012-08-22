@@ -9,7 +9,7 @@
    World."
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
-           (org.jbox2d.collision AABB)
+           (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
            (org.jbox2d.callbacks QueryCallback)
            (org.jbox2d.dynamics.joints Joint)))
@@ -38,11 +38,14 @@ angle] (radians) to [x y]."
 (def ^:dynamic ^World *world*
   "The current Box2D World: see `create-world`.")
 
+(def world-time "Simulated time passed in seconds" (atom nil))
+
 (defn create-world!
   "Create a new Box2D world. Gravity defaults to -10 m/s^2."
   ([]
      (create-world! [0 -10]))
   ([gravity]
+     (reset! world-time 0.0)
      (alter-var-root (var *world*) (fn [_] (World. (vec2 gravity) true)))))
 
 (defn step!
@@ -51,6 +54,7 @@ angle] (radians) to [x y]."
   ([dt]
      (step! dt 8 3))
   ([dt velocity-iterations position-iterations]
+     (swap! world-time + dt)
      (.step *world* dt velocity-iterations position-iterations)))
 
 ;; ## Enums
@@ -207,15 +211,12 @@ maps to be passed to the `fixture-def` function."
   ([^Body body]
      (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))
 
-(defn fixtureseq*
-  "Lazy seq of fixtures from a Fixture list."
-  [^Fixture fixt]
-  (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))
-
 (defn fixtureseq
   "Lazy seq of fixtures on a body or (concatenated) all in the world"
   ([^Body body]
-     (fixtureseq* (.getFixtureList body)))
+     (letfn [(nextstep [fl]
+               (when fl (cons fl (nextstep (.getNext fl)))))]
+       (lazy-seq (nextstep (.getFixtureList body)))))
   ([]
      (mapcat fixtureseq (bodyseq))))
 
@@ -314,6 +315,46 @@ is tested to be inside each shape, not just within its bounding box."
        (.queryAABB *world* cb bb)
        @fxx)))
 
+;; ## Contacts
+
+(defn contact-data
+  "Returns a map with keys :fixture-a :fixture-b :points :normal
+   from a JBox2D Contact class. Returns nil if no contact points exist."
+  [contact]
+  (let [world-manifold (WorldManifold.) ;; TODO could pass this in
+        manifold (.getManifold contact)
+        pcount (.pointCount manifold)]
+    (when (pos? pcount)
+      ;; mutates its argument:
+      (.getWorldManifold contact world-manifold)
+      (let [fixt-a (.getFixtureA contact)
+            fixt-b (.getFixtureB contact)
+            -points (.points world-manifold)
+            pts (map xy (take pcount -points))
+            normal (xy (.normal world-manifold))]
+        {:fixture-a fixt-a :fixture-b fixt-b
+         :points pts :normal normal}))))
+
+(defn contacting
+  "Set of other bodies that the given body is currently contacting."
+  [^Body body]
+  (loop [cl (.getContactList body)
+         result #{}]
+    (if cl
+      (recur (.next cl) (conj result (.other cl)))
+      result)))
+
+(defn contacts
+  "Lazy seq of contacts on this body. Each contact is a map as defined
+by the `contact-data` function. Contacts without contact points are exluded."
+  [^Body body]
+  (letfn [(nextstep [cl]
+            (when cl
+              (if-let [cdata (contact-data (.contact cl))]
+                (cons cdata (nextstep (.next cl)))
+                (nextstep (.next cl)))))]
+    (lazy-seq (nextstep (.getContactList body)))))
+
 ;; ## Body properties
 
 (defn angle
@@ -368,7 +409,7 @@ linear velocity of the center of mass. This wakes up the body."
     
 ;; ## Utilities
 
-(defonce ^{:doc "Pi."} PI (. Math PI))
+(def ^:const ^{:doc "Pi."} PI (. Math PI))
 
 (defn angle-v
   "Angle of a vector in radians"
