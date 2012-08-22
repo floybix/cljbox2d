@@ -3040,10 +3040,11 @@ net.brehaut.ClojureTools = (function (SH) {
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.core
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
-           (org.jbox2d.collision AABB)
+           (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
            (org.jbox2d.callbacks QueryCallback)
-           (org.jbox2d.dynamics.joints Joint)))</pre></td></tr><tr><td class="docs"><h2>Basic data</h2>
+           (org.jbox2d.dynamics.joints Joint)
+           (org.jbox2d.dynamics.contacts Contact ContactEdge)))</pre></td></tr><tr><td class="docs"><h2>Basic data</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Make a <code>Vec2</code> object from given (<code>x</code>, <code>y</code>).
   If the argument is already a Vec2, return it.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn vec2
@@ -3060,17 +3061,20 @@ angle] (radians) to [x y].</p>
       (* mag (Math/sin angle))]))</pre></td></tr><tr><td class="docs"><h2>World</h2>
 </td><td class="codes"></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(def ^:dynamic ^World *world*
-  &quot;The current Box2D World: see `create-world`.&quot;)</pre></td></tr><tr><td class="docs"><p>Create a new Box2D world. Gravity defaults to -10 m/s^2.</p>
+  &quot;The current Box2D World: see `create-world`.&quot;)</pre></td></tr><tr><td class="docs"><p>Simulated time passed in seconds</p>
+</td><td class="codes"><pre class="brush: clojure">(def world-time  (atom nil))</pre></td></tr><tr><td class="docs"><p>Create a new Box2D world. Gravity defaults to -10 m/s^2.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn create-world!
   ([]
      (create-world! [0 -10]))
   ([gravity]
+     (reset! world-time 0.0)
      (alter-var-root (var *world*) (fn [_] (World. (vec2 gravity) true)))))</pre></td></tr><tr><td class="docs"><p>Simulate the world for a time step given in seconds.
    Note that Box2D objects are locked during simulation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn step!
   ([dt]
      (step! dt 8 3))
   ([dt velocity-iterations position-iterations]
+     (swap! world-time + dt)
      (.step *world* dt velocity-iterations position-iterations)))</pre></td></tr><tr><td class="docs"><h2>Enums</h2>
 </td><td class="codes"></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(def ^{:private true}
@@ -3191,13 +3195,12 @@ maps to be passed to the <code>fixture-def</code> function.</p>
   ([]
      (bodyseq (.getBodyList *world*)))
   ([^Body body]
-     (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of fixtures from a Fixture list.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn fixtureseq*
-  [^Fixture fixt]
-  (lazy-seq (when fixt (cons fixt (fixtureseq* (.getNext fixt))))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of fixtures on a body or (concatenated) all in the world</p>
+     (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of fixtures on a body or (concatenated) all in the world</p>
 </td><td class="codes"><pre class="brush: clojure">(defn fixtureseq
   ([^Body body]
-     (fixtureseq* (.getFixtureList body)))
+     (letfn [(nextstep [^Fixture fl]
+               (when fl (cons fl (nextstep (.getNext fl)))))]
+       (lazy-seq (nextstep (.getFixtureList body)))))
   ([]
      (mapcat fixtureseq (bodyseq))))</pre></td></tr><tr><td class="docs"><p>Often a body will only have one fixture. This is a convenience
 function to pull out the first fixture from a body.</p>
@@ -3208,7 +3211,7 @@ function to pull out the first fixture from a body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn local-point
   [^Body body pt]
   (xy (.getLocalPoint body (vec2 pt))))</pre></td></tr><tr><td class="docs"><p>Return world coordinates for a point in body-local coordinates,
-   or for a body origin point</p>
+   by default the body origin point</p>
 </td><td class="codes"><pre class="brush: clojure">(defn world-point
   ([^Body body]
      (xy (.getPosition body)))
@@ -3270,7 +3273,40 @@ is tested to be inside each shape, not just within its bounding box.</p>
                   ;; return false to end search
                   (&lt; (count @fxx) max-take)))]
        (.queryAABB *world* cb bb)
-       @fxx)))</pre></td></tr><tr><td class="docs"><h2>Body properties</h2>
+       @fxx)))</pre></td></tr><tr><td class="docs"><h2>Contacts</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Returns a map with keys :fixture-a :fixture-b :points :normal
+   from a JBox2D Contact class. Returns nil if no contact points exist.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn contact-data
+  [^Contact contact]
+  (let [world-manifold (WorldManifold.) ;; TODO could pass this in
+        manifold (.getManifold contact)
+        pcount (.pointCount manifold)]
+    (when (pos? pcount)
+      ;; mutates its argument:
+      (.getWorldManifold contact world-manifold)
+      (let [fixt-a (.getFixtureA contact)
+            fixt-b (.getFixtureB contact)
+            -points (.points world-manifold)
+            pts (map xy (take pcount -points))
+            normal (xy (.normal world-manifold))]
+        {:fixture-a fixt-a :fixture-b fixt-b
+         :points pts :normal normal}))))</pre></td></tr><tr><td class="docs"><p>Set of other bodies that the given body is currently contacting.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn contacting
+  [^Body body]
+  (loop [cl (.getContactList body)
+         result #{}]
+    (if cl
+      (recur (.next cl) (conj result (.other cl)))
+      result)))</pre></td></tr><tr><td class="docs"><p>Lazy seq of contacts on this body. Each contact is a map as defined
+by the <code>contact-data</code> function. Contacts without contact points are exluded.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn contacts
+  [^Body body]
+  (letfn [(nextstep [^ContactEdge cl]
+            (when cl
+              (if-let [cdata (contact-data (.contact cl))]
+                (cons cdata (nextstep (.next cl)))
+                (nextstep (.next cl)))))]
+    (lazy-seq (nextstep (.getContactList body)))))</pre></td></tr><tr><td class="docs"><h2>Body properties</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Angle of a body in radians</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angle
   [^Body body]
@@ -3283,7 +3319,7 @@ is tested to be inside each shape, not just within its bounding box.</p>
   (xy (.getLinearVelocity body)))</pre></td></tr><tr><td class="docs"><p>Angular velocity of a body in radians/second.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angular-velocity
   [^Body body]
-  (xy (.getLinearVelocity body)))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
+  (xy (.getAngularVelocity body)))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
 is not applied at the center of mass, it will generate a torque and
 affect the angular velocity. This wakes up the body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn apply-force!
@@ -3307,7 +3343,7 @@ linear velocity of the center of mass. This wakes up the body.</p>
   Fixture
   (destroy! [this] (.destroyFixture (body this) this)))</pre></td></tr><tr><td class="docs"><h2>Utilities</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Pi.</p>
-</td><td class="codes"><pre class="brush: clojure">(defonce  PI (. Math PI))</pre></td></tr><tr><td class="docs"><p>Angle of a vector in radians</p>
+</td><td class="codes"><pre class="brush: clojure">(def ^:const  PI (. Math PI))</pre></td></tr><tr><td class="docs"><p>Angle of a vector in radians</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angle-v
   [[x y]]
   (Math/atan2 y x))</pre></td></tr><tr><td class="docs"><p>Magnitude of a vector</p>
@@ -3454,7 +3490,11 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
 </td><td class="codes"><pre class="brush: clojure">(def camera
   (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))</pre></td></tr><tr><td class="docs"><p>Current mouse joint; see <code>left-mouse-pressed</code> etc.</p>
 </td><td class="codes"><pre class="brush: clojure">(def mousej
-  (atom nil))</pre></td></tr><tr><td class="docs"><p>A static body, used as a reference for e.g. mouse joints</p>
+  (atom nil))</pre></td></tr><tr><td class="docs"><p>Whether to simulate or not.</p>
+</td><td class="codes"><pre class="brush: clojure">(def paused  (atom false))</pre></td></tr><tr><td class="docs"><p>A function to run every simulated time step, e.g. for contact
+   processing or to apply special forces.</p>
+</td><td class="codes"><pre class="brush: clojure">(def step-fn
+  (atom (fn [])))</pre></td></tr><tr><td class="docs"><p>A static body, used as a reference for e.g. mouse joints</p>
 </td><td class="codes"><pre class="brush: clojure">(def ground-body
   (atom nil))</pre></td></tr><tr><td class="docs"><h2>Drawing</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>A scaling factor on world coordinates to give pixels.
@@ -3553,7 +3593,14 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                  (doseq [[x y] px-pts] (quil/vertex x y))
                  (quil/end-shape :close))))
   (quil/fill 255)
-  (quil/text @info-text 10 10))</pre></td></tr><tr><td class="docs"><h2>contact / collision handling</h2>
+  (quil/text @info-text 10 10))</pre></td></tr><tr><td class="docs"><p>Draw handler for quil. Calls <code>draw-world</code>.
+   After simulation calls the hook function <code>@step-fn</code></p>
+</td><td class="codes"><pre class="brush: clojure">(defn draw
+  []
+  (when-not @paused
+    (step! (/ 1 (quil/current-frame-rate)))
+    (@step-fn))
+  (draw-world))</pre></td></tr><tr><td class="docs"><h2>contact / collision handling</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Holds a sequence of contacts for the last time step, each
 represented as <code>[fixture-a fixture-b points normal]</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(def contact-buffer
@@ -3627,6 +3674,15 @@ around.</p>
   (case (quil/mouse-button)
     :right (right-mouse-dragged)
     :left (left-mouse-dragged)
+    :otherwise-ignore-it))</pre></td></tr><tr><td class="docs"><p>Standard actions for key events</p>
+</td><td class="codes"><pre class="brush: clojure">(defn key-press
+  []
+  (case (quil/raw-key)
+    \  (swap! paused not)
+    \. (do
+         (swap! paused not)
+         (draw)
+         (swap! paused not))
     :otherwise-ignore-it))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.collision-processing" name="cljbox2d.tests.collision-processing"><h1 class="project-name">cljbox2d.tests.collision-processing</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.CollisionProcessing</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.collision-processing
@@ -3659,11 +3715,7 @@ around.</p>
                            rect-small rect-big
                            circ-small circ-big]})
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn setup []
-  (setup-world!)
-  (set-buffering-contact-listener!))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
+</td><td class="codes"><pre class="brush: clojure">(defn my-step []
   ;; process the buffer of contact points
   (let [to-nuke (for [[fixt-a fixt-b _ _] @contact-buffer]
                   (let [body-a (body fixt-a)
@@ -3674,14 +3726,18 @@ around.</p>
                       (if (&lt; mass-a mass-b) body-a body-b))))]
     (doseq [b (remove nil? (distinct to-nuke))]
       (destroy! b)))
-  (reset! contact-buffer [])
-  (draw-world))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+  (reset! contact-buffer []))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup []
+  (setup-world!)
+  (set-buffering-contact-listener!)
+  (reset! step-fn my-step))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn -main
   [&amp; args]
   (quil/defsketch test-sketch
     :title &quot;Collision Processing&quot;
     :setup setup
     :draw draw
+    :key-typed key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
@@ -3717,28 +3773,26 @@ around.</p>
                  &quot;, Motor &quot; (if (.isMotorEnabled jt) &quot;on &quot; &quot;off &quot;)
                  (if @is-left &quot;left&quot; &quot;right&quot;) &quot;\n&quot;
                  &quot;Keys: (l) limits, (m) motor, (a) left, (d) right&quot;))))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn key-press []
+</td><td class="codes"><pre class="brush: clojure">(defn my-key-press []
   (let [jt (:joint @things)]
     (case (quil/raw-key)
       \l (.enableLimit jt (not (.isLimitEnabled jt)))
       \m (.enableMotor jt (not (.isMotorEnabled jt)))
       \a (do (.setMotorSpeed jt PI) (reset! is-left true))
       \d (do (.setMotorSpeed jt (- PI)) (reset! is-left false))
-      :otherwise-ignore-it))
+      ;; otherwise pass on to testbed
+      (key-press)))
   (update-info-text))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup []
   (setup-world!)
-  (update-info-text))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
-  (draw-world))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+  (update-info-text))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn -main
   [&amp; args]
   (quil/defsketch test-sketch
     :title &quot;Revolute&quot;
     :setup setup
     :draw draw
-    :key-typed key-press
+    :key-typed my-key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
@@ -3785,11 +3839,7 @@ around.</p>
           (swap! (user-data bod) assoc-in [:touching] false))))
     (postSolve [_ contact impulse])
     (preSolve [_ contact omanifold])))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn setup []
-  (setup-world!)
-  (.setContactListener *world* (sensor-touching-listener)))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
+</td><td class="codes"><pre class="brush: clojure">(defn my-step []
   ;; process the buffer of contact points
   (let [cent (first (world-coords @sensor))]
     (doseq [b @balls
@@ -3798,14 +3848,18 @@ around.</p>
                   d (map - cent pt)
                   d-unit (scale-v d)
                   forc (scale-v d-unit 100)]]
-      (apply-force! b forc pt)))
-  (draw-world))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+      (apply-force! b forc pt))))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup []
+  (setup-world!)
+  (.setContactListener *world* (sensor-touching-listener))
+  (reset! step-fn my-step))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn -main
   [&amp; args]
   (quil/defsketch test-sketch
     :title &quot;Sensor Test&quot;
     :setup setup
     :draw draw
+    :key-typed key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
@@ -3824,16 +3878,14 @@ around.</p>
                               {:shape (circle 1), :restitution r})))]
     (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup []
-  (setup-world!))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
-  (draw-world))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+  (setup-world!))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn -main
   [&amp; args]
   (quil/defsketch test-sketch
     :title &quot;Varying Restitution&quot;
     :setup setup
     :draw draw
+    :key-typed key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
@@ -3885,7 +3937,7 @@ around.</p>
   (reset! info-text
           (str &quot;This demonstrates a soft distance joint.&quot; &quot;\n&quot;
                &quot;Press: (b) to delete a body, (j) to delete a joint&quot;)))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn key-press []
+</td><td class="codes"><pre class="brush: clojure">(defn my-key-press []
   (let [jts (:joints @things)
         nodes (:nodes @things)]
     (case (quil/raw-key)
@@ -3895,21 +3947,19 @@ around.</p>
       \j (when-let [jt (first jts)]
            (swap! things update-in [:joints] next)
            (destroy! jt))
-      :otherwise-ignore-it))
+      ;; otherwise pass on to testbed
+      (key-press)))
   (update-info-text))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup []
   (setup-world!)
-  (update-info-text))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
-  (draw-world))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+  (update-info-text))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn -main
   [&amp; args]
   (quil/defsketch test-sketch
     :title &quot;Web&quot;
     :setup setup
     :draw draw
-    :key-typed key-press
+    :key-typed my-key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
