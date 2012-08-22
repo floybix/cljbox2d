@@ -12,7 +12,8 @@
            (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
            (org.jbox2d.callbacks QueryCallback)
-           (org.jbox2d.dynamics.joints Joint)))
+           (org.jbox2d.dynamics.joints Joint)
+           (org.jbox2d.dynamics.contacts Contact ContactEdge)))
 
 ;; ## Basic data
 
@@ -214,7 +215,7 @@ maps to be passed to the `fixture-def` function."
 (defn fixtureseq
   "Lazy seq of fixtures on a body or (concatenated) all in the world"
   ([^Body body]
-     (letfn [(nextstep [fl]
+     (letfn [(nextstep [^Fixture fl]
                (when fl (cons fl (nextstep (.getNext fl)))))]
        (lazy-seq (nextstep (.getFixtureList body)))))
   ([]
@@ -235,7 +236,7 @@ function to pull out the first fixture from a body."
 
 (defn world-point
   "Return world coordinates for a point in body-local coordinates,
-   or for a body origin point"
+   by default the body origin point"
   ([^Body body]
      (xy (.getPosition body)))
   ([^Body body pt]
@@ -320,7 +321,7 @@ is tested to be inside each shape, not just within its bounding box."
 (defn contact-data
   "Returns a map with keys :fixture-a :fixture-b :points :normal
    from a JBox2D Contact class. Returns nil if no contact points exist."
-  [contact]
+  [^Contact contact]
   (let [world-manifold (WorldManifold.) ;; TODO could pass this in
         manifold (.getManifold contact)
         pcount (.pointCount manifold)]
@@ -348,7 +349,7 @@ is tested to be inside each shape, not just within its bounding box."
   "Lazy seq of contacts on this body. Each contact is a map as defined
 by the `contact-data` function. Contacts without contact points are exluded."
   [^Body body]
-  (letfn [(nextstep [cl]
+  (letfn [(nextstep [^ContactEdge cl]
             (when cl
               (if-let [cdata (contact-data (.contact cl))]
                 (cons cdata (nextstep (.next cl)))
