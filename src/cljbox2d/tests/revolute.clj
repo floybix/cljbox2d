@@ -35,23 +35,20 @@
                  (if @is-left "left" "right") "\n"
                  "Keys: (l) limits, (m) motor, (a) left, (d) right"))))
 
-(defn key-press []
+(defn my-key-press []
   (let [jt (:joint @things)]
     (case (quil/raw-key)
       \l (.enableLimit jt (not (.isLimitEnabled jt)))
       \m (.enableMotor jt (not (.isMotorEnabled jt)))
       \a (do (.setMotorSpeed jt PI) (reset! is-left true))
       \d (do (.setMotorSpeed jt (- PI)) (reset! is-left false))
-      :otherwise-ignore-it))
+      ;; otherwise pass on to testbed
+      (key-press)))
   (update-info-text))
 
 (defn setup []
   (setup-world!)
   (update-info-text))
-
-(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
-  (draw-world))
 
 (defn -main
   "Run the test sketch."
@@ -60,7 +57,7 @@
     :title "Revolute"
     :setup setup
     :draw draw
-    :key-typed key-press
+    :key-typed my-key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged

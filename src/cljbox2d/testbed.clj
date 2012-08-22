@@ -30,6 +30,13 @@
   "Current mouse joint; see `left-mouse-pressed` etc."
   (atom nil))
 
+(def paused "Whether to simulate or not." (atom false))
+
+(def step-fn
+  "A function to run every simulated time step, e.g. for contact
+   processing or to apply special forces."
+  (atom (fn [])))
+
 (def ground-body
   "A static body, used as a reference for e.g. mouse joints"
   (atom nil))
@@ -151,6 +158,15 @@ bounds if necessary to ensure an isometric aspect ratio."
   (quil/fill 255)
   (quil/text @info-text 10 10))
 
+(defn draw
+  "Draw handler for quil. Calls `draw-world`.
+   After simulation calls the hook function `@step-fn`"
+  []
+  (when-not @paused
+    (step! (/ 1 (quil/current-frame-rate)))
+    (@step-fn))
+  (draw-world))
+
 ;; ## contact / collision handling
 
 (def contact-buffer
@@ -248,3 +264,13 @@ around."
     :left (left-mouse-dragged)
     :otherwise-ignore-it))
 
+(defn key-press
+  "Standard actions for key events"
+  []
+  (case (quil/raw-key)
+    \  (swap! paused not)
+    \. (do
+         (swap! paused not)
+         (draw)
+         (swap! paused not))
+    :otherwise-ignore-it))

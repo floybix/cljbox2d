@@ -17,10 +17,6 @@
 (defn setup []
   (setup-world!))
 
-(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
-  (draw-world))
-
 (defn -main
   "Run the test sketch."
   [& args]
@@ -28,6 +24,7 @@
     :title "Varying Restitution"
     :setup setup
     :draw draw
+    :key-typed key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged

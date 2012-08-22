@@ -46,12 +46,7 @@
     (postSolve [_ contact impulse])
     (preSolve [_ contact omanifold])))
 
-(defn setup []
-  (setup-world!)
-  (.setContactListener *world* (sensor-touching-listener)))
-
-(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
+(defn my-step []
   ;; process the buffer of contact points
   (let [cent (first (world-coords @sensor))]
     (doseq [b @balls
@@ -60,8 +55,12 @@
                   d (map - cent pt)
                   d-unit (scale-v d)
                   forc (scale-v d-unit 100)]]
-      (apply-force! b forc pt)))
-  (draw-world))
+      (apply-force! b forc pt))))
+
+(defn setup []
+  (setup-world!)
+  (.setContactListener *world* (sensor-touching-listener))
+  (reset! step-fn my-step))
 
 (defn -main
   "Run the test sketch."
@@ -70,6 +69,7 @@
     :title "Sensor Test"
     :setup setup
     :draw draw
+    :key-typed key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged

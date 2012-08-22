@@ -50,7 +50,7 @@
           (str "This demonstrates a soft distance joint." "\n"
                "Press: (b) to delete a body, (j) to delete a joint")))
 
-(defn key-press []
+(defn my-key-press []
   (let [jts (:joints @things)
         nodes (:nodes @things)]
     (case (quil/raw-key)
@@ -60,16 +60,13 @@
       \j (when-let [jt (first jts)]
            (swap! things update-in [:joints] next)
            (destroy! jt))
-      :otherwise-ignore-it))
+      ;; otherwise pass on to testbed
+      (key-press)))
   (update-info-text))
 
 (defn setup []
   (setup-world!)
   (update-info-text))
-
-(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
-  (draw-world))
 
 (defn -main
   "Run the test sketch."
@@ -78,7 +75,7 @@
     :title "Web"
     :setup setup
     :draw draw
-    :key-typed key-press
+    :key-typed my-key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged

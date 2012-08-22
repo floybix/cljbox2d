@@ -35,12 +35,7 @@
                            circ-small circ-big]})
     (reset! ground-body ground)))
 
-(defn setup []
-  (setup-world!)
-  (set-buffering-contact-listener!))
-
-(defn draw []
-  (step! (/ 1 (quil/current-frame-rate)))
+(defn my-step []
   ;; process the buffer of contact points
   (let [to-nuke (for [[fixt-a fixt-b _ _] @contact-buffer]
                   (let [body-a (body fixt-a)
@@ -51,8 +46,12 @@
                       (if (< mass-a mass-b) body-a body-b))))]
     (doseq [b (remove nil? (distinct to-nuke))]
       (destroy! b)))
-  (reset! contact-buffer [])
-  (draw-world))
+  (reset! contact-buffer []))
+
+(defn setup []
+  (setup-world!)
+  (set-buffering-contact-listener!)
+  (reset! step-fn my-step))
 
 (defn -main
   "Run the test sketch."
@@ -61,6 +60,7 @@
     :title "Collision Processing"
     :setup setup
     :draw draw
+    :key-typed key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
