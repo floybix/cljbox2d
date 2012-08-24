@@ -3029,7 +3029,7 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>cljbox2d -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">cljbox2d</h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>A clojure wrapper for JBox2D, for 2D physics simulation.</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>This is <a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>.</p>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">org.slf4j/slf4j-simple</td><td class="dotted"><hr /></td><td class="dep-version">1.6.6</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.slider-crank">cljbox2d.tests.slider-crank</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>This is <a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>.</p>
 
 <p>   A clojure wrapper for <a href="http://www.jbox2d.org/">JBox2D</a>, which is a
    close Java port of Erin Catto's excellent C++
@@ -3059,10 +3059,11 @@ angle] (radians) to [x y].</p>
   ([mag angle]
      [(* mag (Math/cos angle))
       (* mag (Math/sin angle))]))</pre></td></tr><tr><td class="docs"><h2>World</h2>
-</td><td class="codes"></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def ^:dynamic ^World *world*
-  &quot;The current Box2D World: see `create-world`.&quot;)</pre></td></tr><tr><td class="docs"><p>Simulated time passed in seconds</p>
-</td><td class="codes"><pre class="brush: clojure">(def world-time  (atom nil))</pre></td></tr><tr><td class="docs"><p>Create a new Box2D world. Gravity defaults to -10 m/s^2.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>The current Box2D World: see <code>create-world</code>.</p>
+</td><td class="codes"><pre class="brush: clojure">(defonce 
+  ^:dynamic ^World *world* nil)</pre></td></tr><tr><td class="docs"><p>Simulated time passed in seconds</p>
+</td><td class="codes"><pre class="brush: clojure">(defonce 
+  world-time (atom nil))</pre></td></tr><tr><td class="docs"><p>Create a new Box2D world. Gravity defaults to -10 m/s^2.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn create-world!
   ([]
      (create-world! [0 -10]))
@@ -3329,12 +3330,18 @@ screen). This affects the angular velocity without affecting the
 linear velocity of the center of mass. This wakes up the body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn apply-torque!
   [^Body body torque]
-  (.applyTorque body torque))</pre></td></tr><tr><td class="docs">
+  (.applyTorque body torque))</pre></td></tr><tr><td class="docs"><p>Returns an arbitrary object given on body construction.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn user-data
   [^Body body]
-  (.getUserData body))</pre></td></tr><tr><td class="docs"><p>Abstraction for JBox2D objects which can be destroyed</p>
+  (.getUserData body))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn awake?
+  [^Body body]
+  (.isAwake body))</pre></td></tr><tr><td class="docs"><p>Wake up a body.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn wake!
+  [^Body body]
+  (.setAwake body true))</pre></td></tr><tr><td class="docs"><p>Abstraction for JBox2D objects which can be destroyed</p>
 </td><td class="codes"><pre class="brush: clojure">(defprotocol Destroyable
-  (destroy! [this]))</pre></td></tr><tr><td class="docs">
+  (destroy! [this] &quot;Remove object from the World permanantly.&quot;))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(extend-protocol Destroyable
   Body
   (destroy! [this] (.destroyBody *world* this))
@@ -3363,6 +3370,7 @@ Default is to normalise to unit length.</p>
                                        ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
                                        MouseJoint MouseJointDef
+                                       PrismaticJoint PrismaticJointDef
                                        RevoluteJoint RevoluteJointDef)))</pre></td></tr><tr><td class="docs"><h2>Enums</h2>
 </td><td class="codes"></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(def ^{:private true}
@@ -3386,23 +3394,47 @@ shared point. A maximum motor torque is provided so that infinite
 forces are not generated.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn revolute-joint!
   [body1 body2 anchor
-   {:keys [enable-motor motor-speed max-torque
+   {:keys [enable-motor motor-speed max-motor-torque
            enable-limit lower-angle upper-angle
            collide-connected user-data]
-    :or {enable-motor false, motor-speed 0, max-torque 10000,
+    :or {enable-motor false, motor-speed 0, max-motor-torque 10000,
          enable-limit false, lower-angle 0, upper-angle 360,
          collide-connected false}}]
   (let [jd (RevoluteJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor))
     (set! (.enableMotor jd) enable-motor)
     (set! (.motorSpeed jd) motor-speed)
-    (set! (.maxMotorTorque jd) max-torque)
+    (set! (.maxMotorTorque jd) max-motor-torque)
     (set! (.enableLimit jd) enable-limit)
     (set! (.lowerAngle jd) lower-angle)
     (set! (.upperAngle jd) upper-angle)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Distance joint definition. This requires defining an anchor point
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Prismatic joint definition. This requires defining a line of motion
+using an axis and an anchor point. The definition uses local anchor
+points and a local axis so that the initial configuration can violate
+the constraint slightly. The joint translation is zero when the local
+anchor points coincide in world space. Using local anchors and a local
+axis helps when saving and loading a game.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn prismatic-joint!
+  [body1 body2 anchor axis
+   {:keys [enable-motor motor-speed max-motor-force
+           enable-limit lower-trans upper-trans
+           collide-connected user-data]
+    :or {enable-motor false, motor-speed 0, max-motor-force 10000,
+         enable-limit false, lower-trans -10, upper-trans 10,
+         collide-connected false}}]
+  (let [jd (PrismaticJointDef.)]
+    (.initialize jd body1 body2 (vec2 anchor) (vec2 axis))
+    (set! (.enableMotor jd) enable-motor)
+    (set! (.motorSpeed jd) motor-speed)
+    (set! (.maxMotorForce jd) max-motor-force)
+    (set! (.enableLimit jd) enable-limit)
+    (set! (.lowerTranslation jd) lower-trans)
+    (set! (.upperTranslation jd) upper-trans)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Distance joint. This requires defining an anchor point
 on both bodies and the non-zero length of the distance joint. The
 definition uses local anchor points so that the initial configuration
 can violate the constraint slightly. This helps when saving and
@@ -3421,7 +3453,7 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Mouse joint definition.
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Mouse joint.
    By convention <code>body1</code> is ground and <code>body2</code> is the selection</p>
 </td><td class="codes"><pre class="brush: clojure">(defn mouse-joint!
   [body1 body2 target
@@ -3467,7 +3499,68 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
   ;; yuck, the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorB jt v0)
-    (xy v0)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.testbed" name="cljbox2d.testbed"><h1 class="project-name">cljbox2d.testbed</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Provides the scaffolding to run Box2D simulations with visual
+    (xy v0)))</pre></td></tr><tr><td class="docs"><p>Relative angular velocity of two attached bodies in radians/second.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn joint-angular-velocity
+  [jt]
+  (- (angular-velocity (body-b jt))
+     (angular-velocity (body-a jt))))</pre></td></tr><tr><td class="docs"><h2>Limits - no interface so let's impose a protocol</h2>
+
+<p>One could call the java methods directly but these avoid reflection.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Abstraction for JBox2D joints which can have limits</p>
+</td><td class="codes"><pre class="brush: clojure">(defprotocol Limitable
+  (limit-enabled? [this] &quot;Whether limits are in effect on a joint.&quot;)
+  (enable-limit! [this flag] &quot;Set whether limits are in effect.&quot;)
+  (limits [this] &quot;Vector of limits on a joint.&quot;)
+  (limits! [this limits] &quot;Set [lower upper] limits on a joint.&quot;))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(extend-protocol Limitable
+
+  RevoluteJoint
+  (limit-enabled? [this] (.isLimitEnabled this))
+  (enable-limit! [this flag] (.enableLimit this flag))
+  (limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
+  (limits! [this limits] (.setLimits this (first limits) (second limits)))
+
+  PrismaticJoint
+  (limit-enabled? [this] (.isLimitEnabled this))
+  (enable-limit! [this flag] (.enableLimit this flag))
+  (limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
+  (limits! [this limits] (.setLimits this (first limits) (second limits))))</pre></td></tr><tr><td class="docs"><h2>Motors -- no interface so let's impose a protocol</h2>
+
+<p>One could call the java methods directly but these avoid reflection.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Abstraction for JBox2D joints which can have motors</p>
+</td><td class="codes"><pre class="brush: clojure">(defprotocol Motorised
+  (motor-enabled? [this] &quot;Whether a motor is enabled on a joint.&quot;)
+  (enable-motor! [this flag] &quot;Set whether a motor is enabled.&quot;)
+  (motor-speed [this] &quot;Motor (target) speed, may or may not be enabled.&quot;)
+  (motor-speed! [this speed] &quot;Set motor (target) speed, may or may not be enabled.&quot;)
+  (joint-speed [this] &quot;Current joint speed, may be linear or angular.&quot;)
+  (motor-force [this] &quot;Current motor force.&quot;)
+  (motor-torque [this] &quot;Current motor torque.&quot;)
+  (max-motor-force [this] &quot;Maximum motor force&quot;)
+  (max-motor-torque [this] &quot;Maximum motor torque&quot;)
+  (max-motor-force! [this force] &quot;Set maximum motor force&quot;)
+  (max-motor-torque! [this torque] &quot;Set maximum motor torque&quot;))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(extend-protocol Motorised
+
+  RevoluteJoint
+  (motor-enabled? [this] (.isMotorEnabled this))
+  (enable-motor! [this flag] (.enableMotor this flag))
+  (motor-speed [this] (.m_motorSpeed this))
+  (motor-speed! [this speed] (.setMotorSpeed this speed))
+  (joint-speed [this] (.getJointSpeed this))
+  (motor-torque [this] (.getMotorTorque this))
+  (max-motor-torque [this] (.m_maxMotorTorque this))
+  (max-motor-torque! [this torque] (.setMaxMotorTorque this torque))
+
+  PrismaticJoint
+  (motor-enabled? [this] (.isMotorEnabled this))
+  (enable-motor! [this flag] (.enableMotor this flag))
+  (motor-speed [this] (.getMotorSpeed this))
+  (motor-speed! [this speed] (.setMotorSpeed this speed))
+  (joint-speed [this] (.getJointSpeed this))
+  (motor-force [this] (.getMotorForce this))
+  (max-motor-force [this] (.m_maxMotorForce this))
+  (max-motor-force! [this force] (.setMaxMotorForce this force)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.testbed" name="cljbox2d.testbed"><h1 class="project-name">cljbox2d.testbed</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Provides the scaffolding to run Box2D simulations with visual
   animation and interactive inputs (via mouse and keyboard). This is
   built on the Processing framework through the clojure wrapper
   <a href="https://github.com/quil/quil">quil</a>. Box2D timesteps are run
@@ -3577,7 +3670,7 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
   (doseq [fx (fixtureseq)
           :let [body (body fx)
                 body-typ (body-type body)
-                awake (.isAwake body)
+                awake (awake? body)
                 shp-typ (shape-type fx)
                 pts (world-coords fx)
                 px-pts (map world-to-px pts)
@@ -3645,7 +3738,7 @@ around.</p>
               mj (mouse-joint! @ground-body bod pt
                                {:max-force (* 1000 (mass bod))})]
           (reset! mousej mj)
-          (.setAwake bod true))))))</pre></td></tr><tr><td class="docs"><p>Dispatches according to the mouse button.</p>
+          (wake! bod))))))</pre></td></tr><tr><td class="docs"><p>Dispatches according to the mouse button.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn mouse-pressed
   []
   (case (quil/mouse-button)
@@ -3747,7 +3840,6 @@ around.</p>
   (:use [cljbox2d core joints testbed])
   (:require [quil.core :as quil]))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(def things (atom {}))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(def is-left (atom false))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
   (create-world!)
   (let [ground (body! {:type :static}
@@ -3759,7 +3851,7 @@ around.</p>
                     {:shape (circle 0.5) :density 5})
         joint (revolute-joint! ground ball [0 12]
                                {:motor-speed (- PI)
-                                :motor-torque 10000
+                                :max-motor-torque 10000
                                 :lower-angle (/ (- PI) 4)
                                 :upper-angle (/ PI 2)
                                 :enable-limit true
@@ -3769,17 +3861,17 @@ around.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn update-info-text []
   (let [jt (:joint @things)]
     (reset! info-text
-            (str &quot;Limits &quot; (if (.isLimitEnabled jt) &quot;on&quot; &quot;off&quot;)
-                 &quot;, Motor &quot; (if (.isMotorEnabled jt) &quot;on &quot; &quot;off &quot;)
-                 (if @is-left &quot;left&quot; &quot;right&quot;) &quot;\n&quot;
+            (str &quot;Limits &quot; (if (limit-enabled? jt) &quot;on&quot; &quot;off&quot;)
+                 &quot;, Motor &quot; (if (motor-enabled? jt) &quot;on &quot; &quot;off &quot;)
+                 (if (pos? (motor-speed jt)) &quot;left&quot; &quot;right&quot;) &quot;\n&quot;
                  &quot;Keys: (l) limits, (m) motor, (a) left, (d) right&quot;))))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn my-key-press []
   (let [jt (:joint @things)]
     (case (quil/raw-key)
-      \l (.enableLimit jt (not (.isLimitEnabled jt)))
-      \m (.enableMotor jt (not (.isMotorEnabled jt)))
-      \a (do (.setMotorSpeed jt PI) (reset! is-left true))
-      \d (do (.setMotorSpeed jt (- PI)) (reset! is-left false))
+      \l (enable-limit! jt (not (limit-enabled? jt)))
+      \m (enable-motor! jt (not (motor-enabled? jt)))
+      \a (motor-speed! jt PI)
+      \d (motor-speed! jt (- PI))
       ;; otherwise pass on to testbed
       (key-press)))
   (update-info-text))</pre></td></tr><tr><td class="docs">
@@ -3860,6 +3952,63 @@ around.</p>
     :setup setup
     :draw draw
     :key-typed key-press
+    :mouse-pressed mouse-pressed
+    :mouse-released mouse-released
+    :mouse-dragged mouse-dragged
+    :size [600 500]))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.slider-crank" name="cljbox2d.tests.slider-crank"><h1 class="project-name">cljbox2d.tests.slider-crank</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>A translation of Daniel Murphy's
+   org.jbox2d.testbed.tests.SliderCrankTest</p>
+</td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.slider-crank
+  (:use [cljbox2d core joints testbed])
+  (:require [quil.core :as quil]))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def things (atom {}))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
+  (create-world!)
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
+        crank (body! {:position [0 7]}
+                     {:shape (box 0.5 2.0) :density 2})
+        crank-j (revolute-joint! ground crank [0 5]
+                              {:motor-speed PI
+                               :max-motor-torque 10000
+                               :enable-motor true})
+        follow (body! {:position [0 13]}
+                      {:shape (box 0.5 4.0) :density 2})
+        follow-j (revolute-joint! crank follow [0 9]
+                                  {:enable-motor false})
+        piston (body! {:position [0 17]}
+                      {:shape (box 1.5 1.5) :density 2})
+        piston-rj (revolute-joint! follow piston [0 17] {})
+        piston-pj (prismatic-joint! ground piston [0 17] [0 1]
+                                    {:max-motor-force 1000
+                                     :enable-motor true})
+        payload (body! {:position [0 23]}
+                       {:shape (box 1.5 1.5) :density 2})]
+    (reset! things {:crank-j crank-j
+                    :piston-pj piston-pj})
+    (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn update-info-text []
+  (let [jt (:joint @things)]
+    (reset! info-text
+            (str &quot;Keys: (f) toggle friction, (m) toggle motor&quot;))))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn my-key-press []
+  (let [cj (:crank-j @things)
+        pj (:piston-pj @things)]
+    (case (quil/raw-key)
+      \f (enable-motor! pj (not (motor-enabled? pj)))
+      \m (enable-motor! cj (not (motor-enabled? cj)))
+      ;; otherwise pass on to testbed
+      (key-press)))
+  (update-info-text))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup []
+  (setup-world!)
+  (update-info-text))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn -main
+  [&amp; args]
+  (quil/defsketch test-sketch
+    :title &quot;Slider Crank&quot;
+    :setup setup
+    :draw draw
+    :key-typed my-key-press
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
