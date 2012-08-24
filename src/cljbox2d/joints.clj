@@ -16,6 +16,7 @@
   {:constant-volume JointType/CONSTANT_VOLUME
    :distance JointType/DISTANCE
    :mouse JointType/MOUSE
+   :prismatic JointType/PRISMATIC
    :revolute JointType/REVOLUTE})
 
 (def ^{:private true}
@@ -103,6 +104,24 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
     (set! (.userData jd) user-data)
     (.createJoint *world* jd)))
 
+(defn constant-volume-joint!
+  "Constant Volume joint. Connects a group a bodies together so they
+maintain a constant volume within them. Uses Distance joints
+internally."
+  [bodies
+   {:keys [frequency-hz damping-ratio
+           collide-connected user-data]
+    :or {frequency-hz 0, damping-ratio 0,
+         collide-connected false}}]
+  (let [jd (ConstantVolumeJointDef.)]
+    (doseq [body bodies]
+      (.addBody jd body))
+    (set! (.frequencyHz jd) frequency-hz)
+    (set! (.dampingRatio jd) damping-ratio)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    (.createJoint *world* jd)))
+
 (defn mouse-joint!
   "Mouse joint.
    By convention `body1` is ground and `body2` is the selection"
@@ -170,7 +189,9 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
   (- (angular-velocity (body-b jt))
      (angular-velocity (body-a jt))))
 
-;; ## Limits - no interface so let's impose a protocol
+;; ## Limits
+
+;; There's no interface so let's impose a protocol.
 ;; One could call the java methods directly but these avoid reflection.
 
 (defprotocol Limitable
@@ -194,7 +215,9 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
   (limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
   (limits! [this limits] (.setLimits this (first limits) (second limits))))
 
-;; ## Motors -- no interface so let's impose a protocol
+;; ## Motors
+
+;; There's no interface so let's impose a protocol.
 ;; One could call the java methods directly but these avoid reflection.
 
 (defprotocol Motorised

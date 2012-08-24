@@ -421,7 +421,9 @@ linear velocity of the center of mass. This wakes up the body."
     
 ;; ## Utilities
 
-(def ^:const ^{:doc "Pi."} PI (. Math PI))
+(def ^:const ^{:doc "Pi (180 degrees)."} PI (. Math PI))
+(def ^:const ^{:doc "2 Pi (360 degrees)."} TWOPI (* PI 2.0))
+(def ^:const ^{:doc "Pi/2 (90 degrees)."} PI_2 (* PI 0.5))
 
 (defn angle-v
   "Angle of a vector in radians"

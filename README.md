@@ -4,9 +4,7 @@ A [clojure](http://clojure.org/) wrapper for
 [JBox2D](http://www.jbox2d.org/), which is a close Java port of Erin
 Catto's excellent C++ [Box2D](http://www.box2d.org/) physics engine.
 
-## Warning
-
-Do not use this yet, the API is in flux.
+This is my first clojure project. Feedback would be appreciated.
 
 ## API docs
 
@@ -18,10 +16,10 @@ Some ports of the Box2D / JBox2D testbed tests:
 
 <pre>
 lein run -m cljbox2d.tests.varying-restitution
-lein run -m cljbox2d.tests.revolute
-lein run -m cljbox2d.tests.web
+lein run -m cljbox2d.tests.blob
 lein run -m cljbox2d.tests.collision-processing
 lein run -m cljbox2d.tests.sensor-test
+...etc...
 </pre>
 
 See the ball bounce (requires some imagination...)
