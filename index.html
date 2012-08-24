@@ -3029,7 +3029,7 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>cljbox2d -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">cljbox2d</h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>A clojure wrapper for JBox2D, for 2D physics simulation.</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">org.slf4j/slf4j-simple</td><td class="dotted"><hr /></td><td class="dep-version">1.6.6</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.slider-crank">cljbox2d.tests.slider-crank</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>This is <a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>.</p>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">org.slf4j/slf4j-simple</td><td class="dotted"><hr /></td><td class="dep-version">1.6.6</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.blob">cljbox2d.tests.blob</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.slider-crank">cljbox2d.tests.slider-crank</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>This is <a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>.</p>
 
 <p>   A clojure wrapper for <a href="http://www.jbox2d.org/">JBox2D</a>, which is a
    close Java port of Erin Catto's excellent C++
@@ -3349,8 +3349,14 @@ linear velocity of the center of mass. This wakes up the body.</p>
   (destroy! [this] (.destroyJoint *world* this))
   Fixture
   (destroy! [this] (.destroyFixture (body this) this)))</pre></td></tr><tr><td class="docs"><h2>Utilities</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Pi.</p>
-</td><td class="codes"><pre class="brush: clojure">(def ^:const  PI (. Math PI))</pre></td></tr><tr><td class="docs"><p>Angle of a vector in radians</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Pi (180 degrees).</p>
+
+<p>2 Pi (360 degrees).</p>
+
+<p>Pi/2 (90 degrees).</p>
+</td><td class="codes"><pre class="brush: clojure">(def ^:const  PI (. Math PI))
+(def ^:const  TWOPI (* PI 2.0))
+(def ^:const  PI_2 (* PI 0.5))</pre></td></tr><tr><td class="docs"><p>Angle of a vector in radians</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angle-v
   [[x y]]
   (Math/atan2 y x))</pre></td></tr><tr><td class="docs"><p>Magnitude of a vector</p>
@@ -3378,6 +3384,7 @@ Default is to normalise to unit length.</p>
   {:constant-volume JointType/CONSTANT_VOLUME
    :distance JointType/DISTANCE
    :mouse JointType/MOUSE
+   :prismatic JointType/PRISMATIC
    :revolute JointType/REVOLUTE})</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(def ^{:private true}
   joint-keywords
@@ -3453,6 +3460,22 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
+    (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Constant Volume joint. Connects a group a bodies together so they
+maintain a constant volume within them. Uses Distance joints
+internally.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn constant-volume-joint!
+  [bodies
+   {:keys [frequency-hz damping-ratio
+           collide-connected user-data]
+    :or {frequency-hz 0, damping-ratio 0,
+         collide-connected false}}]
+  (let [jd (ConstantVolumeJointDef.)]
+    (doseq [body bodies]
+      (.addBody jd body))
+    (set! (.frequencyHz jd) frequency-hz)
+    (set! (.dampingRatio jd) damping-ratio)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
     (.createJoint *world* jd)))</pre></td></tr><tr><td class="docs"><p>Mouse joint.
    By convention <code>body1</code> is ground and <code>body2</code> is the selection</p>
 </td><td class="codes"><pre class="brush: clojure">(defn mouse-joint!
@@ -3503,9 +3526,9 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn joint-angular-velocity
   [jt]
   (- (angular-velocity (body-b jt))
-     (angular-velocity (body-a jt))))</pre></td></tr><tr><td class="docs"><h2>Limits - no interface so let's impose a protocol</h2>
-
-<p>One could call the java methods directly but these avoid reflection.</p>
+     (angular-velocity (body-a jt))))</pre></td></tr><tr><td class="docs"><h2>Limits</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>There's no interface so let's impose a protocol.
+One could call the java methods directly but these avoid reflection.</p>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Abstraction for JBox2D joints which can have limits</p>
 </td><td class="codes"><pre class="brush: clojure">(defprotocol Limitable
   (limit-enabled? [this] &quot;Whether limits are in effect on a joint.&quot;)
@@ -3524,9 +3547,9 @@ For <code>:damping-ratio</code> 0 = no damping; 1 = critical damping.</p>
   (limit-enabled? [this] (.isLimitEnabled this))
   (enable-limit! [this flag] (.enableLimit this flag))
   (limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
-  (limits! [this limits] (.setLimits this (first limits) (second limits))))</pre></td></tr><tr><td class="docs"><h2>Motors -- no interface so let's impose a protocol</h2>
-
-<p>One could call the java methods directly but these avoid reflection.</p>
+  (limits! [this limits] (.setLimits this (first limits) (second limits))))</pre></td></tr><tr><td class="docs"><h2>Motors</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>There's no interface so let's impose a protocol.
+One could call the java methods directly but these avoid reflection.</p>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Abstraction for JBox2D joints which can have motors</p>
 </td><td class="codes"><pre class="brush: clojure">(defprotocol Motorised
   (motor-enabled? [this] &quot;Whether a motor is enabled on a joint.&quot;)
@@ -3776,7 +3799,47 @@ around.</p>
          (swap! paused not)
          (draw)
          (swap! paused not))
-    :otherwise-ignore-it))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.collision-processing" name="cljbox2d.tests.collision-processing"><h1 class="project-name">cljbox2d.tests.collision-processing</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>A translation of Daniel Murphy's
+    :otherwise-ignore-it))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.blob" name="cljbox2d.tests.blob"><h1 class="project-name">cljbox2d.tests.blob</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>A translation of Daniel Murphy's
+   org.jbox2d.testbed.tests.BlobTest4</p>
+</td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.blob
+  (:use [cljbox2d core joints testbed])
+  (:require [quil.core :as quil]))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def things (atom {}))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def ^:const NBODY 20)</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
+  (create-world!)
+  (let [ground (body! {:type :static}
+                      {:shape (box 50 0.4)}
+                      {:shape (box 0.4 50 [-10 0])}
+                      {:shape (box 0.4 50 [10 0])})
+        [cx cy] [0 10], rad 5 ;; center, radius
+        angles (range 0 TWOPI (/ TWOPI NBODY))
+        nodes (doall (for [angle angles
+                           :let [[x y] (xy rad angle)]]
+                       (body! {:position [(+ x cx) (+ y cy)]
+                               :fixed-rotation true}
+                              {:shape (circle 0.5)
+                               :group-index -2})))
+        cvj (constant-volume-joint! nodes
+                                    {:frequency-hz 10
+                                     :damping-ratio 1})
+        falling-box (body! {:position [cx (+ cy 15)]}
+                           {:shape (box 3 1.5 [cx (+ cy 15)])})]
+    (reset! things {:nodes nodes :cvj cvj})
+    (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup []
+  (setup-world!))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn -main
+  [&amp; args]
+  (quil/defsketch test-sketch
+    :title &quot;Blob Joint&quot;
+    :setup setup
+    :draw draw
+    :key-typed key-press
+    :mouse-pressed mouse-pressed
+    :mouse-released mouse-released
+    :mouse-dragged mouse-dragged
+    :size [600 500]))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.collision-processing" name="cljbox2d.tests.collision-processing"><h1 class="project-name">cljbox2d.tests.collision-processing</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.CollisionProcessing</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.collision-processing
   (:use [cljbox2d core testbed])
