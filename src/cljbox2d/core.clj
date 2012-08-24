@@ -36,10 +36,11 @@ angle] (radians) to [x y]."
 
 ;; ## World
 
-(def ^:dynamic ^World *world*
-  "The current Box2D World: see `create-world`.")
+(defonce ^{:doc "The current Box2D World: see `create-world`."}
+  ^:dynamic ^World *world* nil)
 
-(def world-time "Simulated time passed in seconds" (atom nil))
+(defonce ^{:doc "Simulated time passed in seconds"}
+  world-time (atom nil))
 
 (defn create-world!
   "Create a new Box2D world. Gravity defaults to -10 m/s^2."
@@ -393,12 +394,22 @@ linear velocity of the center of mass. This wakes up the body."
   (.applyTorque body torque))
 
 (defn user-data
+  "Returns an arbitrary object given on body construction."
   [^Body body]
   (.getUserData body))
 
+(defn awake?
+  [^Body body]
+  (.isAwake body))
+
+(defn wake!
+  "Wake up a body."
+  [^Body body]
+  (.setAwake body true))
+
 (defprotocol Destroyable
   "Abstraction for JBox2D objects which can be destroyed"
-  (destroy! [this]))
+  (destroy! [this] "Remove object from the World permanantly."))
 
 (extend-protocol Destroyable
   Body

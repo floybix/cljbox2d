@@ -140,7 +140,7 @@ bounds if necessary to ensure an isometric aspect ratio."
   (doseq [fx (fixtureseq)
           :let [body (body fx)
                 body-typ (body-type body)
-                awake (.isAwake body)
+                awake (awake? body)
                 shp-typ (shape-type fx)
                 pts (world-coords fx)
                 px-pts (map world-to-px pts)
@@ -223,7 +223,7 @@ around."
               mj (mouse-joint! @ground-body bod pt
                                {:max-force (* 1000 (mass bod))})]
           (reset! mousej mj)
-          (.setAwake bod true))))))
+          (wake! bod))))))
 
 (defn mouse-pressed
   "Dispatches according to the mouse button."

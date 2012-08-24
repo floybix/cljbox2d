@@ -6,8 +6,6 @@
 
 (def things (atom {}))
 
-(def is-left (atom false))
-
 (defn setup-world! []
   (create-world!)
   (let [ground (body! {:type :static}
@@ -19,7 +17,7 @@
                     {:shape (circle 0.5) :density 5})
         joint (revolute-joint! ground ball [0 12]
                                {:motor-speed (- PI)
-                                :motor-torque 10000
+                                :max-motor-torque 10000
                                 :lower-angle (/ (- PI) 4)
                                 :upper-angle (/ PI 2)
                                 :enable-limit true
@@ -30,18 +28,18 @@
 (defn update-info-text []
   (let [jt (:joint @things)]
     (reset! info-text
-            (str "Limits " (if (.isLimitEnabled jt) "on" "off")
-                 ", Motor " (if (.isMotorEnabled jt) "on " "off ")
-                 (if @is-left "left" "right") "\n"
+            (str "Limits " (if (limit-enabled? jt) "on" "off")
+                 ", Motor " (if (motor-enabled? jt) "on " "off ")
+                 (if (pos? (motor-speed jt)) "left" "right") "\n"
                  "Keys: (l) limits, (m) motor, (a) left, (d) right"))))
 
 (defn my-key-press []
   (let [jt (:joint @things)]
     (case (quil/raw-key)
-      \l (.enableLimit jt (not (.isLimitEnabled jt)))
-      \m (.enableMotor jt (not (.isMotorEnabled jt)))
-      \a (do (.setMotorSpeed jt PI) (reset! is-left true))
-      \d (do (.setMotorSpeed jt (- PI)) (reset! is-left false))
+      \l (enable-limit! jt (not (limit-enabled? jt)))
+      \m (enable-motor! jt (not (motor-enabled? jt)))
+      \a (motor-speed! jt PI)
+      \d (motor-speed! jt (- PI))
       ;; otherwise pass on to testbed
       (key-press)))
   (update-info-text))

@@ -6,6 +6,7 @@
                                        ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
                                        MouseJoint MouseJointDef
+                                       PrismaticJoint PrismaticJointDef
                                        RevoluteJoint RevoluteJointDef)))
 
 ;; ## Enums
@@ -37,17 +38,17 @@ angle. You can use a motor to drive the relative rotation about the
 shared point. A maximum motor torque is provided so that infinite
 forces are not generated."
   [body1 body2 anchor
-   {:keys [enable-motor motor-speed max-torque
+   {:keys [enable-motor motor-speed max-motor-torque
            enable-limit lower-angle upper-angle
            collide-connected user-data]
-    :or {enable-motor false, motor-speed 0, max-torque 10000,
+    :or {enable-motor false, motor-speed 0, max-motor-torque 10000,
          enable-limit false, lower-angle 0, upper-angle 360,
          collide-connected false}}]
   (let [jd (RevoluteJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor))
     (set! (.enableMotor jd) enable-motor)
     (set! (.motorSpeed jd) motor-speed)
-    (set! (.maxMotorTorque jd) max-torque)
+    (set! (.maxMotorTorque jd) max-motor-torque)
     (set! (.enableLimit jd) enable-limit)
     (set! (.lowerAngle jd) lower-angle)
     (set! (.upperAngle jd) upper-angle)
@@ -55,8 +56,34 @@ forces are not generated."
     (set! (.userData jd) user-data)
     (.createJoint *world* jd)))
 
+(defn prismatic-joint!
+  "Prismatic joint definition. This requires defining a line of motion
+using an axis and an anchor point. The definition uses local anchor
+points and a local axis so that the initial configuration can violate
+the constraint slightly. The joint translation is zero when the local
+anchor points coincide in world space. Using local anchors and a local
+axis helps when saving and loading a game."
+  [body1 body2 anchor axis
+   {:keys [enable-motor motor-speed max-motor-force
+           enable-limit lower-trans upper-trans
+           collide-connected user-data]
+    :or {enable-motor false, motor-speed 0, max-motor-force 10000,
+         enable-limit false, lower-trans -10, upper-trans 10,
+         collide-connected false}}]
+  (let [jd (PrismaticJointDef.)]
+    (.initialize jd body1 body2 (vec2 anchor) (vec2 axis))
+    (set! (.enableMotor jd) enable-motor)
+    (set! (.motorSpeed jd) motor-speed)
+    (set! (.maxMotorForce jd) max-motor-force)
+    (set! (.enableLimit jd) enable-limit)
+    (set! (.lowerTranslation jd) lower-trans)
+    (set! (.upperTranslation jd) upper-trans)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    (.createJoint *world* jd)))
+
 (defn distance-joint!
-  "Distance joint definition. This requires defining an anchor point
+  "Distance joint. This requires defining an anchor point
 on both bodies and the non-zero length of the distance joint. The
 definition uses local anchor points so that the initial configuration
 can violate the constraint slightly. This helps when saving and
@@ -77,7 +104,7 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
     (.createJoint *world* jd)))
 
 (defn mouse-joint!
-  "Mouse joint definition.
+  "Mouse joint.
    By convention `body1` is ground and `body2` is the selection"
   [body1 body2 target
    {:keys [max-force
@@ -136,3 +163,72 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
   (let [v0 (vec2 [0 0])]
     (.getAnchorB jt v0)
     (xy v0)))
+
+(defn joint-angular-velocity
+  "Relative angular velocity of two attached bodies in radians/second."
+  [jt]
+  (- (angular-velocity (body-b jt))
+     (angular-velocity (body-a jt))))
+
+;; ## Limits - no interface so let's impose a protocol
+;; One could call the java methods directly but these avoid reflection.
+
+(defprotocol Limitable
+  "Abstraction for JBox2D joints which can have limits"
+  (limit-enabled? [this] "Whether limits are in effect on a joint.")
+  (enable-limit! [this flag] "Set whether limits are in effect.")
+  (limits [this] "Vector of limits on a joint.")
+  (limits! [this limits] "Set [lower upper] limits on a joint."))
+
+(extend-protocol Limitable
+
+  RevoluteJoint
+  (limit-enabled? [this] (.isLimitEnabled this))
+  (enable-limit! [this flag] (.enableLimit this flag))
+  (limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
+  (limits! [this limits] (.setLimits this (first limits) (second limits)))
+
+  PrismaticJoint
+  (limit-enabled? [this] (.isLimitEnabled this))
+  (enable-limit! [this flag] (.enableLimit this flag))
+  (limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
+  (limits! [this limits] (.setLimits this (first limits) (second limits))))
+
+;; ## Motors -- no interface so let's impose a protocol
+;; One could call the java methods directly but these avoid reflection.
+
+(defprotocol Motorised
+  "Abstraction for JBox2D joints which can have motors"
+  (motor-enabled? [this] "Whether a motor is enabled on a joint.")
+  (enable-motor! [this flag] "Set whether a motor is enabled.")
+  (motor-speed [this] "Motor (target) speed, may or may not be enabled.")
+  (motor-speed! [this speed] "Set motor (target) speed, may or may not be enabled.")
+  (joint-speed [this] "Current joint speed, may be linear or angular.")
+  (motor-force [this] "Current motor force.")
+  (motor-torque [this] "Current motor torque.")
+  (max-motor-force [this] "Maximum motor force")
+  (max-motor-torque [this] "Maximum motor torque")
+  (max-motor-force! [this force] "Set maximum motor force")
+  (max-motor-torque! [this torque] "Set maximum motor torque"))
+
+(extend-protocol Motorised
+
+  RevoluteJoint
+  (motor-enabled? [this] (.isMotorEnabled this))
+  (enable-motor! [this flag] (.enableMotor this flag))
+  (motor-speed [this] (.m_motorSpeed this))
+  (motor-speed! [this speed] (.setMotorSpeed this speed))
+  (joint-speed [this] (.getJointSpeed this))
+  (motor-torque [this] (.getMotorTorque this))
+  (max-motor-torque [this] (.m_maxMotorTorque this))
+  (max-motor-torque! [this torque] (.setMaxMotorTorque this torque))
+
+  PrismaticJoint
+  (motor-enabled? [this] (.isMotorEnabled this))
+  (enable-motor! [this flag] (.enableMotor this flag))
+  (motor-speed [this] (.getMotorSpeed this))
+  (motor-speed! [this speed] (.setMotorSpeed this speed))
+  (joint-speed [this] (.getJointSpeed this))
+  (motor-force [this] (.getMotorForce this))
+  (max-motor-force [this] (.m_maxMotorForce this))
+  (max-motor-force! [this force] (.setMaxMotorForce this force)))
