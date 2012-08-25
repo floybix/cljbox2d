@@ -12,6 +12,8 @@ See http://floybix.github.com/cljbox2d/
 
 ## Usage
 
+Get [Leiningen](https://github.com/technomancy/leiningen) first.
+
 Some ports of the Box2D / JBox2D testbed tests:
 
 <pre>

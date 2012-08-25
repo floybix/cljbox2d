@@ -1,7 +1,7 @@
 (ns cljbox2d.joints
   "Core API for joints."
-  (:use cljbox2d.core)
-  (:import (org.jbox2d.dynamics Body World)
+  (:use [cljbox2d.core :only [*world* vec2 v2xy angular-velocity]])
+  (:import (org.jbox2d.dynamics Body)
            (org.jbox2d.dynamics.joints Joint JointType
                                        ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
@@ -173,7 +173,7 @@ internally."
   ;; yuck, the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorA jt v0)
-    (xy v0)))
+    (v2xy v0)))
 
 (defn anchor-b
   "The anchor point on bodyB in world coordinates"
@@ -181,7 +181,7 @@ internally."
   ;; yuck, the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorB jt v0)
-    (xy v0)))
+    (v2xy v0)))
 
 (defn joint-angular-velocity
   "Relative angular velocity of two attached bodies in radians/second."

@@ -11,7 +11,14 @@
   In this namespace we have drawing functions, some vars/atoms for
   hooking in to the testbed, a default contact listener, and default
   input event handlers."
-  (:use [cljbox2d core joints])
+  (:use [cljbox2d.core :only [*world* world-time step!
+                              fixtureseq body-type shape-type body
+                              world-center world-coords radius mass
+                              query-at-point destroy!
+                              awake? wake! v2xy vec2]]
+        [cljbox2d.joints :only [jointseq joint-type
+                                body-a body-b anchor-a anchor-b
+                                mouse-joint!]])
   (:import (org.jbox2d.callbacks ContactListener)
            (org.jbox2d.collision WorldManifold))
   (:require [quil.core :as quil]))
@@ -133,14 +140,13 @@ bounds if necessary to ensure an isometric aspect ratio."
                       anch-b (anchor-b jt)]
                   (quil/line (world-to-px anch-a) (world-to-px anch-b)))
       :mouse (let [anch-b (anchor-b jt)
-                   targ (xy (.getTarget jt))]
+                   targ (v2xy (.getTarget jt))]
                (quil/line (world-to-px anch-b) (world-to-px targ)))
       :otherwise-ignore-it
       ))
   (doseq [fx (fixtureseq)
           :let [body (body fx)
                 body-typ (body-type body)
-                awake (awake? body)
                 shp-typ (shape-type fx)
                 pts (world-coords fx)
                 px-pts (map world-to-px pts)
@@ -148,7 +154,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                 radius-px (* (radius fx) (world-to-px-scale))]]
     (case body-typ
       :static (static-style)
-      :dynamic (if awake (dynamic-style) (sleeping-style)))
+      :dynamic (if (awake? body) (dynamic-style) (sleeping-style)))
     (case shp-typ
       :circle (quil/ellipse x0 y0 (* 2 radius-px) (* 2 radius-px))
       :polygon (do
@@ -191,8 +197,8 @@ represented as `[fixture-a fixture-b points normal]`."
                       (let [fixt-a (.getFixtureA contact)
                             fixt-b (.getFixtureB contact)
                             -points (.points world-manifold)
-                            pts (map xy (take pcount -points))
-                            normal (xy (.normal world-manifold))]
+                            pts (map v2xy (take pcount -points))
+                            normal (v2xy (.normal world-manifold))]
                         (swap! contact-buffer conj
                                [fixt-a fixt-b pts normal])
                         )))))]

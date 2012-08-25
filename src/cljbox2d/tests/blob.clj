@@ -1,7 +1,8 @@
 (ns cljbox2d.tests.blob
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.BlobTest4"
-  (:use [cljbox2d core joints testbed])
+  (:use (cljbox2d core joints testbed)
+        [cljbox2d.vec2d :only [TWOPI polar-xy]])
   (:require [quil.core :as quil]))
 
 (def things (atom {}))
@@ -17,7 +18,7 @@
         [cx cy] [0 10], rad 5 ;; center, radius
         angles (range 0 TWOPI (/ TWOPI NBODY))
         nodes (doall (for [angle angles
-                           :let [[x y] (xy rad angle)]]
+                           :let [[x y] (polar-xy rad angle)]]
                        (body! {:position [(+ x cx) (+ y cy)]
                                :fixed-rotation true}
                               {:shape (circle 0.5)

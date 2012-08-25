@@ -15,24 +15,15 @@
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))
 
-;; ## Basic data
-
 (defn vec2
-  "Make a `Vec2` object from given (`x`, `y`).
-  If the argument is already a Vec2, return it."
-  ([v] (if (isa? (class v) Vec2)
-         v
-         (Vec2. (first v) (second v))))
+  "Make a JBox2D `Vec2` object from given `x`, `y`."
+  ([v] (Vec2. (first v) (second v)))
   ([x y] (Vec2. x y)))
 
-(defn xy
-  "Makes a vector [x y] from a Vec2, or convert polar coordinates [mag
-angle] (radians) to [x y]."
-  ([^Vec2 v]
-     [(.x v) (.y v)])
-  ([mag angle]
-     [(* mag (Math/cos angle))
-      (* mag (Math/sin angle))]))
+(defn v2xy
+  "Makes a vector [x y] from a Vec2"
+  [^Vec2 v]
+  [(.x v) (.y v)])
 
 ;; ## World
 
@@ -140,18 +131,23 @@ by default centered at [0 0]"
 
 (defn fixture-def
   "A FixtureDef: a shape with some physical properties. Do not call
-this directly, instead use `(body!)` or `(fixture!)`"
-  ;; TODO: filter (contact filtering)
+this directly, instead use `(body!)` or `(fixture!)`.
+
+`:group-index` allows a certain group of objects to never
+collide (negative) or always collide (positive). Zero means no
+collision group."
   [{:keys [shape density friction restitution is-sensor
-           user-data]
+           group-index user-data]
     :or {density 1, friction 0.3, restitution 0.3,
-         is-sensor false}}]
-  (let [fd (FixtureDef.)]
+         is-sensor false, group-index 0}}]
+  (let [fd (FixtureDef.)
+        ff (.filter fd)]
     (set! (.shape fd) shape)
     (set! (.density fd) density)
     (set! (.friction fd) friction)
     (set! (.restitution fd) restitution)
     (set! (.isSensor fd) is-sensor)
+    (set! (.groupIndex ff) group-index)
     (set! (.userData fd) user-data)
     fd))
 
@@ -233,34 +229,34 @@ function to pull out the first fixture from a body."
 (defn local-point
   "Return body-local coordinates for a given world point"
   [^Body body pt]
-  (xy (.getLocalPoint body (vec2 pt))))
+  (v2xy (.getLocalPoint body (vec2 pt))))
 
 (defn world-point
   "Return world coordinates for a point in body-local coordinates,
    by default the body origin point"
   ([^Body body]
-     (xy (.getPosition body)))
+     (v2xy (.getPosition body)))
   ([^Body body pt]
-     (xy (.getWorldPoint body (vec2 pt)))))
+     (v2xy (.getWorldPoint body (vec2 pt)))))
 
 (defn local-center
   "Center of mass of a body in local coordinates"
   [^Body body]
-  (xy (.getLocalCenter body)))
+  (v2xy (.getLocalCenter body)))
 
 (defn world-center
   "Center of mass of a body in world coordinates"
   [^Body body]
-  (xy (.getWorldCenter body)))
+  (v2xy (.getWorldCenter body)))
 
 (defn local-coords
   "Local coordinates for a polygon (vertices) or circle (center)."
   [^Fixture fixt]
   (let [shp (.getShape fixt)]
     (case (shape-type fixt)
-      :circle (map xy [(.getVertex ^CircleShape shp 0)])
+      :circle (map v2xy [(.getVertex ^CircleShape shp 0)])
       :polygon (let [n (.getVertexCount ^PolygonShape shp)]
-                 (take n (map xy (.getVertices ^PolygonShape shp)))))))
+                 (take n (map v2xy (.getVertices ^PolygonShape shp)))))))
 
 (defn world-coords
   "World coordinates for a polygon (vertices) or circle (center)."
@@ -332,8 +328,8 @@ is tested to be inside each shape, not just within its bounding box."
       (let [fixt-a (.getFixtureA contact)
             fixt-b (.getFixtureB contact)
             -points (.points world-manifold)
-            pts (map xy (take pcount -points))
-            normal (xy (.normal world-manifold))]
+            pts (map v2xy (take pcount -points))
+            normal (v2xy (.normal world-manifold))]
         {:fixture-a fixt-a :fixture-b fixt-b
          :points pts :normal normal}))))
 
@@ -372,12 +368,12 @@ by the `contact-data` function. Contacts without contact points are exluded."
 (defn linear-velocity
   "Linear velocity of the center of mass of a body. In m/s?"
   [^Body body]
-  (xy (.getLinearVelocity body)))
+  (v2xy (.getLinearVelocity body)))
 
 (defn angular-velocity
   "Angular velocity of a body in radians/second."
   [^Body body]
-  (xy (.getAngularVelocity body)))
+  (v2xy (.getAngularVelocity body)))
 
 (defn apply-force!
   "Apply a force in Newtons to body at a world point. If the force
@@ -419,27 +415,3 @@ linear velocity of the center of mass. This wakes up the body."
   Fixture
   (destroy! [this] (.destroyFixture (body this) this)))
     
-;; ## Utilities
-
-(def ^:const ^{:doc "Pi (180 degrees)."} PI (. Math PI))
-(def ^:const ^{:doc "2 Pi (360 degrees)."} TWOPI (* PI 2.0))
-(def ^:const ^{:doc "Pi/2 (90 degrees)."} PI_2 (* PI 0.5))
-
-(defn angle-v
-  "Angle of a vector in radians"
-  [[x y]]
-  (Math/atan2 y x))
-
-(defn mag-v
-  "Magnitude of a vector"
-  [[x y]]
-  (Math/sqrt (+ (* x x) (* y y))))
-
-(defn scale-v
-  "Multiply elements of a vector by a scalar;
-Default is to normalise to unit length."
-  ([v]
-     (scale-v v (/ 1 (mag-v v))))
-  ([[x y] s]
-     [(* x s) (* y s)]))
-

@@ -1,7 +1,8 @@
 (ns cljbox2d.tests.sensor-test
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SensorTest"
-  (:use [cljbox2d core testbed])
+  (:use (cljbox2d core testbed)
+        [cljbox2d.vec2d :only [v-scale]])
   (:import (org.jbox2d.callbacks ContactListener))
   (:require [quil.core :as quil]))
 
@@ -53,8 +54,8 @@
             :when (:touching @(user-data b))
             :let [pt (world-point b)
                   d (map - cent pt)
-                  d-unit (scale-v d)
-                  forc (scale-v d-unit 100)]]
+                  d-unit (v-scale d)
+                  forc (v-scale d-unit 100)]]
       (apply-force! b forc pt))))
 
 (defn setup []

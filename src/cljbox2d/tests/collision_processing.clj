@@ -1,7 +1,7 @@
 (ns cljbox2d.tests.collision-processing
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.CollisionProcessing"
-  (:use [cljbox2d core testbed])
+  (:use (cljbox2d core testbed))
   (:require [quil.core :as quil]))
 
 (def things (atom {}))

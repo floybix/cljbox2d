@@ -1,7 +1,8 @@
 (ns cljbox2d.tests.revolute
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.RevoluteTest"
-  (:use [cljbox2d core joints testbed])
+  (:use (cljbox2d core joints testbed)
+        [cljbox2d.vec2d :only [PI]])
   (:require [quil.core :as quil]))
 
 (def things (atom {}))
