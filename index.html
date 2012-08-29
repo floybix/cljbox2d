@@ -3029,7 +3029,7 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>cljbox2d -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">cljbox2d</h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>A clojure wrapper for JBox2D, for 2D physics simulation.</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">org.slf4j/slf4j-simple</td><td class="dotted"><hr /></td><td class="dep-version">1.6.6</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.blob">cljbox2d.tests.blob</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.slider-crank">cljbox2d.tests.slider-crank</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li><li><a href="#cljbox2d.vec2d">cljbox2d.vec2d</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>This is <a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>.</p>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.jbox2d/jbox2d-library</td><td class="dotted"><hr /></td><td class="dep-version">2.1.2.2</td></tr><tr><td class="dep-name">org.slf4j/slf4j-simple</td><td class="dotted"><hr /></td><td class="dep-version">1.6.6</td></tr><tr><td class="dep-name">quil</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.4.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#cljbox2d.core">cljbox2d.core</a></li><li><a href="#cljbox2d.joints">cljbox2d.joints</a></li><li><a href="#cljbox2d.testbed">cljbox2d.testbed</a></li><li><a href="#cljbox2d.tests.blob">cljbox2d.tests.blob</a></li><li><a href="#cljbox2d.tests.collision-processing">cljbox2d.tests.collision-processing</a></li><li><a href="#cljbox2d.tests.edge-points">cljbox2d.tests.edge-points</a></li><li><a href="#cljbox2d.tests.revolute">cljbox2d.tests.revolute</a></li><li><a href="#cljbox2d.tests.sensor-test">cljbox2d.tests.sensor-test</a></li><li><a href="#cljbox2d.tests.slider-crank">cljbox2d.tests.slider-crank</a></li><li><a href="#cljbox2d.tests.varying-restitution">cljbox2d.tests.varying-restitution</a></li><li><a href="#cljbox2d.tests.web">cljbox2d.tests.web</a></li><li><a href="#cljbox2d.vec2d">cljbox2d.vec2d</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.core" name="cljbox2d.core"><h1 class="project-name">cljbox2d.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p><a href="https://github.com/floybix/cljbox2d/">cljbox2d</a>, a 2D physics engine.</p>
 
 <p>   A clojure wrapper for <a href="http://www.jbox2d.org/">JBox2D</a>, which is a
    close Java port of Erin Catto's excellent C++
@@ -3038,10 +3038,12 @@ net.brehaut.ClojureTools = (function (SH) {
 <p>   In this namespace we have the core API for fixtures, bodies and the
    World.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.core
+  (:use [cljbox2d.vec2d :only [polar-xy v-add v-sub v-interp PI TWOPI
+                               edge-point-from-vertices v-mag]])
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB WorldManifold)
-           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
+           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType MassData)
            (org.jbox2d.callbacks QueryCallback)
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))</pre></td></tr><tr><td class="docs"><p>Make a JBox2D <code>Vec2</code> object from given <code>x</code>, <code>y</code>.</p>
@@ -3051,7 +3053,7 @@ net.brehaut.ClojureTools = (function (SH) {
 </td><td class="codes"><pre class="brush: clojure">(defn v2xy
   [^Vec2 v]
   [(.x v) (.y v)])</pre></td></tr><tr><td class="docs"><h2>World</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>The current Box2D World: see <code>create-world</code>.</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>The current Box2D World: see <code>create-world!</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defonce 
   ^:dynamic ^World *world* nil)</pre></td></tr><tr><td class="docs"><p>Simulated time passed in seconds</p>
 </td><td class="codes"><pre class="brush: clojure">(defonce 
@@ -3118,7 +3120,13 @@ by default centered at [0 0]</p>
   ([hx hy center angle]
      (let [shape (PolygonShape.)]
        (.setAsBox shape hx hy (vec2 center) angle)
-       shape)))</pre></td></tr><tr><td class="docs"><p>Create a polygon shape. Must be convex!
+       shape)))</pre></td></tr><tr><td class="docs"><p>Create a long thin (box) shape extending from a point to a given
+   length and with a given angle.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn rod
+  [from-pt angle length width]
+  (box (/ length 2) (/ width 2)
+       (v-add from-pt (polar-xy (/ length 2) angle))
+       angle))</pre></td></tr><tr><td class="docs"><p>Create a polygon shape. Must be convex!
    It is assumed that the exterior is the right of each edge.
    i.e. vertices go counter-clockwise.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn polygon
@@ -3204,37 +3212,131 @@ maps to be passed to the <code>fixture-def</code> function.</p>
 function to pull out the first fixture from a body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn fixture
   [^Body body]
+  {:pre [(= 1 (count (fixtureseq body)))]}
   (first (fixtureseq body)))</pre></td></tr><tr><td class="docs"><h3>Coordinates</h3>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Return body-local coordinates for a given world point</p>
-</td><td class="codes"><pre class="brush: clojure">(defn local-point
-  [^Body body pt]
-  (v2xy (.getLocalPoint body (vec2 pt))))</pre></td></tr><tr><td class="docs"><p>Return world coordinates for a point in body-local coordinates,
-   by default the body origin point</p>
-</td><td class="codes"><pre class="brush: clojure">(defn world-point
-  ([^Body body]
-     (v2xy (.getPosition body)))
-  ([^Body body pt]
-     (v2xy (.getWorldPoint body (vec2 pt)))))</pre></td></tr><tr><td class="docs"><p>Center of mass of a body in local coordinates</p>
-</td><td class="codes"><pre class="brush: clojure">(defn local-center
-  [^Body body]
-  (v2xy (.getLocalCenter body)))</pre></td></tr><tr><td class="docs"><p>Center of mass of a body in world coordinates</p>
-</td><td class="codes"><pre class="brush: clojure">(defn world-center
-  [^Body body]
-  (v2xy (.getWorldCenter body)))</pre></td></tr><tr><td class="docs"><p>Local coordinates for a polygon (vertices) or circle (center).</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>General methods for 2D physical objects which may be aggregated</p>
+</td><td class="codes"><pre class="brush: clojure">(defprotocol TwoDeeObject
+  (mass [this] &quot;Total mass in kg.&quot;)
+  (center [this] &quot;Center of mass in world coordinates.&quot;)
+  (loc-center [this] &quot;Center of mass in local coordinates.&quot;)
+  (position [this] [this loc-pt] &quot;World coordinates of a local point, default [0 0].&quot;)
+  (to-local [this pt] &quot;Local coordinates of a world point.&quot;)
+  (edge-point* [this angle frac origin-pt] &quot;World coordinates a
+   fraction of the way to the edge of a shape in a given direction
+   from an origin point. Prefer the high-level `edge-point`.&quot;))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(declare world-coords local-coords)</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(extend-protocol TwoDeeObject
+
+  Body
+  (mass [this]
+    (.getMass this))
+  (center [this]
+    (v2xy (.getWorldCenter this)))
+  (loc-center [this]
+    (v2xy (.getLocalCenter this)))
+  (position
+    ([this]
+       (v2xy (.getPosition this)))
+    ([this loc-pt]
+       (v2xy (.getWorldPoint this (vec2 loc-pt)))))
+  (to-local [this pt]
+    (v2xy (.getLocalPoint this (vec2 pt))))
+  (edge-point* [this angle frac origin-pt]
+    ;; take the edge point from all fixtures having
+    ;; greatest dot product with the (unit) angle vector.
+    (let [fx-pts (for [fx (fixtureseq this)]
+                   (edge-point* fx angle frac origin-pt))]
+      (apply max-key #(v-mag (v-sub % origin-pt))
+             (remove nil? fx-pts))))
+
+  Fixture
+  (mass [this]
+    (let [md (MassData.)]
+      (.getMassData this md)
+      (.mass md)))
+  (center [this]
+    (position this (loc-center this)))
+  (loc-center [this]
+    (let [md (MassData.)]
+      (.getMassData this md)
+      (v2xy (.center md))))
+  (position
+    ([this]
+       (position (body this)))
+    ([this loc-pt]
+       (position (body this) loc-pt)))
+  (to-local [this pt]
+    (to-local (body this) pt))
+  (edge-point* [this angle frac origin-pt]
+    (let [vv (world-coords this)
+          on-edge (edge-point-from-vertices vv angle origin-pt)]
+      (if (nil? on-edge) nil
+          (v-interp origin-pt on-edge frac)))))</pre></td></tr><tr><td class="docs"><p>World coordinates on the edge of an object in a given direction
+from its center. Further arguments can specify the fraction out
+towards the edge (or outside if > 1), and an origin point other than
+the object center (in world coordinates).</p>
+</td><td class="codes"><pre class="brush: clojure">(defn edge-point
+  ([this angle] (edge-point* this angle 1 (center this)))
+  ([this angle frac] (edge-point* this angle frac (center this)))
+  ([this angle frac origin-pt] (edge-point* this angle frac origin-pt)))</pre></td></tr><tr><td class="docs"><p>Radius of a Fixture's shape.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn radius
+  [^Fixture fixt]
+  (.m_radius (.getShape fixt)))</pre></td></tr><tr><td class="docs"><p>Local coordinates of polygon vertices. Approximated for circles.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn local-coords
   [^Fixture fixt]
   (let [shp (.getShape fixt)]
     (case (shape-type fixt)
-      :circle (map v2xy [(.getVertex ^CircleShape shp 0)])
+      :circle (let [r (radius fixt)
+                    cent (loc-center fixt)]
+                (for [a (range (- PI) PI (/ TWOPI 30))]
+                  (v-add cent (polar-xy r a))))
       :polygon (let [n (.getVertexCount ^PolygonShape shp)]
-                 (take n (map v2xy (.getVertices ^PolygonShape shp)))))))</pre></td></tr><tr><td class="docs"><p>World coordinates for a polygon (vertices) or circle (center).</p>
+                 (take n (map v2xy (.getVertices ^PolygonShape shp)))))))</pre></td></tr><tr><td class="docs"><p>World coordinates of polygon vertices. Approximated for circles.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn world-coords
   [^Fixture fixt]
   (let [body (.getBody fixt)]
-    (map (partial world-point body) (local-coords fixt))))</pre></td></tr><tr><td class="docs"><p>Radius of a Fixture's shape.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn radius
-  [^Fixture fixt]
-  (.m_radius (.getShape fixt)))</pre></td></tr><tr><td class="docs"><h3>Spatial queries</h3>
+    (map #(position body %) (local-coords fixt))))</pre></td></tr><tr><td class="docs"><p>Angle of a body in radians</p>
+</td><td class="codes"><pre class="brush: clojure">(defn angle
+  [^Body body]
+  (.getAngle body))</pre></td></tr><tr><td class="docs"><h2>Movement</h2>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Linear velocity of the a point on the body in local coordinates, by
+   default its center of mass. In m/s.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn linear-velocity
+  ([^Body body]
+     (v2xy (.getLinearVelocity body)))
+  ([^Body body loc-pt]
+     (v2xy (.getLinearVelocityFromLocalPoint body (vec2 loc-pt)))))</pre></td></tr><tr><td class="docs"><p>Angular velocity of a body in radians/second.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn angular-velocity
+  [^Body body]
+  (v2xy (.getAngularVelocity body)))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
+is not applied at the center of mass, it will generate a torque and
+affect the angular velocity. This wakes up the body.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn apply-force!
+  [^Body body force pt]
+  (.applyForce body (vec2 force) (vec2 pt)))</pre></td></tr><tr><td class="docs"><p>Apply a torque in N-m, i.e. about the z-axis (out of the
+screen). This affects the angular velocity without affecting the
+linear velocity of the center of mass. This wakes up the body.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn apply-torque!
+  [^Body body torque]
+  (.applyTorque body torque))</pre></td></tr><tr><td class="docs"><p>Returns an arbitrary object given on body construction.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn user-data
+  [^Body body]
+  (.getUserData body))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn awake?
+  [^Body body]
+  (.isAwake body))</pre></td></tr><tr><td class="docs"><p>Wake up a body.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn wake!
+  [^Body body]
+  (.setAwake body true))</pre></td></tr><tr><td class="docs"><p>Abstraction for JBox2D objects which can be destroyed</p>
+</td><td class="codes"><pre class="brush: clojure">(defprotocol Destroyable
+  (destroy! [this] &quot;Remove object from the World permanantly.&quot;))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(extend-protocol Destroyable
+  Body
+  (destroy! [this] (.destroyBody *world* this))
+  Joint
+  (destroy! [this] (.destroyJoint *world* this))
+  Fixture
+  (destroy! [this] (.destroyFixture (body this) this)))</pre></td></tr><tr><td class="docs"><h3>Spatial queries</h3>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Axis-Aligned Bounding Box</p>
 </td><td class="codes"><pre class="brush: clojure">(defn aabb
   ([[x0 y0] [x1 y1]]
@@ -3304,48 +3406,7 @@ by the <code>contact-data</code> function. Contacts without contact points are e
               (if-let [cdata (contact-data (.contact cl))]
                 (cons cdata (nextstep (.next cl)))
                 (nextstep (.next cl)))))]
-    (lazy-seq (nextstep (.getContactList body)))))</pre></td></tr><tr><td class="docs"><h2>Body properties</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Angle of a body in radians</p>
-</td><td class="codes"><pre class="brush: clojure">(defn angle
-  [^Body body]
-  (.getAngle body))</pre></td></tr><tr><td class="docs"><p>Total mass of a body in kg</p>
-</td><td class="codes"><pre class="brush: clojure">(defn mass
-  [^Body body]
-  (.getMass body))</pre></td></tr><tr><td class="docs"><p>Linear velocity of the center of mass of a body. In m/s?</p>
-</td><td class="codes"><pre class="brush: clojure">(defn linear-velocity
-  [^Body body]
-  (v2xy (.getLinearVelocity body)))</pre></td></tr><tr><td class="docs"><p>Angular velocity of a body in radians/second.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn angular-velocity
-  [^Body body]
-  (v2xy (.getAngularVelocity body)))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
-is not applied at the center of mass, it will generate a torque and
-affect the angular velocity. This wakes up the body.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn apply-force!
-  [^Body body force pt]
-  (.applyForce body (vec2 force) (vec2 pt)))</pre></td></tr><tr><td class="docs"><p>Apply a torque in N-m, i.e. about the z-axis (out of the
-screen). This affects the angular velocity without affecting the
-linear velocity of the center of mass. This wakes up the body.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn apply-torque!
-  [^Body body torque]
-  (.applyTorque body torque))</pre></td></tr><tr><td class="docs"><p>Returns an arbitrary object given on body construction.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn user-data
-  [^Body body]
-  (.getUserData body))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn awake?
-  [^Body body]
-  (.isAwake body))</pre></td></tr><tr><td class="docs"><p>Wake up a body.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn wake!
-  [^Body body]
-  (.setAwake body true))</pre></td></tr><tr><td class="docs"><p>Abstraction for JBox2D objects which can be destroyed</p>
-</td><td class="codes"><pre class="brush: clojure">(defprotocol Destroyable
-  (destroy! [this] &quot;Remove object from the World permanantly.&quot;))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(extend-protocol Destroyable
-  Body
-  (destroy! [this] (.destroyBody *world* this))
-  Joint
-  (destroy! [this] (.destroyJoint *world* this))
-  Fixture
-  (destroy! [this] (.destroyFixture (body this) this)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.joints" name="cljbox2d.joints"><h1 class="project-name">cljbox2d.joints</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Core API for joints.</p>
+    (lazy-seq (nextstep (.getContactList body)))))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.joints" name="cljbox2d.joints"><h1 class="project-name">cljbox2d.joints</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Core API for joints.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.joints
   (:use [cljbox2d.core :only [*world* vec2 v2xy angular-velocity]])
   (:import (org.jbox2d.dynamics Body)
@@ -3573,9 +3634,9 @@ One could call the java methods directly but these avoid reflection.</p>
   hooking in to the testbed, a default contact listener, and default
   input event handlers.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.testbed
-  (:use [cljbox2d.core :only [*world* world-time step!
+  (:use [cljbox2d.core :only [*world* world-time step! bodyseq
                               fixtureseq body-type shape-type body
-                              world-center world-coords radius mass
+                              center world-coords radius mass
                               query-at-point destroy!
                               awake? wake! v2xy vec2]]
         [cljbox2d.joints :only [jointseq joint-type
@@ -3663,8 +3724,8 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                 body-b (body-b jt)]]
     (case typ
       :revolute (let [anch (anchor-a jt)
-                      center-a (world-center body-a)
-                      center-b (world-center body-b)]
+                      center-a (center body-a)
+                      center-b (center body-b)]
                   (quil/line (world-to-px anch) (world-to-px center-a))
                   (quil/line (world-to-px anch) (world-to-px center-b)))
       :distance (let [anch-a (anchor-a jt)
@@ -3674,23 +3735,20 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                    targ (v2xy (.getTarget jt))]
                (quil/line (world-to-px anch-b) (world-to-px targ)))
       :otherwise-ignore-it))
-  (doseq [fx (fixtureseq)
-          :let [body (body fx)
-                body-typ (body-type body)
-                shp-typ (shape-type fx)
-                pts (world-coords fx)
-                px-pts (map world-to-px pts)
-                [x0 y0] (first px-pts)
-                radius-px (* (radius fx) (world-to-px-scale))]]
-    (case body-typ
+  (doseq [body (bodyseq)]
+    (case (body-type body)
       :static (static-style)
       :dynamic (if (awake? body) (dynamic-style) (sleeping-style)))
-    (case shp-typ
-      :circle (quil/ellipse x0 y0 (* 2 radius-px) (* 2 radius-px))
-      :polygon (do
-                 (quil/begin-shape)
-                 (doseq [[x y] px-pts] (quil/vertex x y))
-                 (quil/end-shape :close))))
+    (doseq [fx (fixtureseq body)]
+      (case (shape-type fx)
+        :circle (let [[x y] (world-to-px (center fx))
+                      radius-px (* (radius fx) (world-to-px-scale))]
+                  (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
+        :polygon (let [pts (world-coords fx)
+                       px-pts (map world-to-px pts)]
+                   (quil/begin-shape)
+                   (doseq [[x y] px-pts] (quil/vertex x y))
+                   (quil/end-shape :close)))))
   (quil/fill 255)
   (quil/text @info-text 10 10))</pre></td></tr><tr><td class="docs"><p>Draw handler for quil. Calls <code>draw-world</code>.
    After simulation calls the hook function <code>@step-fn</code></p>
@@ -3881,6 +3939,62 @@ around.</p>
     :mouse-pressed mouse-pressed
     :mouse-released mouse-released
     :mouse-dragged mouse-dragged
+    :size [600 500]))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.edge-points" name="cljbox2d.tests.edge-points"><h1 class="project-name">cljbox2d.tests.edge-points</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>An example of cljbox2d.core/edge-point</p>
+</td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.edge-points
+  (:use (cljbox2d core joints testbed)
+        [cljbox2d.vec2d :only [TWOPI PI poly-flip-x angle*]])
+  (:require [quil.core :as quil]))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup-world! []
+  (create-world!)
+  (let [ground (body! {:type :static}
+                      {:shape (edge [-40 0] [40 0])})
+        angles (range 0 TWOPI (/ TWOPI 16))
+        shell-v (list [0 0] [8 0] [8 0.5]
+                      [6 1.5] [3 2.5]
+                      [1 2] [0.5 1.5])
+        ;; make a beetle body with radial fixtures.
+        ;; get edge-points just on the hub fixture
+        ;; (because we are adding fixtures to the body)
+        hub (body! {:position [0 10]}
+                   {:shape (polygon shell-v)})
+        fx (fixture hub)
+        spokes (doall (for [angle angles
+                            :let [pt (edge-point fx angle)
+                                  locpt (to-local hub pt)]]
+                        (fixture! hub
+                                  {:shape (rod locpt angle 1 0.2)})))
+        eye (let [pt (edge-point fx (angle* :right) 0.9)
+                  locpt (to-local hub pt)]
+              (fixture! hub {:shape (circle 0.7 locpt)}))
+        ;; another beetle body, with radial jointed bodies.
+        ;; this time we get edge-points on the whole body (2 fixtures)
+        hub2 (body! {:position [20 10]}
+                    {:shape (polygon (poly-flip-x shell-v))})
+        eye2 (let [pt (edge-point hub2 (angle* :left) 1.1)
+                   locpt (to-local hub2 pt)]
+               (fixture! hub2 {:shape (circle 0.7 locpt)}))
+        spokes2 (doall (for [angle angles
+                             :let [pt (edge-point hub2 angle)]]
+                         (let [b (body! {:position pt}
+                                        {:shape (rod [0 0] angle 1 0.2)
+                                         :group-index -2})]
+                           (revolute-joint! hub2 b pt
+                                            {:enable-motor true
+                                             :motor-speed (/ PI 2)
+                                             :max-motor-torque 100}))))]
+    (reset! ground-body ground)))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(defn setup []
+  (setup-world!))</pre></td></tr><tr><td class="docs"><p>Run the test sketch.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn -main
+  [&amp; args]
+  (quil/defsketch test-sketch
+    :title &quot;Edge points&quot;
+    :setup setup
+    :draw draw
+    :key-typed key-press
+    :mouse-pressed mouse-pressed
+    :mouse-released mouse-released
+    :mouse-dragged mouse-dragged
     :size [600 500]))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.tests.revolute" name="cljbox2d.tests.revolute"><h1 class="project-name">cljbox2d.tests.revolute</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.RevoluteTest</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.tests.revolute
@@ -3982,10 +4096,10 @@ around.</p>
     (preSolve [_ contact omanifold])))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn my-step []
   ;; process the buffer of contact points
-  (let [cent (first (world-coords @sensor))]
+  (let [cent (center @sensor)]
     (doseq [b @balls
             :when (:touching @(user-data b))
-            :let [pt (world-point b)
+            :let [pt (position b)
                   d (map - cent pt)
                   d-unit (v-scale d)
                   forc (v-scale d-unit 100)]]
@@ -4105,7 +4219,7 @@ around.</p>
         x-middle 0
         y-middle 10
         ground-joints (for [nd nodes
-                            :let [[x y] (world-point nd)
+                            :let [[x y] (position nd)
                                   is-right (&gt; x x-middle)
                                   is-top (&gt; y y-middle)
                                   ground-x (if is-right 10 -10)
@@ -4120,8 +4234,8 @@ around.</p>
         inner-joints (for [i (range 4)
                            :let [n1 (nth nodes i)
                                  n2 (nth nodes (mod (inc i) 4))
-                                 [x1 y1] (world-point n1)
-                                 [x2 y2] (world-point n2)
+                                 [x1 y1] (position n1)
+                                 [x2 y2] (position n2)
                                  off-x1 (* -0.5 (compare x1 x2))
                                  off-y1 (* -0.5 (compare y1 y2))]]
                        (distance-joint! n1 n2
@@ -4171,29 +4285,51 @@ around.</p>
 <p>Pi/2 (90 degrees).</p>
 </td><td class="codes"><pre class="brush: clojure">(def ^:const  PI (. Math PI))
 (def ^:const  TWOPI (* PI 2.0))
-(def ^:const  PI_2 (* PI 0.5))</pre></td></tr><tr><td class="docs"><p>Angles in radians for compass directions,
-   with keys :n :ne :e :se :s :sw :w :nw.</p>
-</td><td class="codes"><pre class="brush: clojure">(def dir-angle
-  {:e 0
-   :ne (/ PI 4)
-   :n PI_2
-   :nw (* PI (/ 3 4))
-   :w PI
-   :sw (* PI (/ 5 4))
-   :s (* PI (/ 3 2))
-   :se (* PI (/ 7 4))})</pre></td></tr><tr><td class="docs"><p>Convert polar coordinates (magnitude, angle) to cartesian
-coordinates [x y].</p>
+(def ^:const  PI_2 (* PI 0.5))</pre></td></tr><tr><td class="docs"><p>Returns the angle expressed in the range -pi to pi.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn in-pi-pi
+  [angle]
+  (cond
+   (&gt; angle PI) (in-pi-pi (- angle TWOPI))
+   (&lt; angle (- PI)) (in-pi-pi (+ angle TWOPI))
+   :else angle))</pre></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(def ^{:private true} dir-angle
+  (let [m {:right           0
+           :top-right       (/ PI 4)
+           :bottom-right (- (/ PI 4))
+           :top             PI_2
+           :bottom       (- PI_2)
+           :top-left        (* PI (/ 3 4))
+           :bottom-left  (- (* PI (/ 3 4)))
+           :left            PI}]
+    (merge m {:r  (:right m)
+              :tr (:top-right m)
+              :br (:bottom-right m)
+              :t  (:top m)
+              :b  (:bottom m)
+              :tl (:top-left m)
+              :bl (:bottom-left m)
+              :l  (:left m)})))</pre></td></tr><tr><td class="docs"><p>Return an angle in radians from given number in degrees, or a
+  keyword for a direction:
+  <code>:right (0) :top (pi/2) :left (pi) :bottom (-pi/2)</code>
+  <code>:top-right :top-left :bottom-left :bottom-right</code>
+  Aliases <code>:r :t :l :b :tr :tl :bl :br</code>.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn angle*
+  [a]
+  (cond
+   (number? a) (in-pi-pi (* PI (/ 180.0 a)))
+   (keyword? a) (a dir-angle)))</pre></td></tr><tr><td class="docs"><p>Convert polar coordinates (magnitude, angle) to cartesian
+   coordinates (x, y).</p>
 </td><td class="codes"><pre class="brush: clojure">(defn polar-xy
   [mag angle]
   [(* mag (Math/cos angle))
-   (* mag (Math/sin angle))])</pre></td></tr><tr><td class="docs"><p>Angle of a 2d geometric vector in radians</p>
+   (* mag (Math/sin angle))])</pre></td></tr><tr><td class="docs"><p>Angle of a 2d geometric vector in radians in range -pi to pi.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn v-angle
   [[x y]]
   (Math/atan2 y x))</pre></td></tr><tr><td class="docs"><p>Magnitude of a 2d geometric vector</p>
 </td><td class="codes"><pre class="brush: clojure">(defn v-mag
   [[x y]]
   (Math/sqrt (+ (* x x) (* y y))))</pre></td></tr><tr><td class="docs"><p>Multiply elements of a 2d vector by a scalar;
-Default is to normalise to unit length.</p>
+   Default is to normalise to unit length.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn v-scale
   ([v]
      (v-scale v (/ 1 (v-mag v))))
@@ -4204,13 +4340,57 @@ Default is to normalise to unit length.</p>
   (mapv - v1 v2))</pre></td></tr><tr><td class="docs"><p>Add a 2d geometric vector to another.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn v-add
   [v1 v2]
-  (mapv + v1 v2))</pre></td></tr><tr><td class="docs"><p>Find a point <code>frac</code> fraction of the way from <code>v1</code> to <code>v2</code> by linear
-interpolation.</p>
+  (mapv + v1 v2))</pre></td></tr><tr><td class="docs"><p>Find a point <code>frac</code> fraction of the way from v1 to v2 by linear
+   interpolation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn v-interp
   [v1 v2 frac]
   (v-add (v-scale v2 frac)
          (v-scale v1 (- 1 frac))))</pre></td></tr><tr><td class="docs"><p>Distance from one 2d point to another.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn v-dist
   [v1 v2]
-  (v-mag (v-sub v1 v2)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/fogus/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
+  (v-mag (v-sub v1 v2)))</pre></td></tr><tr><td class="docs"><p>Dot product of two vectors.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn v-dot
+  [v1 v2]
+  (apply + (map * v1 v2)))</pre></td></tr><tr><td class="docs"><p>Flip polygon coordinates horizontally, by default around x=0.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn poly-flip-x
+  ([vv]
+     (poly-flip-x vv 0))
+  ([vv x0]
+     ;; need to reverse to keep it counter-clockwise.
+     (reverse (map (fn [[x y]] [(- x0 x) y]) vv))))</pre></td></tr><tr><td class="docs"><p>Flip polygon coordinates vertically, by default around y=0.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn poly-flip-y
+  ([vv]
+     (poly-flip-y vv 0))
+  ([vv y0]
+     ;; need to reverse to keep it counter-clockwise.
+     (reverse (map (fn [[x y]] [x (- y0 y)]) vv))))</pre></td></tr><tr><td class="docs"><p>Finds point on edge of a convex polygon shape (given by
+   counter-clockwise vertices) at a given <code>angle</code> from <code>origin-pt</code>.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn edge-point-from-vertices
+  [vv angle origin-pt]
+  (let [targ (in-pi-pi angle)
+        ;; offsets from origin point (typically shape center)
+        offs (map v-sub vv (repeat origin-pt))
+        angs (map v-angle offs)
+        ;; differences of angles from target
+        errs (map #(in-pi-pi (- % targ)) angs)
+        ;; index of vertex closest to target angle
+        best-i (apply min-key #(Math/abs (nth errs %))
+                      (range (count vv)))
+        best-err (nth errs best-i)
+        ;; now find the vertex on opposite side of target.
+        ;; we know that coordinates go counter-clockwise
+        ;; (by box2d polygon definition)
+        opp-i (-&gt; (if (pos? best-err) (dec best-i) (inc best-i))
+                  (mod (count vv)))
+        opp-err (nth errs opp-i)]
+    ;; note however: it is possible that the angle vec does not touch
+    ;; shape at all. in that case we return nil.
+    (if (= (compare 0 best-err)
+           (compare 0 opp-err))
+      nil
+      (v-interp
+       (nth vv best-i)
+       (nth vv opp-i)
+       (Math/abs (/ best-err
+                    (+ (Math/abs best-err) (Math/abs opp-err))))))))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/fogus/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
        SyntaxHighlighter.all()</script></body></html>
