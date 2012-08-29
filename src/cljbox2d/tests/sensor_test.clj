@@ -49,10 +49,10 @@
 
 (defn my-step []
   ;; process the buffer of contact points
-  (let [cent (first (world-coords @sensor))]
+  (let [cent (center @sensor)]
     (doseq [b @balls
             :when (:touching @(user-data b))
-            :let [pt (world-point b)
+            :let [pt (position b)
                   d (map - cent pt)
                   d-unit (v-scale d)
                   forc (v-scale d-unit 100)]]

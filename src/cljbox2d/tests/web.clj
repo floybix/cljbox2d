@@ -17,7 +17,7 @@
         x-middle 0
         y-middle 10
         ground-joints (for [nd nodes
-                            :let [[x y] (world-point nd)
+                            :let [[x y] (position nd)
                                   is-right (> x x-middle)
                                   is-top (> y y-middle)
                                   ground-x (if is-right 10 -10)
@@ -32,8 +32,8 @@
         inner-joints (for [i (range 4)
                            :let [n1 (nth nodes i)
                                  n2 (nth nodes (mod (inc i) 4))
-                                 [x1 y1] (world-point n1)
-                                 [x2 y2] (world-point n2)
+                                 [x1 y1] (position n1)
+                                 [x2 y2] (position n2)
                                  off-x1 (* -0.5 (compare x1 x2))
                                  off-y1 (* -0.5 (compare y1 y2))]]
                        (distance-joint! n1 n2

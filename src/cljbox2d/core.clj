@@ -1,5 +1,5 @@
 (ns cljbox2d.core
-  "This is [cljbox2d](https://github.com/floybix/cljbox2d/).
+  "[cljbox2d](https://github.com/floybix/cljbox2d/), a 2D physics engine.
 
    A clojure wrapper for [JBox2D](http://www.jbox2d.org/), which is a
    close Java port of Erin Catto's excellent C++
@@ -7,10 +7,12 @@
 
    In this namespace we have the core API for fixtures, bodies and the
    World."
+  (:use [cljbox2d.vec2d :only [polar-xy v-add v-sub v-interp PI TWOPI
+                               edge-point-from-vertices v-mag]])
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB WorldManifold)
-           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType)
+           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType MassData)
            (org.jbox2d.callbacks QueryCallback)
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))
@@ -27,7 +29,7 @@
 
 ;; ## World
 
-(defonce ^{:doc "The current Box2D World: see `create-world`."}
+(defonce ^{:doc "The current Box2D World: see `create-world!`."}
   ^:dynamic ^World *world* nil)
 
 (defonce ^{:doc "Simulated time passed in seconds"}
@@ -116,6 +118,14 @@ by default centered at [0 0]"
      (let [shape (PolygonShape.)]
        (.setAsBox shape hx hy (vec2 center) angle)
        shape)))
+
+(defn rod
+  "Create a long thin (box) shape extending from a point to a given
+   length and with a given angle."
+  [from-pt angle length width]
+  (box (/ length 2) (/ width 2)
+       (v-add from-pt (polar-xy (/ length 2) angle))
+       angle))
 
 (defn polygon
   "Create a polygon shape. Must be convex!
@@ -222,52 +232,163 @@ maps to be passed to the `fixture-def` function."
   "Often a body will only have one fixture. This is a convenience
 function to pull out the first fixture from a body."
   [^Body body]
+  {:pre [(= 1 (count (fixtureseq body)))]}
   (first (fixtureseq body)))
 
 ;; ### Coordinates
 
-(defn local-point
-  "Return body-local coordinates for a given world point"
-  [^Body body pt]
-  (v2xy (.getLocalPoint body (vec2 pt))))
+(defprotocol TwoDeeObject
+  "General methods for 2D physical objects which may be aggregated"
+  (mass [this] "Total mass in kg.")
+  (center [this] "Center of mass in world coordinates.")
+  (loc-center [this] "Center of mass in local coordinates.")
+  (position [this] [this loc-pt] "World coordinates of a local point, default [0 0].")
+  (to-local [this pt] "Local coordinates of a world point.")
+  (edge-point* [this angle frac origin-pt] "World coordinates a
+   fraction of the way to the edge of a shape in a given direction
+   from an origin point. Prefer the high-level `edge-point`."))
 
-(defn world-point
-  "Return world coordinates for a point in body-local coordinates,
-   by default the body origin point"
-  ([^Body body]
-     (v2xy (.getPosition body)))
-  ([^Body body pt]
-     (v2xy (.getWorldPoint body (vec2 pt)))))
+(declare world-coords local-coords)
 
-(defn local-center
-  "Center of mass of a body in local coordinates"
-  [^Body body]
-  (v2xy (.getLocalCenter body)))
+(extend-protocol TwoDeeObject
 
-(defn world-center
-  "Center of mass of a body in world coordinates"
-  [^Body body]
-  (v2xy (.getWorldCenter body)))
+  Body
+  (mass [this]
+    (.getMass this))
+  (center [this]
+    (v2xy (.getWorldCenter this)))
+  (loc-center [this]
+    (v2xy (.getLocalCenter this)))
+  (position
+    ([this]
+       (v2xy (.getPosition this)))
+    ([this loc-pt]
+       (v2xy (.getWorldPoint this (vec2 loc-pt)))))
+  (to-local [this pt]
+    (v2xy (.getLocalPoint this (vec2 pt))))
+  (edge-point* [this angle frac origin-pt]
+    ;; take the edge point from all fixtures having
+    ;; greatest dot product with the (unit) angle vector.
+    (let [fx-pts (for [fx (fixtureseq this)]
+                   (edge-point* fx angle frac origin-pt))]
+      (apply max-key #(v-mag (v-sub % origin-pt))
+             (remove nil? fx-pts))))
 
-(defn local-coords
-  "Local coordinates for a polygon (vertices) or circle (center)."
-  [^Fixture fixt]
-  (let [shp (.getShape fixt)]
-    (case (shape-type fixt)
-      :circle (map v2xy [(.getVertex ^CircleShape shp 0)])
-      :polygon (let [n (.getVertexCount ^PolygonShape shp)]
-                 (take n (map v2xy (.getVertices ^PolygonShape shp)))))))
+  Fixture
+  (mass [this]
+    (let [md (MassData.)]
+      (.getMassData this md)
+      (.mass md)))
+  (center [this]
+    (position this (loc-center this)))
+  (loc-center [this]
+    (let [md (MassData.)]
+      (.getMassData this md)
+      (v2xy (.center md))))
+  (position
+    ([this]
+       (position (body this)))
+    ([this loc-pt]
+       (position (body this) loc-pt)))
+  (to-local [this pt]
+    (to-local (body this) pt))
+  (edge-point* [this angle frac origin-pt]
+    (let [vv (world-coords this)
+          on-edge (edge-point-from-vertices vv angle origin-pt)]
+      (if (nil? on-edge) nil
+          (v-interp origin-pt on-edge frac)))))
 
-(defn world-coords
-  "World coordinates for a polygon (vertices) or circle (center)."
-  [^Fixture fixt]
-  (let [body (.getBody fixt)]
-    (map (partial world-point body) (local-coords fixt))))
+(defn edge-point
+  "World coordinates on the edge of an object in a given direction
+from its center. Further arguments can specify the fraction out
+towards the edge (or outside if > 1), and an origin point other than
+the object center (in world coordinates)."
+  ([this angle] (edge-point* this angle 1 (center this)))
+  ([this angle frac] (edge-point* this angle frac (center this)))
+  ([this angle frac origin-pt] (edge-point* this angle frac origin-pt)))
 
 (defn radius
   "Radius of a Fixture's shape."
   [^Fixture fixt]
   (.m_radius (.getShape fixt)))
+
+(defn local-coords
+  "Local coordinates of polygon vertices. Approximated for circles."
+  [^Fixture fixt]
+  (let [shp (.getShape fixt)]
+    (case (shape-type fixt)
+      :circle (let [r (radius fixt)
+                    cent (loc-center fixt)]
+                (for [a (range (- PI) PI (/ TWOPI 30))]
+                  (v-add cent (polar-xy r a))))
+      :polygon (let [n (.getVertexCount ^PolygonShape shp)]
+                 (take n (map v2xy (.getVertices ^PolygonShape shp)))))))
+
+(defn world-coords
+  "World coordinates of polygon vertices. Approximated for circles."
+  [^Fixture fixt]
+  (let [body (.getBody fixt)]
+    (map #(position body %) (local-coords fixt))))
+
+(defn angle
+  "Angle of a body in radians"
+  [^Body body]
+  (.getAngle body))
+
+;; ## Movement
+
+(defn linear-velocity
+  "Linear velocity of the a point on the body in local coordinates, by
+   default its center of mass. In m/s."
+  ([^Body body]
+     (v2xy (.getLinearVelocity body)))
+  ([^Body body loc-pt]
+     (v2xy (.getLinearVelocityFromLocalPoint body (vec2 loc-pt)))))
+
+(defn angular-velocity
+  "Angular velocity of a body in radians/second."
+  [^Body body]
+  (v2xy (.getAngularVelocity body)))
+
+(defn apply-force!
+  "Apply a force in Newtons to body at a world point. If the force
+is not applied at the center of mass, it will generate a torque and
+affect the angular velocity. This wakes up the body."
+  [^Body body force pt]
+  (.applyForce body (vec2 force) (vec2 pt)))
+
+(defn apply-torque!
+  "Apply a torque in N-m, i.e. about the z-axis (out of the
+screen). This affects the angular velocity without affecting the
+linear velocity of the center of mass. This wakes up the body."
+  [^Body body torque]
+  (.applyTorque body torque))
+
+(defn user-data
+  "Returns an arbitrary object given on body construction."
+  [^Body body]
+  (.getUserData body))
+
+(defn awake?
+  [^Body body]
+  (.isAwake body))
+
+(defn wake!
+  "Wake up a body."
+  [^Body body]
+  (.setAwake body true))
+
+(defprotocol Destroyable
+  "Abstraction for JBox2D objects which can be destroyed"
+  (destroy! [this] "Remove object from the World permanantly."))
+
+(extend-protocol Destroyable
+  Body
+  (destroy! [this] (.destroyBody *world* this))
+  Joint
+  (destroy! [this] (.destroyJoint *world* this))
+  Fixture
+  (destroy! [this] (.destroyFixture (body this) this)))
 
 ;; ### Spatial queries
 
@@ -353,65 +474,3 @@ by the `contact-data` function. Contacts without contact points are exluded."
                 (nextstep (.next cl)))))]
     (lazy-seq (nextstep (.getContactList body)))))
 
-;; ## Body properties
-
-(defn angle
-  "Angle of a body in radians"
-  [^Body body]
-  (.getAngle body))
-
-(defn mass
-  "Total mass of a body in kg"
-  [^Body body]
-  (.getMass body))
-
-(defn linear-velocity
-  "Linear velocity of the center of mass of a body. In m/s?"
-  [^Body body]
-  (v2xy (.getLinearVelocity body)))
-
-(defn angular-velocity
-  "Angular velocity of a body in radians/second."
-  [^Body body]
-  (v2xy (.getAngularVelocity body)))
-
-(defn apply-force!
-  "Apply a force in Newtons to body at a world point. If the force
-is not applied at the center of mass, it will generate a torque and
-affect the angular velocity. This wakes up the body."
-  [^Body body force pt]
-  (.applyForce body (vec2 force) (vec2 pt)))
-
-(defn apply-torque!
-  "Apply a torque in N-m, i.e. about the z-axis (out of the
-screen). This affects the angular velocity without affecting the
-linear velocity of the center of mass. This wakes up the body."
-  [^Body body torque]
-  (.applyTorque body torque))
-
-(defn user-data
-  "Returns an arbitrary object given on body construction."
-  [^Body body]
-  (.getUserData body))
-
-(defn awake?
-  [^Body body]
-  (.isAwake body))
-
-(defn wake!
-  "Wake up a body."
-  [^Body body]
-  (.setAwake body true))
-
-(defprotocol Destroyable
-  "Abstraction for JBox2D objects which can be destroyed"
-  (destroy! [this] "Remove object from the World permanantly."))
-
-(extend-protocol Destroyable
-  Body
-  (destroy! [this] (.destroyBody *world* this))
-  Joint
-  (destroy! [this] (.destroyJoint *world* this))
-  Fixture
-  (destroy! [this] (.destroyFixture (body this) this)))
-    

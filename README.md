@@ -1,5 +1,7 @@
 # cljbox2d
 
+2D physics engine.
+
 A [clojure](http://clojure.org/) wrapper for
 [JBox2D](http://www.jbox2d.org/), which is a close Java port of Erin
 Catto's excellent C++ [Box2D](http://www.box2d.org/) physics engine.
@@ -17,10 +19,10 @@ Get [Leiningen](https://github.com/technomancy/leiningen) first.
 Some ports of the Box2D / JBox2D testbed tests:
 
 <pre>
-lein run -m cljbox2d.tests.varying-restitution
 lein run -m cljbox2d.tests.blob
 lein run -m cljbox2d.tests.collision-processing
 lein run -m cljbox2d.tests.sensor-test
+lein run -m cljbox2d.tests.edge-points
 ...etc...
 </pre>
 
@@ -35,7 +37,7 @@ See the ball bounce (requires some imagination...)
                  {:shape (circle 1), :restitution 0.5}))
 ;; let it go
 (dotimes [i 10]
-  (println (world-point ball))
+  (println (position ball))
   (step! (/ 1 3)))
 
 ;  [0.0 10.0]

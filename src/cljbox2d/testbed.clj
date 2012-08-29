@@ -11,9 +11,9 @@
   In this namespace we have drawing functions, some vars/atoms for
   hooking in to the testbed, a default contact listener, and default
   input event handlers."
-  (:use [cljbox2d.core :only [*world* world-time step!
+  (:use [cljbox2d.core :only [*world* world-time step! bodyseq
                               fixtureseq body-type shape-type body
-                              world-center world-coords radius mass
+                              center world-coords radius mass
                               query-at-point destroy!
                               awake? wake! v2xy vec2]]
         [cljbox2d.joints :only [jointseq joint-type
@@ -132,8 +132,8 @@ bounds if necessary to ensure an isometric aspect ratio."
                 body-b (body-b jt)]]
     (case typ
       :revolute (let [anch (anchor-a jt)
-                      center-a (world-center body-a)
-                      center-b (world-center body-b)]
+                      center-a (center body-a)
+                      center-b (center body-b)]
                   (quil/line (world-to-px anch) (world-to-px center-a))
                   (quil/line (world-to-px anch) (world-to-px center-b)))
       :distance (let [anch-a (anchor-a jt)
@@ -144,23 +144,20 @@ bounds if necessary to ensure an isometric aspect ratio."
                (quil/line (world-to-px anch-b) (world-to-px targ)))
       :otherwise-ignore-it
       ))
-  (doseq [fx (fixtureseq)
-          :let [body (body fx)
-                body-typ (body-type body)
-                shp-typ (shape-type fx)
-                pts (world-coords fx)
-                px-pts (map world-to-px pts)
-                [x0 y0] (first px-pts)
-                radius-px (* (radius fx) (world-to-px-scale))]]
-    (case body-typ
+  (doseq [body (bodyseq)]
+    (case (body-type body)
       :static (static-style)
       :dynamic (if (awake? body) (dynamic-style) (sleeping-style)))
-    (case shp-typ
-      :circle (quil/ellipse x0 y0 (* 2 radius-px) (* 2 radius-px))
-      :polygon (do
-                 (quil/begin-shape)
-                 (doseq [[x y] px-pts] (quil/vertex x y))
-                 (quil/end-shape :close))))
+    (doseq [fx (fixtureseq body)]
+      (case (shape-type fx)
+        :circle (let [[x y] (world-to-px (center fx))
+                      radius-px (* (radius fx) (world-to-px-scale))]
+                  (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
+        :polygon (let [pts (world-coords fx)
+                       px-pts (map world-to-px pts)]
+                   (quil/begin-shape)
+                   (doseq [[x y] px-pts] (quil/vertex x y))
+                   (quil/end-shape :close)))))
   (quil/fill 255)
   (quil/text @info-text 10 10))
 
