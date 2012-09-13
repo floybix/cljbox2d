@@ -8,7 +8,7 @@
    In this namespace we have the core API for fixtures, bodies and the
    World."
   (:use [cljbox2d.vec2d :only [polar-xy v-add v-sub v-interp PI TWOPI
-                               edge-point-from-vertices v-mag]])
+                               in-pi-pi edge-point-from-vertices v-mag]])
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB WorldManifold)
@@ -246,7 +246,8 @@ function to pull out the first fixture from a body."
   (to-local [this pt] "Local coordinates of a world point.")
   (edge-point* [this angle frac origin-pt] "World coordinates a
    fraction of the way to the edge of a shape in a given direction
-   from an origin point. Prefer the high-level `edge-point`."))
+   from an origin point. Prefer the high-level `edge-point`.")
+  (user-data [this] "Returns an object given on body construction."))
 
 (declare world-coords local-coords)
 
@@ -273,6 +274,7 @@ function to pull out the first fixture from a body."
                    (edge-point* fx angle frac origin-pt))]
       (apply max-key #(v-mag (v-sub % origin-pt))
              (remove nil? fx-pts))))
+  (user-data [this] (.getUserData this))
 
   Fixture
   (mass [this]
@@ -296,7 +298,8 @@ function to pull out the first fixture from a body."
     (let [vv (world-coords this)
           on-edge (edge-point-from-vertices vv angle origin-pt)]
       (if (nil? on-edge) nil
-          (v-interp origin-pt on-edge frac)))))
+          (v-interp origin-pt on-edge frac))))
+  (user-data [this] (.getUserData this)))
 
 (defn edge-point
   "World coordinates on the edge of an object in a given direction
@@ -333,7 +336,7 @@ the object center (in world coordinates)."
 (defn angle
   "Angle of a body in radians"
   [^Body body]
-  (.getAngle body))
+  (in-pi-pi (.getAngle body)))
 
 ;; ## Movement
 
@@ -363,11 +366,6 @@ screen). This affects the angular velocity without affecting the
 linear velocity of the center of mass. This wakes up the body."
   [^Body body torque]
   (.applyTorque body torque))
-
-(defn user-data
-  "Returns an arbitrary object given on body construction."
-  [^Body body]
-  (.getUserData body))
 
 (defn awake?
   [^Body body]

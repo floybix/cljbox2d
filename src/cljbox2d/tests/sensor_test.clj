@@ -59,6 +59,7 @@
       (apply-force! b forc pt))))
 
 (defn setup []
+  (quil/frame-rate (/ 1 *timestep*))
   (setup-world!)
   (.setContactListener *world* (sensor-touching-listener))
   (reset! step-fn my-step))

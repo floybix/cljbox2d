@@ -49,6 +49,7 @@
   (reset! contact-buffer []))
 
 (defn setup []
+  (quil/frame-rate (/ 1 *timestep*))
   (setup-world!)
   (set-buffering-contact-listener!)
   (reset! step-fn my-step))

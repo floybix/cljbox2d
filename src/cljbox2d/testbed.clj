@@ -23,6 +23,8 @@
            (org.jbox2d.collision WorldManifold))
   (:require [quil.core :as quil]))
 
+(def ^:dynamic *timestep* (/ 1 30.0))
+
 ;; ## Atoms acting as hooks
 
 (def info-text
@@ -42,6 +44,10 @@
 (def step-fn
   "A function to run every simulated time step, e.g. for contact
    processing or to apply special forces."
+  (atom (fn [])))
+
+(def draw-more-fn
+  "A function to run every frame after drawing the world objects."
   (atom (fn [])))
 
 (def ground-body
@@ -166,9 +172,10 @@ bounds if necessary to ensure an isometric aspect ratio."
    After simulation calls the hook function `@step-fn`"
   []
   (when-not @paused
-    (step! (/ 1 (quil/current-frame-rate)))
+    (step! *timestep*)
     (@step-fn))
-  (draw-world))
+  (draw-world)
+  (@draw-more-fn))
 
 ;; ## contact / collision handling
 
@@ -267,6 +274,20 @@ around."
     :left (left-mouse-dragged)
     :otherwise-ignore-it))
 
+(defn zoom-camera
+  "Factor multiplies the visible world distance."
+  [factor]
+  (swap! camera
+         (fn [{:keys [width height x-left y-bottom]}]
+           (let [cent-x (+ x-left (/ width 2))
+                 cent-y (+ y-bottom (/ height 2))
+                 new-width (* width factor)
+                 new-height (* height factor)]
+             {:width new-width
+              :height new-height
+              :x-left (- cent-x (/ new-width 2))
+              :y-bottom (- cent-y (/ new-height 2))}))))
+
 (defn key-press
   "Standard actions for key events"
   []
@@ -276,4 +297,6 @@ around."
          (swap! paused not)
          (draw)
          (swap! paused not))
+    \= (zoom-camera (/ 1 1.5))
+    \- (zoom-camera 1.5)
     :otherwise-ignore-it))

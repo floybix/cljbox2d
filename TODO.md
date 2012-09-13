@@ -1,4 +1,7 @@
 
+* split testbed into separate lein project (same repo)
+  * so that cljbox2d core does not depend on quil
+* edge-point-local
 * in joint! give :limits []
 * (fixture-spec) returns map from Fixture
 * (body-spec returns map from Body

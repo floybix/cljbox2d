@@ -65,6 +65,7 @@
   (update-info-text))
 
 (defn setup []
+  (quil/frame-rate (/ 1 *timestep*))
   (setup-world!)
   (update-info-text))
 

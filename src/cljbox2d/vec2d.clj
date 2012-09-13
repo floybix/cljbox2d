@@ -6,6 +6,11 @@
 (def ^:const ^{:doc "2 Pi (360 degrees)."} TWOPI (* PI 2.0))
 (def ^:const ^{:doc "Pi/2 (90 degrees)."} PI_2 (* PI 0.5))
 
+(defn abs
+  "Absolute value; avoids reflection from overloaded Math/abs"
+  [x]
+  (if (neg? x) (- x) x))
+
 (defn in-pi-pi
   "Returns the angle expressed in the range -pi to pi."
   [angle]
@@ -40,8 +45,16 @@
   Aliases `:r :t :l :b :tr :tl :bl :br`."
   [a]
   (cond
-   (number? a) (in-pi-pi (* PI (/ 180.0 a)))
+   (number? a) (in-pi-pi (* PI (/ a 180.0)))
    (keyword? a) (a dir-angle)))
+
+(defn angle-left?
+  [angle]
+  (> (abs (in-pi-pi angle)) PI_2))
+
+(defn angle-up?
+  [angle]
+  (pos? (in-pi-pi angle)))
 
 (defn polar-xy
   "Convert polar coordinates (magnitude, angle) to cartesian
@@ -122,7 +135,7 @@
         ;; differences of angles from target
         errs (map #(in-pi-pi (- % targ)) angs)
         ;; index of vertex closest to target angle
-        best-i (apply min-key #(Math/abs (nth errs %))
+        best-i (apply min-key #(abs (nth errs %))
                       (range (count vv)))
         best-err (nth errs best-i)
         ;; now find the vertex on opposite side of target.
@@ -139,5 +152,5 @@
       (v-interp
        (nth vv best-i)
        (nth vv opp-i)
-       (Math/abs (/ best-err
-                    (+ (Math/abs best-err) (Math/abs opp-err))))))))
+       (abs (/ best-err
+               (+ (abs best-err) (abs opp-err))))))))

@@ -45,6 +45,7 @@
     (reset! ground-body ground)))
 
 (defn setup []
+  (quil/frame-rate (/ 1 *timestep*))
   (setup-world!))
 
 (defn -main

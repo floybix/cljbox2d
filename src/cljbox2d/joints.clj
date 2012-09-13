@@ -1,6 +1,7 @@
 (ns cljbox2d.joints
   "Core API for joints."
   (:use [cljbox2d.core :only [*world* vec2 v2xy angular-velocity]])
+  (:use [cljbox2d.vec2d :only [in-pi-pi]])
   (:import (org.jbox2d.dynamics Body)
            (org.jbox2d.dynamics.joints Joint JointType
                                        ConstantVolumeJoint ConstantVolumeJointDef
@@ -189,6 +190,10 @@ internally."
   (- (angular-velocity (body-b jt))
      (angular-velocity (body-a jt))))
 
+(defn joint-angle
+  [^RevoluteJoint jt]
+  (in-pi-pi (.getJointAngle jt)))
+
 ;; ## Limits
 
 ;; There's no interface so let's impose a protocol.
@@ -255,3 +260,9 @@ internally."
   (motor-force [this] (.getMotorForce this))
   (max-motor-force [this] (.m_maxMotorForce this))
   (max-motor-force! [this force] (.setMaxMotorForce this force)))
+
+(defn power-watts
+  "Instantaneous rate of work done by a revolute joint in Watts.
+   Multiply by the time step to get work in Joules."
+  [jt]
+  (* (joint-speed jt) (motor-torque jt)))
