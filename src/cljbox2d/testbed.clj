@@ -169,6 +169,7 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 (defn draw
   "Draw handler for quil. Calls `draw-world`.
+   After drawing calls the hook function `@draw-more-fn`.
    After simulation calls the hook function `@step-fn`"
   []
   (when-not @paused

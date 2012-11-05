@@ -341,7 +341,7 @@ the object center (in world coordinates)."
 ;; ## Movement
 
 (defn linear-velocity
-  "Linear velocity of the a point on the body in local coordinates, by
+  "Linear velocity of a point on the body in local coordinates, by
    default its center of mass. In m/s."
   ([^Body body]
      (v2xy (.getLinearVelocity body)))
@@ -351,7 +351,7 @@ the object center (in world coordinates)."
 (defn angular-velocity
   "Angular velocity of a body in radians/second."
   [^Body body]
-  (v2xy (.getAngularVelocity body)))
+  (.getAngularVelocity body))
 
 (defn apply-force!
   "Apply a force in Newtons to body at a world point. If the force
@@ -452,23 +452,23 @@ is tested to be inside each shape, not just within its bounding box."
         {:fixture-a fixt-a :fixture-b fixt-b
          :points pts :normal normal}))))
 
-(defn contacting
-  "Set of other bodies that the given body is currently contacting."
-  [^Body body]
-  (loop [cl (.getContactList body)
-         result #{}]
-    (if cl
-      (recur (.next cl) (conj result (.other cl)))
-      result)))
-
 (defn contacts
   "Lazy seq of contacts on this body. Each contact is a map as defined
-by the `contact-data` function. Contacts without contact points are exluded."
-  [^Body body]
+by the `contact-data` function. Contacts without actual contact
+points (i.e. created only due to overlapping bounding boxes) are
+excluded."
+  [^Body bod]
   (letfn [(nextstep [^ContactEdge cl]
             (when cl
               (if-let [cdata (contact-data (.contact cl))]
                 (cons cdata (nextstep (.next cl)))
                 (nextstep (.next cl)))))]
-    (lazy-seq (nextstep (.getContactList body)))))
+    (lazy-seq (nextstep (.getContactList bod)))))
 
+(defn contacting
+  "Set of other bodies that the given body is currently contacting."
+  [^Body bod]
+  (let [bodies (mapcat #(list (body (:fixture-a %))
+                              (body (:fixture-b %)))
+                       (contacts bod))]
+    (set (remove #(= bod %) bodies))))
