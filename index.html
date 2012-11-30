@@ -3044,7 +3044,7 @@ net.brehaut.ClojureTools = (function (SH) {
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType MassData)
-           (org.jbox2d.callbacks QueryCallback)
+           (org.jbox2d.callbacks QueryCallback RayCastCallback)
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))</pre></td></tr><tr><td class="docs"><p>Make a JBox2D <code>Vec2</code> object from given <code>x</code>, <code>y</code>.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn vec2
@@ -3302,7 +3302,7 @@ the object center (in world coordinates).</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angle
   [^Body body]
   (in-pi-pi (.getAngle body)))</pre></td></tr><tr><td class="docs"><h2>Movement</h2>
-</td><td class="codes"></td></tr><tr><td class="docs"><p>Linear velocity of the a point on the body in local coordinates, by
+</td><td class="codes"></td></tr><tr><td class="docs"><p>Linear velocity of a point on the body in local coordinates, by
    default its center of mass. In m/s.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn linear-velocity
   ([^Body body]
@@ -3311,7 +3311,7 @@ the object center (in world coordinates).</p>
      (v2xy (.getLinearVelocityFromLocalPoint body (vec2 loc-pt)))))</pre></td></tr><tr><td class="docs"><p>Angular velocity of a body in radians/second.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn angular-velocity
   [^Body body]
-  (v2xy (.getAngularVelocity body)))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
+  (.getAngularVelocity body))</pre></td></tr><tr><td class="docs"><p>Apply a force in Newtons to body at a world point. If the force
 is not applied at the center of mass, it will generate a torque and
 affect the angular velocity. This wakes up the body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn apply-force!
@@ -3321,13 +3321,22 @@ screen). This affects the angular velocity without affecting the
 linear velocity of the center of mass. This wakes up the body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn apply-torque!
   [^Body body torque]
-  (.applyTorque body torque))</pre></td></tr><tr><td class="docs">
+  (.applyTorque body torque))</pre></td></tr><tr><td class="docs"><p>Apply an impulse in N-seconds or kg-m/s at a point. This
+immediately modifies the velocity. It also modifies the angular
+velocity if the point of application is not at the center of
+mass. This wakes up the body.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn apply-impulse!
+  [^Body body impulse pt]
+  (.applyLinearImpulse body (vec2 impulse) (vec2 pt)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn awake?
   [^Body body]
   (.isAwake body))</pre></td></tr><tr><td class="docs"><p>Wake up a body.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn wake!
   [^Body body]
-  (.setAwake body true))</pre></td></tr><tr><td class="docs"><p>Abstraction for JBox2D objects which can be destroyed</p>
+  (.setAwake body true))</pre></td></tr><tr><td class="docs"><p>Put a body to sleep.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn sleep!
+  [^Body body]
+  (.setAwake body false))</pre></td></tr><tr><td class="docs"><p>Abstraction for JBox2D objects which can be destroyed</p>
 </td><td class="codes"><pre class="brush: clojure">(defprotocol Destroyable
   (destroy! [this] &quot;Remove object from the World permanantly.&quot;))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(extend-protocol Destroyable
@@ -3373,7 +3382,19 @@ is tested to be inside each shape, not just within its bounding box.</p>
                   ;; return false to end search
                   (&lt; (count @fxx) max-take)))]
        (.queryAABB *world* cb bb)
-       @fxx)))</pre></td></tr><tr><td class="docs"><h2>Contacts</h2>
+       @fxx)))</pre></td></tr><tr><td class="docs"><p>Raycast from start-pt to end-pt, returning the intersected fixtures
+in an ordered seq. Each element of the seq looks like `[fixture point
+normal fraction]`, giving details of the intersection point and its
+fraction along the ray.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn raycast
+  [start-pt end-pt]
+  (let [fxx (atom [])
+        cb (reify RayCastCallback
+             (reportFixture [_ fixt pt norm frac]
+               (swap! fxx conj [fixt pt norm frac])
+               1.0))]
+    (.raycast *world* cb start-pt end-pt)
+    (sort-by #(nth % 3) @fxx)))</pre></td></tr><tr><td class="docs"><h2>Contacts</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Returns a map with keys :fixture-a :fixture-b :points :normal
    from a JBox2D Contact class. Returns nil if no contact points exist.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn contact-data
@@ -3390,23 +3411,24 @@ is tested to be inside each shape, not just within its bounding box.</p>
             pts (map v2xy (take pcount -points))
             normal (v2xy (.normal world-manifold))]
         {:fixture-a fixt-a :fixture-b fixt-b
-         :points pts :normal normal}))))</pre></td></tr><tr><td class="docs"><p>Set of other bodies that the given body is currently contacting.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn contacting
-  [^Body body]
-  (loop [cl (.getContactList body)
-         result #{}]
-    (if cl
-      (recur (.next cl) (conj result (.other cl)))
-      result)))</pre></td></tr><tr><td class="docs"><p>Lazy seq of contacts on this body. Each contact is a map as defined
-by the <code>contact-data</code> function. Contacts without contact points are exluded.</p>
+         :points pts :normal normal}))))</pre></td></tr><tr><td class="docs"><p>Lazy seq of contacts on this body. Each contact is a map as defined
+by the <code>contact-data</code> function. Contacts without actual contact
+points (i.e. created only due to overlapping bounding boxes) are
+excluded.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn contacts
-  [^Body body]
+  [^Body bod]
   (letfn [(nextstep [^ContactEdge cl]
             (when cl
               (if-let [cdata (contact-data (.contact cl))]
                 (cons cdata (nextstep (.next cl)))
                 (nextstep (.next cl)))))]
-    (lazy-seq (nextstep (.getContactList body)))))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.joints" name="cljbox2d.joints"><h1 class="project-name">cljbox2d.joints</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Core API for joints.</p>
+    (lazy-seq (nextstep (.getContactList bod)))))</pre></td></tr><tr><td class="docs"><p>Set of other bodies that the given body is currently contacting.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn contacting
+  [^Body bod]
+  (let [bodies (mapcat #(list (body (:fixture-a %))
+                              (body (:fixture-b %)))
+                       (contacts bod))]
+    (set (remove #(= bod %) bodies))))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#cljbox2d.joints" name="cljbox2d.joints"><h1 class="project-name">cljbox2d.joints</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>Core API for joints.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns cljbox2d.joints
   (:use [cljbox2d.core :only [*world* vec2 v2xy angular-velocity]])
   (:use [cljbox2d.vec2d :only [in-pi-pi]])
@@ -3656,7 +3678,7 @@ One could call the java methods directly but these avoid reflection.</p>
 </td><td class="codes"><pre class="brush: clojure">(def ^:dynamic *timestep* (/ 1 30.0))</pre></td></tr><tr><td class="docs"><h2>Atoms acting as hooks</h2>
 </td><td class="codes"></td></tr><tr><td class="docs"><p>Text to draw in the corner of the sketch</p>
 </td><td class="codes"><pre class="brush: clojure">(def info-text
-  (atom &quot;&quot;))</pre></td></tr><tr><td class="docs"><p>Defines the current view (location and scale) in world coordinates</p>
+  (atom &quot;&quot;))</pre></td></tr><tr><td class="docs"><p>Defines the current view (location and scale) in world coordinates (m)</p>
 </td><td class="codes"><pre class="brush: clojure">(def camera
   (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))</pre></td></tr><tr><td class="docs"><p>Current mouse joint; see <code>left-mouse-pressed</code> etc.</p>
 </td><td class="codes"><pre class="brush: clojure">(def mousej
@@ -3681,25 +3703,25 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
            yscale (/ px-height (:height cam))]
        (min xscale yscale))))</pre></td></tr><tr><td class="docs"><p>Convert a point in Box2d world coordinates to quil pixels.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn world-to-px
-  ([[x y]]
-     (let [cam @camera
-           scale (world-to-px-scale)
-           x-left (:x-left cam)
-           y-bottom (:y-bottom cam)
-           y-top (+ y-bottom (:height cam))]
-       [(* (- x x-left) scale)
-        ;; quil has flipped y (0px at top)
-        (* (- y-top y) scale)])))</pre></td></tr><tr><td class="docs"><p>Convert a point in quil pixels to Box2d world coordinates.</p>
+  [[x y]]
+  (let [cam @camera
+        scale (world-to-px-scale)
+        x-left (:x-left cam)
+        y-bottom (:y-bottom cam)
+        y-top (+ y-bottom (:height cam))]
+    [(* (- x x-left) scale)
+     ;; quil has flipped y (0px at top)
+     (* (- y-top y) scale)]))</pre></td></tr><tr><td class="docs"><p>Convert a point in quil pixels to Box2d world coordinates.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn px-to-world
-  ([[xp yp]]
-     (let [cam @camera
-           scale (world-to-px-scale)
-           x-left (:x-left cam)
-           y-bottom (:y-bottom cam)
-           y-top (+ y-bottom (:height cam))]
-       [(+ (/ xp scale) x-left)
-        ;; quil has flipped y (0px at top)
-        (- y-top (/ yp scale))])))</pre></td></tr><tr><td class="docs"><p>Set common drawing style attributes</p>
+  [[xp yp]]
+  (let [cam @camera
+        scale (world-to-px-scale)
+        x-left (:x-left cam)
+        y-bottom (:y-bottom cam)
+        y-top (+ y-bottom (:height cam))]
+    [(+ (/ xp scale) x-left)
+     ;; quil has flipped y (0px at top)
+     (- y-top (/ yp scale))]))</pre></td></tr><tr><td class="docs"><p>Set common drawing style attributes</p>
 </td><td class="codes"><pre class="brush: clojure">(defn setup-style
   []
   (quil/background 0)
@@ -3762,6 +3784,7 @@ bounds if necessary to ensure an isometric aspect ratio.</p>
                    (quil/end-shape :close)))))
   (quil/fill 255)
   (quil/text @info-text 10 10))</pre></td></tr><tr><td class="docs"><p>Draw handler for quil. Calls <code>draw-world</code>.
+   After drawing calls the hook function <code>@draw-more-fn</code>.
    After simulation calls the hook function <code>@step-fn</code></p>
 </td><td class="codes"><pre class="brush: clojure">(defn draw
   []
