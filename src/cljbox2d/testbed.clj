@@ -32,7 +32,7 @@
   (atom ""))
 
 (def camera
-  "Defines the current view (location and scale) in world coordinates"
+  "Defines the current view (location and scale) in world coordinates (m)"
   (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))
 
 (def mousej
@@ -70,27 +70,27 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 (defn world-to-px
   "Convert a point in Box2d world coordinates to quil pixels."
-  ([[x y]]
-     (let [cam @camera
-           scale (world-to-px-scale)
-           x-left (:x-left cam)
-           y-bottom (:y-bottom cam)
-           y-top (+ y-bottom (:height cam))]
-       [(* (- x x-left) scale)
-        ;; quil has flipped y (0px at top)
-        (* (- y-top y) scale)])))
+  [[x y]]
+  (let [cam @camera
+        scale (world-to-px-scale)
+        x-left (:x-left cam)
+        y-bottom (:y-bottom cam)
+        y-top (+ y-bottom (:height cam))]
+    [(* (- x x-left) scale)
+     ;; quil has flipped y (0px at top)
+     (* (- y-top y) scale)]))
 
 (defn px-to-world
   "Convert a point in quil pixels to Box2d world coordinates."
-  ([[xp yp]]
-     (let [cam @camera
-           scale (world-to-px-scale)
-           x-left (:x-left cam)
-           y-bottom (:y-bottom cam)
-           y-top (+ y-bottom (:height cam))]
-       [(+ (/ xp scale) x-left)
-        ;; quil has flipped y (0px at top)
-        (- y-top (/ yp scale))])))
+  [[xp yp]]
+  (let [cam @camera
+        scale (world-to-px-scale)
+        x-left (:x-left cam)
+        y-bottom (:y-bottom cam)
+        y-top (+ y-bottom (:height cam))]
+    [(+ (/ xp scale) x-left)
+     ;; quil has flipped y (0px at top)
+     (- y-top (/ yp scale))]))
 
 (defn setup-style
   "Set common drawing style attributes"

@@ -13,7 +13,7 @@
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType MassData)
-           (org.jbox2d.callbacks QueryCallback)
+           (org.jbox2d.callbacks QueryCallback RayCastCallback)
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))
 
@@ -367,6 +367,14 @@ linear velocity of the center of mass. This wakes up the body."
   [^Body body torque]
   (.applyTorque body torque))
 
+(defn apply-impulse!
+  "Apply an impulse in N-seconds or kg-m/s at a point. This
+immediately modifies the velocity. It also modifies the angular
+velocity if the point of application is not at the center of
+mass. This wakes up the body."
+  [^Body body impulse pt]
+  (.applyLinearImpulse body (vec2 impulse) (vec2 pt)))
+
 (defn awake?
   [^Body body]
   (.isAwake body))
@@ -375,6 +383,11 @@ linear velocity of the center of mass. This wakes up the body."
   "Wake up a body."
   [^Body body]
   (.setAwake body true))
+
+(defn sleep!
+  "Put a body to sleep."
+  [^Body body]
+  (.setAwake body false))
 
 (defprotocol Destroyable
   "Abstraction for JBox2D objects which can be destroyed"
@@ -431,6 +444,20 @@ is tested to be inside each shape, not just within its bounding box."
                   (< (count @fxx) max-take)))]
        (.queryAABB *world* cb bb)
        @fxx)))
+
+(defn raycast
+  "Raycast from start-pt to end-pt, returning the intersected fixtures
+in an ordered seq. Each element of the seq looks like `[fixture point
+normal fraction]`, giving details of the intersection point and its
+fraction along the ray."
+  [start-pt end-pt]
+  (let [fxx (atom [])
+        cb (reify RayCastCallback
+             (reportFixture [_ fixt pt norm frac]
+               (swap! fxx conj [fixt pt norm frac])
+               1.0))]
+    (.raycast *world* cb start-pt end-pt)
+    (sort-by #(nth % 3) @fxx)))
 
 ;; ## Contacts
 
