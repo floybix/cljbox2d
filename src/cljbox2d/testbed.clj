@@ -14,7 +14,7 @@
   (:use [cljbox2d.core :only [*world* world-time step! bodyseq
                               fixtureseq body-type shape-type body
                               center world-coords radius mass
-                              query-at-point destroy!
+                              query-at-point destroy! user-data
                               awake? wake! v2xy vec2]]
         [cljbox2d.joints :only [jointseq joint-type
                                 body-a body-b anchor-a anchor-b
@@ -98,20 +98,6 @@ bounds if necessary to ensure an isometric aspect ratio."
   (quil/background 0)
   (quil/stroke-weight 1))
 
-(defn dynamic-style
-  "Set drawing style for awake dynamic bodies."
-  []
-  (let [clr (quil/color 255 200 200)]
-    (quil/stroke clr)
-    (quil/fill clr 127)))
-
-(defn sleeping-style
-  "Set drawing style for sleeping dynamic bodies."
-  []
-  (let [clr (quil/color 150 150 150)]
-    (quil/stroke clr)
-    (quil/fill clr 127)))
-
 (defn joint-style
   "Set drawing style for joints"
   []
@@ -119,12 +105,11 @@ bounds if necessary to ensure an isometric aspect ratio."
     (quil/stroke blue)
     (quil/fill blue 127)))
 
-(defn static-style
-  "Set drawing style for static bodies."
-  []
-  (let [green (quil/color 100 255 100)]
-    (quil/stroke green)
-    (quil/fill green 127)))
+(defn default-rgb
+  [body]
+  (if (= :static (body-type body))
+    [100 255 100]
+    [255 200 200]))
 
 (defn draw-world
   "Draw all shapes (fixtures) and joints in the Box2D world.
@@ -150,10 +135,14 @@ bounds if necessary to ensure an isometric aspect ratio."
                (quil/line (world-to-px anch-b) (world-to-px targ)))
       :otherwise-ignore-it
       ))
-  (doseq [body (bodyseq)]
-    (case (body-type body)
-      :static (static-style)
-      :dynamic (if (awake? body) (dynamic-style) (sleeping-style)))
+  (doseq [body (bodyseq)
+          :let [rgb (or (:rgb (user-data body))
+                        (default-rgb body))
+                color (apply quil/color rgb)
+                alpha (if (= :static (body-type body)) 127
+                          (if (awake? body) 191 127))]]
+    (quil/stroke color)
+    (quil/fill color alpha)
     (doseq [fx (fixtureseq body)]
       (case (shape-type fx)
         :circle (let [[x y] (world-to-px (center fx))
