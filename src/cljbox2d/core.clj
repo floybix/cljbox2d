@@ -145,7 +145,9 @@ this directly, instead use `(body!)` or `(fixture!)`.
 
 `:group-index` allows a certain group of objects to never
 collide (negative) or always collide (positive). Zero means no
-collision group."
+collision group.
+
+`:user-data` should be an atom holding a map."
   [{:keys [shape density friction restitution is-sensor
            group-index user-data]
     :or {density 1, friction 0.3, restitution 0.3,
@@ -171,7 +173,9 @@ fixture specification map to be passed to the `fixture-def` function."
 
 (defn body-def
   "A BodyDef, which holds properties but not shapes. Do not call this
-directly, instead use `(body!)`"
+directly, instead use `(body!)`.
+
+`:user-data` should be an atom holding a map."
   [{:keys [type position angle bullet fixed-rotation
            angular-damping linear-damping
            angular-velocity linear-velocity
@@ -247,7 +251,7 @@ function to pull out the first fixture from a body."
   (edge-point* [this angle frac origin-pt] "World coordinates a
    fraction of the way to the edge of a shape in a given direction
    from an origin point. Prefer the high-level `edge-point`.")
-  (user-data [this] "Returns an object given on body construction."))
+  (user-data [this] "Returns the user data item. By convention this should be an atom holding a map."))
 
 (declare world-coords local-coords)
 

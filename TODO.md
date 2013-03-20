@@ -1,10 +1,17 @@
 
+* bring in from uglyboids:
+  * buffered-contact-listener
+  * set-velocity
+  * 2d geometry stuff
+* fully qualify namespace org.nfrac.cljbox2d
+* review use of atoms - maybe should be agents instead
 * split testbed into separate lein project (same repo)
   * so that cljbox2d core does not depend on quil
 * edge-point-local
 * in joint! give :limits []
-* (fixture-spec) returns map from Fixture
-* (body-spec returns map from Body
+* serialise worlds?
+  * (fixture-spec) returns map from Fixture
+  * (body-spec) returns map from Body
 * how to detect unmatched keys in argument maps?
 * want to have thread-safe worlds, testbed etc:
   * (so can run parallel simulations in separate worlds)

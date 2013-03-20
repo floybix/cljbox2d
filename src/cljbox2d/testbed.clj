@@ -136,7 +136,9 @@ bounds if necessary to ensure an isometric aspect ratio."
       :otherwise-ignore-it
       ))
   (doseq [body (bodyseq)
-          :let [rgb (or (:rgb (user-data body))
+          :let [ud (user-data body)
+                ud (when (instance? clojure.lang.IDeref ud) (deref ud))
+                rgb (or (:rgb ud)
                         (default-rgb body))
                 color (apply quil/color rgb)
                 alpha (if (= :static (body-type body)) 127
