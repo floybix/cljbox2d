@@ -8,7 +8,8 @@
                                        DistanceJoint DistanceJointDef
                                        MouseJoint MouseJointDef
                                        PrismaticJoint PrismaticJointDef
-                                       RevoluteJoint RevoluteJointDef)))
+                                       RevoluteJoint RevoluteJointDef
+                                       WeldJoint WeldJointDef)))
 
 ;; ## Enums
 
@@ -18,7 +19,8 @@
    :distance JointType/DISTANCE
    :mouse JointType/MOUSE
    :prismatic JointType/PRISMATIC
-   :revolute JointType/REVOLUTE})
+   :revolute JointType/REVOLUTE
+   :weld JointType/WELD})
 
 (def ^{:private true}
   joint-keywords
@@ -140,6 +142,18 @@ internally."
     (set! (.maxForce jd) max-force)
     (set! (.frequencyHz jd) frequency-hz)
     (set! (.dampingRatio jd) damping-ratio)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    (.createJoint *world* jd)))
+
+(defn weld-joint!
+  "Weld joint. This requires defining a common anchor point
+on both bodies. This initialisation function takes a world point."
+  [body1 body2 anchor
+   {:keys [collide-connected user-data]
+    :or {collide-connected false}}]
+  (let [jd (WeldJointDef.)]
+    (.initialize jd body1 body2 (vec2 anchor))
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
     (.createJoint *world* jd)))
