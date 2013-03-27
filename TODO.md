@@ -2,7 +2,6 @@
 * bring in from uglyboids:
   * buffered-contact-listener
   * set-velocity
-  * 2d geometry stuff
 * fully qualify namespace org.nfrac.cljbox2d
 * review use of atoms - maybe should be agents instead
 * split testbed into separate lein project (same repo)

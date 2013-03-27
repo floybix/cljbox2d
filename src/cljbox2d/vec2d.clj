@@ -56,6 +56,20 @@
   [angle]
   (pos? (in-pi-pi angle)))
 
+(defn vertical-angle?
+  "Is angle vertical, within +/- 1.5 degrees by default."
+  ([ang]
+     (vertical-angle? ang (* 1.5 (/ PI 180.0))))
+  ([ang tol]
+     (< (abs (- (abs (in-pi-pi ang)) PI_2)) tol)))
+
+(defn horizontal-angle?
+  "Is angle horizontal, within +/- 1.5 degrees by default."
+  ([ang]
+     (vertical-angle? (in-pi-pi (+ ang PI_2))))
+  ([ang tol]
+     (vertical-angle? (in-pi-pi (+ ang PI_2)) tol)))
+
 (defn polar-xy
   "Convert polar coordinates (magnitude, angle) to cartesian
    coordinates (x, y)."
@@ -154,3 +168,55 @@
        (nth vv opp-i)
        (abs (/ best-err
                (+ (abs best-err) (abs opp-err))))))))
+
+(defn interior-angle
+  "Interior angle of a triple of points using law of cosines:
+     cosC = (a^2 + b^2 - c^2) / (2ab)
+   where, in a triangle, angle C is opposite side c."
+  [[v0 v1 v2]]
+  (let [a (v-dist v0 v1)
+        b (v-dist v2 v1)
+        c (v-dist v0 v2)]
+    (Math/acos (/ (+ (* a a)
+                     (* b b)
+                     (- (* c c)))
+                  (* 2 a b)))))
+
+(defn line-intersection
+  "Point of intersection of two lines in the plane.
+   First line passes through [x0 y0] with gradient m0.
+   Other line passes through [x1 y1] with gradient m1.
+   Gradient can be passed as nil for vertical lines."
+  [[x0 y0] m0 [x1 y1] m1]
+  (cond
+   (= m0 m1) nil
+   ;; vertical line at x = x0
+   (nil? m0)
+   (let [y (+ (* m1 (- x0 x1)) y1)]
+     [x0 y])
+   ;; vertical line at x = x1
+   (nil? m1)
+   (let [y (+ (* m0 (- x1 x0)) y0)]
+     [x1 y])
+   ;; general equation
+   ;; x = m0.x0 - m1.x1 + y1 - y0
+   ;;     (m0 - m1)
+   ;; y = m0 (x - x0) + y0
+   :else
+   (let [x (/ (+ (* m0 x0) (* -1 m1 x1) y1 (- y0))
+              (- m0 m1))
+         y (+ (* m0 (- x x0)) y0)]
+     [x y])))
+
+(defn angle-to-gradient
+  [ang]
+  (cond (vertical-angle? ang) nil
+        (horizontal-angle? ang) 0.0
+        :else (Math/tan ang)))
+
+(defn angle-intersection
+  "Point of intersection of two lines in the plane."
+  [xy0 ang0 xy1 ang1]
+  (let [m0 (angle-to-gradient ang0)
+        m1 (angle-to-gradient ang1)]
+    (line-intersection xy0 m0 xy1 m1)))
