@@ -11,7 +11,7 @@
   In this namespace we have drawing functions, some vars/atoms for
   hooking in to the testbed, a default contact listener, and default
   input event handlers."
-  (:use [cljbox2d.core :only [*world* world-time step! bodyseq
+  (:use [cljbox2d.core :only [*world* step! bodyseq
                               fixtureseq body-type shape-type body
                               center world-coords radius mass
                               query-at-point destroy! user-data

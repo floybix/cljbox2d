@@ -11,7 +11,7 @@
 (def balls (atom []))
 
 (defn setup-world! []
-  (create-world!)
+  (reset-world! (new-world))
   (let [ground (body! {:type :static}
                       {:shape (edge [-40 0] [40 0])})
         sens (fixture! ground {:shape (circle 5 [0 10])

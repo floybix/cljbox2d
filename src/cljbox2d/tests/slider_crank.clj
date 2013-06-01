@@ -8,7 +8,7 @@
 (def things (atom {}))
 
 (defn setup-world! []
-  (create-world!)
+  (reset-world! (new-world))
   (let [ground (body! {:type :static}
                       {:shape (edge [-40 0] [40 0])})
         crank (body! {:position [0 7]}

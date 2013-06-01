@@ -5,7 +5,7 @@
   (:require [quil.core :as quil]))
 
 (defn setup-world! []
-  (create-world!)
+  (reset-world! (new-world))
   (let [ground (body! {:type :static}
                       {:shape (edge [-40 0] [40 0])})
         restns [0.0 0.1 0.3 0.5 0.75 0.9 1.0]

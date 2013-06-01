@@ -5,7 +5,7 @@
   (:require [quil.core :as quil]))
 
 (defn setup-world! []
-  (create-world!)
+  (reset-world! (new-world))
   (let [ground (body! {:type :static}
                       {:shape (edge [-40 0] [40 0])})
         angles (range 0 TWOPI (/ TWOPI 16))

@@ -12,7 +12,7 @@
   (map (fn [[x y]] [(* x s) (* y s)]) vv))
 
 (defn setup-world! []
-  (create-world!)
+  (reset-world! (new-world))
   (let [ground (body! {:type :static}
                       {:shape (edge [-50 0] [50 0])})
         rand-pos (fn [] [(+ -5 (rand 10))

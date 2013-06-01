@@ -29,28 +29,37 @@
 
 ;; ## World
 
-(defonce ^{:doc "The current Box2D World: see `create-world!`."}
+(defonce ^{:doc "The current Box2D World: see `new-world`."}
   ^:dynamic ^World *world* nil)
 
-(defonce ^{:doc "Simulated time passed in seconds"}
-  world-time (atom nil))
-
-(defn create-world!
-  "Create a new Box2D world. Gravity defaults to -10 m/s^2."
+(defn new-world
+  "Returns a new Box2D world. Gravity defaults to -10 m/s^2."
   ([]
-     (create-world! [0 -10]))
+     (new-world [0 -10]))
   ([gravity]
-     (reset! world-time 0.0)
-     (alter-var-root (var *world*) (fn [_] (World. (vec2 gravity) true)))))
+     (World. (vec2 gravity) true)))
+
+(defn reset-world!
+  "Globally sets the new Box2D world. Not for concurrent simulations!"
+  [world]
+  (alter-var-root (var *world*) (fn [_] world)))
+
+(defn ^:deprecated create-world!
+  ([] (reset-world! (new-world)))
+  ([g] (reset-world! (new-world g))))
 
 (defn step!
-  "Simulate the world for a time step given in seconds.
+  "Simulate the *world* for a time step given in seconds.
    Note that Box2D objects are locked during simulation."
   ([dt]
      (step! dt 8 3))
   ([dt velocity-iterations position-iterations]
-     (swap! world-time + dt)
      (.step *world* dt velocity-iterations position-iterations)))
+
+(defn gravity!
+  "Sets the gravity vector."
+  [gravity]
+  (.setGravity *world* (vec2 gravity)))
 
 ;; ## Enums
 

@@ -10,19 +10,19 @@
 (def ^:const NBODY 20)
 
 (defn setup-world! []
-  (create-world!)
+  (reset-world! (new-world))
   (let [ground (body! {:type :static}
                       {:shape (box 50 0.4)}
                       {:shape (box 0.4 50 [-10 0])}
                       {:shape (box 0.4 50 [10 0])})
         [cx cy] [0 10], rad 5 ;; center, radius
         angles (range 0 TWOPI (/ TWOPI NBODY))
-        nodes (doall (for [angle angles
-                           :let [[x y] (polar-xy rad angle)]]
-                       (body! {:position [(+ x cx) (+ y cy)]
-                               :fixed-rotation true}
-                              {:shape (circle 0.5)
-                               :group-index -2})))
+        nodes (for [angle angles
+                    :let [[x y] (polar-xy rad angle)]]
+                (body! {:position [(+ x cx) (+ y cy)]
+                        :fixed-rotation true}
+                       {:shape (circle 0.5)
+                        :group-index -2}))
         cvj (constant-volume-joint! nodes
                                     {:frequency-hz 10
                                      :damping-ratio 1})

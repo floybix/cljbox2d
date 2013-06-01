@@ -1,9 +1,11 @@
 
+* use euclidian.math.vector
+* update to JBox2D 2.2.1.1
+  * RopeJoint
 * bring in from uglyboids:
   * buffered-contact-listener
   * set-velocity
 * fully qualify namespace org.nfrac.cljbox2d
-* review use of atoms - maybe should be agents instead
 * split testbed into separate lein project (same repo)
   * so that cljbox2d core does not depend on quil
 * edge-point-local
@@ -12,10 +14,6 @@
   * (fixture-spec) returns map from Fixture
   * (body-spec) returns map from Body
 * how to detect unmatched keys in argument maps?
-* want to have thread-safe worlds, testbed etc:
-  * (so can run parallel simulations in separate worlds)
-  * so use vars with thread-local bindings, not atoms
-  * but is JBox2D thread-safe? (lots of pooling...)
 * how to provide arbitrary contact handlers?
 * testbed: set a default contact handler that:
   * buffers contacts (preSolve)
@@ -45,4 +43,3 @@
 * need a library of shape functions?
   * e.g. transform polygons
   * counter-clockwise, convex construction
-* box2d thread?

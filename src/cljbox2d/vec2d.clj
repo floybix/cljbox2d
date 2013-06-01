@@ -6,6 +6,9 @@
 (def ^:const ^{:doc "2 Pi (360 degrees)."} TWOPI (* PI 2.0))
 (def ^:const ^{:doc "Pi/2 (90 degrees)."} PI_2 (* PI 0.5))
 
+(def x-val first)
+(def y-val second)
+
 (defn abs
   "Absolute value; avoids reflection from overloaded Math/abs"
   [x]
