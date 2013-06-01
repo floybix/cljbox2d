@@ -185,7 +185,7 @@ on both bodies. This initialisation function takes a world point."
 (defn anchor-a
   "The anchor point on bodyA in world coordinates"
   [^Joint jt]
-  ;; yuck, the method modifies its argument
+  ;; the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorA jt v0)
     (v2xy v0)))
@@ -193,10 +193,25 @@ on both bodies. This initialisation function takes a world point."
 (defn anchor-b
   "The anchor point on bodyB in world coordinates"
   [^Joint jt]
-  ;; yuck, the method modifies its argument
+  ;; the method modifies its argument
   (let [v0 (vec2 [0 0])]
     (.getAnchorB jt v0)
     (v2xy v0)))
+
+(defn reaction-force
+  "The reaction force on bodyB at the joint anchor in Newtons.
+   Give the inverse of the timestep."
+  [^Joint jt inv-dt]
+  ;; the method modifies its argument
+  (let [v0 (vec2 [0 0])]
+    (.getReactionForce jt inv-dt v0)
+    (v2xy v0)))
+
+(defn reaction-torque
+  "The reaction torque on bodyB in N*m.
+   Give the inverse of the timestep."
+  [^Joint jt inv-dt]
+  (.getReactionTorque jt inv-dt))
 
 (defn joint-angular-velocity
   "Relative angular velocity of two attached bodies in radians/second."
