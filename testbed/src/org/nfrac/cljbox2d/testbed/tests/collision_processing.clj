@@ -1,8 +1,9 @@
-(ns cljbox2d.tests.collision-processing
+(ns org.nfrac.cljbox2d.testbed.tests.collision-processing
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.CollisionProcessing"
-  (:use (cljbox2d core testbed))
-  (:require [quil.core :as quil]))
+  (:require [cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.testbed :as bed :refer [*timestep*]]
+            [quil.core :as quil]))
 
 (def things (atom {}))
 
@@ -33,11 +34,11 @@
     (reset! things {:objs [tri-small tri-big
                            rect-small rect-big
                            circ-small circ-big]})
-    (reset! ground-body ground)))
+    (reset! bed/ground-body ground)))
 
 (defn my-step []
   ;; process the buffer of contact points
-  (let [to-nuke (for [[fixt-a fixt-b _ _] @contact-buffer]
+  (let [to-nuke (for [[fixt-a fixt-b _ _] @bed/contact-buffer]
                   (let [body-a (body fixt-a)
                         body-b (body fixt-b)
                         mass-a (mass body-a)
@@ -46,13 +47,13 @@
                       (if (< mass-a mass-b) body-a body-b))))]
     (doseq [b (remove nil? (distinct to-nuke))]
       (destroy! b)))
-  (reset! contact-buffer []))
+  (reset! bed/contact-buffer []))
 
 (defn setup []
   (quil/frame-rate (/ 1 *timestep*))
   (setup-world!)
-  (set-buffering-contact-listener!)
-  (reset! step-fn my-step))
+  (bed/set-buffering-contact-listener!)
+  (reset! bed/step-fn my-step))
 
 (defn -main
   "Run the test sketch."
@@ -60,9 +61,9 @@
   (quil/defsketch test-sketch
     :title "Collision Processing"
     :setup setup
-    :draw draw
-    :key-typed key-press
-    :mouse-pressed mouse-pressed
-    :mouse-released mouse-released
-    :mouse-dragged mouse-dragged
+    :draw bed/draw
+    :key-typed bed/key-press
+    :mouse-pressed bed/mouse-pressed
+    :mouse-released bed/mouse-released
+    :mouse-dragged bed/mouse-dragged
     :size [600 500]))

@@ -1,10 +1,11 @@
-(ns cljbox2d.tests.sensor-test
+(ns org.nfrac.cljbox2d.testbed.tests.sensor-test
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SensorTest"
-  (:use (cljbox2d core testbed)
-        [cljbox2d.vec2d :only [v-scale]])
-  (:import (org.jbox2d.callbacks ContactListener))
-  (:require [quil.core :as quil]))
+  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [*timestep*]]
+            [cljbox2d.core :refer :all]
+            [cljbox2d.vec2d :refer [v-scale]]
+            [quil.core :as quil])
+  (:import (org.jbox2d.callbacks ContactListener)))
 
 (def sensor (atom nil))
 
@@ -23,7 +24,7 @@
                          {:shape (circle 1)}))]
     (reset! sensor sens)
     (reset! balls (doall ballseq))
-    (reset! ground-body ground)))
+    (reset! bed/ground-body ground)))
 
 (defn sensor-touching-listener
   []
@@ -62,7 +63,7 @@
   (quil/frame-rate (/ 1 *timestep*))
   (setup-world!)
   (.setContactListener *world* (sensor-touching-listener))
-  (reset! step-fn my-step))
+  (reset! bed/step-fn my-step))
 
 (defn -main
   "Run the test sketch."
@@ -70,9 +71,9 @@
   (quil/defsketch test-sketch
     :title "Sensor Test"
     :setup setup
-    :draw draw
-    :key-typed key-press
-    :mouse-pressed mouse-pressed
-    :mouse-released mouse-released
-    :mouse-dragged mouse-dragged
+    :draw bed/draw
+    :key-typed bed/key-press
+    :mouse-pressed bed/mouse-pressed
+    :mouse-released bed/mouse-released
+    :mouse-dragged bed/mouse-dragged
     :size [600 500]))

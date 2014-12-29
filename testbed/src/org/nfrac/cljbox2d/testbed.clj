@@ -1,4 +1,4 @@
-(ns cljbox2d.testbed
+(ns org.nfrac.cljbox2d.testbed
   "Provides the scaffolding to run Box2D simulations with visual
   animation and interactive inputs (via mouse and keyboard). This is
   built on the Processing framework through the clojure wrapper

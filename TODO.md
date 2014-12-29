@@ -6,8 +6,6 @@
   * buffered-contact-listener
   * set-velocity
 * fully qualify namespace org.nfrac.cljbox2d
-* split testbed into separate lein project (same repo)
-  * so that cljbox2d core does not depend on quil
 * edge-point-local
 * in joint! give :limits []
 * serialise worlds?

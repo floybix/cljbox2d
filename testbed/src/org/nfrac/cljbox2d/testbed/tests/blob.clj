@@ -1,9 +1,11 @@
-(ns cljbox2d.tests.blob
+(ns org.nfrac.cljbox2d.testbed.tests.blob
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.BlobTest4"
-  (:use (cljbox2d core joints testbed)
-        [cljbox2d.vec2d :only [TWOPI polar-xy]])
-  (:require [quil.core :as quil]))
+  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [*timestep*]]
+            [cljbox2d.core :refer :all]
+            [cljbox2d.joints :refer [constant-volume-joint!]]
+            [cljbox2d.vec2d :refer [TWOPI polar-xy]]
+            [quil.core :as quil]))
 
 (def things (atom {}))
 
@@ -29,7 +31,7 @@
         falling-box (body! {:position [cx (+ cy 15)]}
                            {:shape (box 3 1.5 [cx (+ cy 15)])})]
     (reset! things {:nodes nodes :cvj cvj})
-    (reset! ground-body ground)))
+    (reset! bed/ground-body ground)))
 
 (defn setup []
   (quil/frame-rate (/ 1 *timestep*))
@@ -41,9 +43,9 @@
   (quil/defsketch test-sketch
     :title "Blob Joint"
     :setup setup
-    :draw draw
-    :key-typed key-press
-    :mouse-pressed mouse-pressed
-    :mouse-released mouse-released
-    :mouse-dragged mouse-dragged
+    :draw bed/draw
+    :key-typed bed/key-press
+    :mouse-pressed bed/mouse-pressed
+    :mouse-released bed/mouse-released
+    :mouse-dragged bed/mouse-dragged
     :size [600 500]))

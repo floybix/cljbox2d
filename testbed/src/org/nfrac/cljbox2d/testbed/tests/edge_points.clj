@@ -1,8 +1,10 @@
-(ns cljbox2d.tests.edge-points
+(ns org.nfrac.cljbox2d.testbed.tests.edge-points
   "An example of cljbox2d.core/edge-point"
-  (:use (cljbox2d core joints testbed)
-        [cljbox2d.vec2d :only [TWOPI PI poly-flip-x angle*]])
-  (:require [quil.core :as quil]))
+  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [*timestep*]]
+            [cljbox2d.core :refer :all]
+            [cljbox2d.joints :refer :all]
+            [cljbox2d.vec2d :refer [TWOPI PI poly-flip-x angle*]]
+            [quil.core :as quil]))
 
 (defn setup-world! []
   (reset-world! (new-world))
@@ -42,7 +44,7 @@
                                             {:enable-motor true
                                              :motor-speed (/ PI 2)
                                              :max-motor-torque 100}))))]
-    (reset! ground-body ground)))
+    (reset! bed/ground-body ground)))
 
 (defn setup []
   (quil/frame-rate (/ 1 *timestep*))
@@ -54,9 +56,9 @@
   (quil/defsketch test-sketch
     :title "Edge points"
     :setup setup
-    :draw draw
-    :key-typed key-press
-    :mouse-pressed mouse-pressed
-    :mouse-released mouse-released
-    :mouse-dragged mouse-dragged
+    :draw bed/draw
+    :key-typed bed/key-press
+    :mouse-pressed bed/mouse-pressed
+    :mouse-released bed/mouse-released
+    :mouse-dragged bed/mouse-dragged
     :size [600 500]))
