@@ -150,11 +150,12 @@ bounds if necessary to ensure an isometric aspect ratio."
         :circle (let [[x y] (world-to-px (center fx))
                       radius-px (* (radius fx) (world-to-px-scale))]
                   (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
-        :polygon (let [pts (world-coords fx)
-                       px-pts (map world-to-px pts)]
-                   (quil/begin-shape)
-                   (doseq [[x y] px-pts] (quil/vertex x y))
-                   (quil/end-shape :close)))))
+        (:edge
+         :polygon) (let [pts (world-coords fx)
+                         px-pts (map world-to-px pts)]
+                     (quil/begin-shape)
+                     (doseq [[x y] px-pts] (quil/vertex x y))
+                     (quil/end-shape :close)))))
   (quil/fill 255)
   (quil/text @info-text 10 10))
 

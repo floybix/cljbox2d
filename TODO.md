@@ -2,6 +2,7 @@
 * use euclidian.math.vector
 * update to JBox2D 2.2.1.1
   * RopeJoint
+  * chain shape
 * bring in from uglyboids:
   * buffered-contact-listener
   * set-velocity

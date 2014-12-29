@@ -261,8 +261,8 @@ on both bodies. This initialisation function takes a world point."
   (motor-speed [this] "Motor (target) speed, may or may not be enabled.")
   (motor-speed! [this speed] "Set motor (target) speed, may or may not be enabled.")
   (joint-speed [this] "Current joint speed, may be linear or angular.")
-  (motor-force [this] "Current motor force.")
-  (motor-torque [this] "Current motor torque.")
+  (motor-force [this inv-dt] "Current motor force.")
+  (motor-torque [this inv-dt] "Current motor torque.")
   (max-motor-force [this] "Maximum motor force")
   (max-motor-torque [this] "Maximum motor torque")
   (max-motor-force! [this force] "Set maximum motor force")
@@ -273,11 +273,11 @@ on both bodies. This initialisation function takes a world point."
   RevoluteJoint
   (motor-enabled? [this] (.isMotorEnabled this))
   (enable-motor! [this flag] (.enableMotor this flag))
-  (motor-speed [this] (.m_motorSpeed this))
+  (motor-speed [this] (.getMotorSpeed this))
   (motor-speed! [this speed] (.setMotorSpeed this speed))
   (joint-speed [this] (.getJointSpeed this))
-  (motor-torque [this] (.getMotorTorque this))
-  (max-motor-torque [this] (.m_maxMotorTorque this))
+  (motor-torque [this inv-dt] (.getMotorTorque this inv-dt))
+  (max-motor-torque [this] (.getMaxMotorTorque this))
   (max-motor-torque! [this torque] (.setMaxMotorTorque this torque))
 
   PrismaticJoint
@@ -286,12 +286,12 @@ on both bodies. This initialisation function takes a world point."
   (motor-speed [this] (.getMotorSpeed this))
   (motor-speed! [this speed] (.setMotorSpeed this speed))
   (joint-speed [this] (.getJointSpeed this))
-  (motor-force [this] (.getMotorForce this))
-  (max-motor-force [this] (.m_maxMotorForce this))
+  (motor-force [this inv-dt] (.getMotorForce this inv-dt))
+  (max-motor-force [this] (.getMaxMotorForce this))
   (max-motor-force! [this force] (.setMaxMotorForce this force)))
 
 (defn power-watts
   "Instantaneous rate of work done by a revolute joint in Watts.
    Multiply by the time step to get work in Joules."
   [jt]
-  (* (joint-speed jt) (motor-torque jt)))
+  (* (joint-speed jt) (motor-torque jt 1.0)))

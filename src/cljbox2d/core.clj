@@ -12,7 +12,7 @@
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
            (org.jbox2d.collision AABB WorldManifold)
-           (org.jbox2d.collision.shapes PolygonShape CircleShape ShapeType MassData)
+           (org.jbox2d.collision.shapes PolygonShape CircleShape EdgeShape ShapeType MassData)
            (org.jbox2d.callbacks QueryCallback RayCastCallback)
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))
@@ -37,7 +37,7 @@
   ([]
      (new-world [0 -10]))
   ([gravity]
-     (World. (vec2 gravity) true)))
+     (World. (vec2 gravity))))
 
 (defn reset-world!
   "Globally sets the new Box2D world. Not for concurrent simulations!"
@@ -81,14 +81,16 @@
 (def ^{:private true}
   shape-types
   {:circle ShapeType/CIRCLE
-   :polygon ShapeType/POLYGON})
+   :polygon ShapeType/POLYGON
+   :edge ShapeType/EDGE
+   :chain ShapeType/CHAIN})
 
 (def ^{:private true}
   shape-keywords
   (zipmap (vals shape-types) (keys shape-types)))
 
 (defn shape-type
-  "The shape type of a Fixture as a keyword `:circle` or `:polygon`."
+  "The shape type of a Fixture as a keyword e.g. `:circle` or `:polygon`."
   [^Fixture fixt]
   (shape-keywords (.getType fixt)))
 
@@ -102,16 +104,15 @@
      (circle radius [0 0]))
   ([radius center]
      (let [shape (CircleShape.)]
-       (set! (. shape m_radius) radius)
-       (.set (. shape m_p) (vec2 center))
+       (.setRadius shape radius)
+       (.set (.m_p shape) (vec2 center))
        shape)))
 
 (defn edge
-  "Create an edge shape, a line between two points. Good for static
-bodies but seems to behave strangely in dynamic ones."
+  "Create an edge shape, a line between two points."
   [pt1 pt2]
-  (let [shape (PolygonShape.)]
-    (.setAsEdge shape (vec2 pt1) (vec2 pt2))
+  (let [shape (EdgeShape.)]
+    (.set shape (vec2 pt1) (vec2 pt2))
     shape))
 
 (defn box
@@ -326,7 +327,7 @@ the object center (in world coordinates)."
 (defn radius
   "Radius of a Fixture's shape."
   [^Fixture fixt]
-  (.m_radius (.getShape fixt)))
+  (.getRadius (.getShape fixt)))
 
 (defn local-coords
   "Local coordinates of polygon vertices. Approximated for circles."
@@ -338,7 +339,9 @@ the object center (in world coordinates)."
                 (for [a (range (- PI) PI (/ TWOPI 30))]
                   (v-add cent (polar-xy r a))))
       :polygon (let [n (.getVertexCount ^PolygonShape shp)]
-                 (take n (map v2xy (.getVertices ^PolygonShape shp)))))))
+                 (take n (map v2xy (.getVertices ^PolygonShape shp))))
+      :edge [(v2xy (.m_vertex1 shp))
+             (v2xy (.m_vertex2 shp))])))
 
 (defn world-coords
   "World coordinates of polygon vertices. Approximated for circles."
@@ -422,7 +425,11 @@ mass. This wakes up the body."
      (AABB. (vec2 [(min x0 x1) (min y0 y1)])
             (vec2 [(max x0 x1) (max y0 y1)])))
   ([^Fixture fixt]
-     (.getAABB fixt)))
+     (let [aabb* (AABB.)]
+       (.computeAABB (.getShape fixt) aabb*
+                     (.getTransform (.getBody fixt))
+                     0)
+       aabb*)))
 
 (defn query-aabb
   "Return a vector of (up to a given number of) fixtures overlapping
