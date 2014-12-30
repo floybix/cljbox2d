@@ -11,25 +11,25 @@
   In this namespace we have drawing functions, some vars/atoms for
   hooking in to the testbed, a default contact listener, and default
   input event handlers."
-  (:use [cljbox2d.core :only [*world* step! bodyseq
-                              fixtureseq body-type shape-type body
-                              center world-coords radius mass
-                              query-at-point destroy! user-data
-                              awake? wake! v2xy vec2]]
-        [cljbox2d.joints :only [jointseq joint-type
-                                body-a body-b anchor-a anchor-b
-                                mouse-joint!]])
-  (:import (org.jbox2d.callbacks ContactListener)
-           (org.jbox2d.collision WorldManifold))
-  (:require [quil.core :as quil]))
+  (:require [cljbox2d.core :refer [step! bodyseq
+                                   fixtureseq body-type shape-type body
+                                   center world-coords radius mass
+                                   query-at-point destroy! user-data
+                                   awake? wake! v2xy vec2]]
+            [cljbox2d.joints :refer [alljointseq joint-type
+                                     body-a body-b anchor-a anchor-b
+                                     mouse-joint!]]
+            [quil.core :as quil])
+  (:import (org.jbox2d.dynamics World)
+           (org.jbox2d.dynamics.joints MouseJoint)
+           (org.jbox2d.callbacks ContactListener)
+           (org.jbox2d.collision WorldManifold)))
 
-(def ^:dynamic *timestep* (/ 1 30.0))
+(def the-world (atom nil))
 
-;; ## Atoms acting as hooks
+(def dt-secs (atom (/ 1 30.0)))
 
-(def info-text
-  "Text to draw in the corner of the sketch"
-  (atom ""))
+(def paused? "Whether to simulate or not." (atom false))
 
 (def camera
   "Defines the current view (location and scale) in world coordinates (m)"
@@ -37,21 +37,6 @@
 
 (def mousej
   "Current mouse joint; see `left-mouse-pressed` etc."
-  (atom nil))
-
-(def paused "Whether to simulate or not." (atom false))
-
-(def step-fn
-  "A function to run every simulated time step, e.g. for contact
-   processing or to apply special forces."
-  (atom (fn [])))
-
-(def draw-more-fn
-  "A function to run every frame after drawing the world objects."
-  (atom (fn [])))
-
-(def ground-body
-  "A static body, used as a reference for e.g. mouse joints"
   (atom nil))
 
 ;; ## Drawing
@@ -112,12 +97,11 @@ bounds if necessary to ensure an isometric aspect ratio."
     [255 200 200]))
 
 (defn draw-world
-  "Draw all shapes (fixtures) and joints in the Box2D world.
-   Also draws @info-text."
-  []
+  "Draw all shapes (fixtures) and joints in the Box2D world."
+  [^World world]
   (setup-style)
   (joint-style)
-  (doseq [jt (jointseq)
+  (doseq [jt (alljointseq world)
           :let [typ (joint-type jt)
                 body-a (body-a jt)
                 body-b (body-b jt)]]
@@ -135,7 +119,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                (quil/line (world-to-px anch-b) (world-to-px targ)))
       :otherwise-ignore-it
       ))
-  (doseq [body (bodyseq)
+  (doseq [body (bodyseq world)
           :let [ud (user-data body)
                 ud (when (instance? clojure.lang.IDeref ud) (deref ud))
                 rgb (or (:rgb ud)
@@ -155,20 +139,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                          px-pts (map world-to-px pts)]
                      (quil/begin-shape)
                      (doseq [[x y] px-pts] (quil/vertex x y))
-                     (quil/end-shape :close)))))
-  (quil/fill 255)
-  (quil/text @info-text 10 10))
-
-(defn draw
-  "Draw handler for quil. Calls `draw-world`.
-   After drawing calls the hook function `@draw-more-fn`.
-   After simulation calls the hook function `@step-fn`"
-  []
-  (when-not @paused
-    (step! *timestep*)
-    (@step-fn))
-  (draw-world)
-  (@draw-more-fn))
+                     (quil/end-shape :close))))))
 
 ;; ## contact / collision handling
 
@@ -179,7 +150,7 @@ represented as `[fixture-a fixture-b points normal]`."
 
 (defn set-buffering-contact-listener!
   "A ContactListener which populates `contact-buffer`."
-  []
+  [^World world]
   (let [world-manifold (WorldManifold.)
         lstnr (reify ContactListener
                 (beginContact [_ _])
@@ -199,7 +170,7 @@ represented as `[fixture-a fixture-b points normal]`."
                         (swap! contact-buffer conj
                                [fixt-a fixt-b pts normal])
                         )))))]
-    (.setContactListener *world* lstnr)))
+    (.setContactListener world lstnr)))
     
 ;; ## input event handling
 
@@ -220,10 +191,13 @@ around."
   []
   (when-not @mousej
     (let [pt (mouse-world)
-          fixt (first (query-at-point pt 1))]
+          world @the-world
+          fixt (first (query-at-point world pt 1))]
       (when fixt
         (let [bod (body fixt)
-              mj (mouse-joint! @ground-body bod pt
+              ground-body (first (filter #(= :static (body-type %))
+                                         (bodyseq world)))
+              mj (mouse-joint! world ground-body bod pt
                                {:max-force (* 1000 (mass bod))})]
           (reset! mousej mj)
           (wake! bod))))))
@@ -245,9 +219,9 @@ around."
 (defn left-mouse-dragged
   "Updates the mouse joint target point."
   []
-  (when @mousej
+  (when-let [jt ^MouseJoint @mousej]
     (let [pt (mouse-world)]
-      (.setTarget @mousej (vec2 pt)))))
+      (.setTarget jt (vec2 pt)))))
 
 (defn right-mouse-dragged
   "Shifts the current view (camera)"
@@ -285,11 +259,8 @@ around."
   "Standard actions for key events"
   []
   (case (quil/raw-key)
-    \  (swap! paused not)
-    \. (do
-         (swap! paused not)
-         (draw)
-         (swap! paused not))
+    \  (swap! paused? not)
+    \. (step! @the-world @dt-secs)
     \= (zoom-camera (/ 1 1.5))
     \- (zoom-camera 1.5)
     :otherwise-ignore-it))

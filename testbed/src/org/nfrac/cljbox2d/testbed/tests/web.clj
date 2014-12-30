@@ -1,7 +1,8 @@
 (ns org.nfrac.cljbox2d.testbed.tests.web
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.Web"
-  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [*timestep*]]
+  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [the-world
+                                                        dt-secs]]
             [cljbox2d.core :refer :all]
             [cljbox2d.joints :refer :all]
             [quil.core :as quil]))
@@ -9,12 +10,12 @@
 (def things (atom {}))
 
 (defn setup-world! []
-  (reset-world! (new-world))
-  (let [ground (body! {:type :static}
+  (let [world (new-world)
+        ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
         nodeshape (box 0.5 0.5)
         nodes (for [pt [[-5 5] [5 5] [5 15] [-5 15]]]
-                (body! {:position pt}
+                (body! world {:position pt}
                        {:shape nodeshape :density 5}))
         x-middle 0
         y-middle 10
@@ -26,7 +27,7 @@
                                   ground-y (if is-top 20 0)
                                   off-x (if is-right 0.5 -0.5)
                                   off-y (if is-top 0.5 -0.5)]]
-                        (distance-joint! ground nd
+                        (distance-joint! world ground nd
                                          [ground-x ground-y]
                                          [(+ x off-x) (+ y off-y)]
                                          {:frequency-hz 4
@@ -38,19 +39,14 @@
                                  [x2 y2] (position n2)
                                  off-x1 (* -0.5 (compare x1 x2))
                                  off-y1 (* -0.5 (compare y1 y2))]]
-                       (distance-joint! n1 n2
+                       (distance-joint! world n1 n2
                                         [(+ x1 off-x1) (+ y1 off-y1)]
                                         [(- x2 off-x1) (- y2 off-y1)]
                                         {:frequency-hz 4
                                          :damping-ratio 0.5}))]
+    (reset! the-world world)
     (reset! things {:nodes (doall nodes)
-                    :joints (doall (concat ground-joints inner-joints))})
-    (reset! bed/ground-body ground)))
-
-(defn update-info-text []
-  (reset! bed/info-text
-          (str "This demonstrates a soft distance joint." "\n"
-               "Press: (b) to delete a body, (j) to delete a joint")))
+                    :joints (doall (concat ground-joints inner-joints))})))
 
 (defn my-key-press []
   (let [jts (:joints @things)
@@ -63,13 +59,20 @@
            (swap! things update-in [:joints] next)
            (destroy! jt))
       ;; otherwise pass on to testbed
-      (bed/key-press)))
-  (update-info-text))
+      (bed/key-press))))
 
 (defn setup []
-  (quil/frame-rate (/ 1 *timestep*))
-  (setup-world!)
-  (update-info-text))
+  (quil/frame-rate (/ 1 @dt-secs))
+  (setup-world!))
+
+(defn draw []
+  (when-not @bed/paused?
+    (step! @the-world @dt-secs))
+  (bed/draw-world @the-world)
+  (quil/fill 255)
+  (quil/text (str "This demonstrates a soft distance joint." "\n"
+                  "Press: (b) to delete a body, (j) to delete a joint")
+             10 10))
 
 (defn -main
   "Run the test sketch."
@@ -77,7 +80,7 @@
   (quil/defsketch test-sketch
     :title "Web"
     :setup setup
-    :draw bed/draw
+    :draw draw
     :key-typed my-key-press
     :mouse-pressed bed/mouse-pressed
     :mouse-released bed/mouse-released

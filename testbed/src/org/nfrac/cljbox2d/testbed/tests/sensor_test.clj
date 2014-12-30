@@ -1,7 +1,8 @@
 (ns org.nfrac.cljbox2d.testbed.tests.sensor-test
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SensorTest"
-  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [*timestep*]]
+  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [the-world
+                                                        dt-secs]]
             [cljbox2d.core :refer :all]
             [cljbox2d.vec2d :refer [v-scale]]
             [quil.core :as quil])
@@ -12,19 +13,19 @@
 (def balls (atom []))
 
 (defn setup-world! []
-  (reset-world! (new-world))
-  (let [ground (body! {:type :static}
+  (let [world (new-world)
+        ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
         sens (fixture! ground {:shape (circle 5 [0 10])
                                :is-sensor true})
         ballseq (for [i (range 7)
                       :let [x (+ -10 (* i 3))]]
-                  (body! {:position [x 20]
-                          :user-data (atom {:touching false})}
+                  (body! world {:position [x 20]
+                                :user-data (atom {:touching false})}
                          {:shape (circle 1)}))]
     (reset! sensor sens)
     (reset! balls (doall ballseq))
-    (reset! bed/ground-body ground)))
+    (reset! the-world world)))
 
 (defn sensor-touching-listener
   []
@@ -48,7 +49,7 @@
     (postSolve [_ contact impulse])
     (preSolve [_ contact omanifold])))
 
-(defn my-step []
+(defn post-step! []
   ;; process the buffer of contact points
   (let [cent (center @sensor)]
     (doseq [b @balls
@@ -60,10 +61,15 @@
       (apply-force! b forc pt))))
 
 (defn setup []
-  (quil/frame-rate (/ 1 *timestep*))
+  (quil/frame-rate (/ 1 @dt-secs))
   (setup-world!)
-  (.setContactListener *world* (sensor-touching-listener))
-  (reset! bed/step-fn my-step))
+  (.setContactListener @the-world (sensor-touching-listener)))
+
+(defn draw []
+  (when-not @bed/paused?
+    (step! @the-world @dt-secs)
+    (post-step!))
+  (bed/draw-world @the-world))
 
 (defn -main
   "Run the test sketch."
@@ -71,7 +77,7 @@
   (quil/defsketch test-sketch
     :title "Sensor Test"
     :setup setup
-    :draw bed/draw
+    :draw draw
     :key-typed bed/key-press
     :mouse-pressed bed/mouse-pressed
     :mouse-released bed/mouse-released

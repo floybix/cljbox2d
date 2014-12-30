@@ -7,10 +7,10 @@
 
    In this namespace we have the core API for fixtures, bodies and the
    World."
-  (:use [cljbox2d.vec2d :only [polar-xy v-add v-sub v-interp PI TWOPI
-                               in-pi-pi edge-point-from-vertices v-mag]])
+  (:require [cljbox2d.vec2d :refer [polar-xy v-add v-sub v-interp PI TWOPI
+                                    in-pi-pi edge-point-from-vertices v-mag]])
   (:import (org.jbox2d.common Vec2)
-           (org.jbox2d.dynamics Body BodyDef BodyType Fixture FixtureDef World)
+           (org.jbox2d.dynamics World Body BodyDef BodyType Fixture FixtureDef)
            (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape EdgeShape ShapeType MassData)
            (org.jbox2d.callbacks QueryCallback RayCastCallback)
@@ -29,37 +29,25 @@
 
 ;; ## World
 
-(defonce ^{:doc "The current Box2D World: see `new-world`."}
-  ^:dynamic ^World *world* nil)
-
 (defn new-world
-  "Returns a new Box2D world. Gravity defaults to -10 m/s^2."
+  "Returns a new Box2D world. Gravity defaults to [0 -10] m/s^2."
   ([]
      (new-world [0 -10]))
   ([gravity]
      (World. (vec2 gravity))))
 
-(defn reset-world!
-  "Globally sets the new Box2D world. Not for concurrent simulations!"
-  [world]
-  (alter-var-root (var *world*) (fn [_] world)))
-
-(defn ^:deprecated create-world!
-  ([] (reset-world! (new-world)))
-  ([g] (reset-world! (new-world g))))
-
 (defn step!
-  "Simulate the *world* for a time step given in seconds.
+  "Simulate the world for a time step given in seconds.
    Note that Box2D objects are locked during simulation."
-  ([dt]
-     (step! dt 8 3))
-  ([dt velocity-iterations position-iterations]
-     (.step *world* dt velocity-iterations position-iterations)))
+  ([world dt]
+     (step! world dt 8 3))
+  ([^World world dt velocity-iterations position-iterations]
+     (.step world dt velocity-iterations position-iterations)))
 
 (defn gravity!
   "Sets the gravity vector."
-  [gravity]
-  (.setGravity *world* (vec2 gravity)))
+  [^World world gravity]
+  (.setGravity world (vec2 gravity)))
 
 ;; ## Enums
 
@@ -209,12 +197,12 @@ directly, instead use `(body!)`.
 
 (defn body!
   "Creates a Body together with some Fixtures.
-  The first argument is a body specification map to be passed to the
+  The second argument is a body specification map to be passed to the
 `body-def` function. Any remaining arguments are fixture specification
 maps to be passed to the `fixture-def` function."
-  [body-spec & fixture-specs]
+  [^World world body-spec & fixture-specs]
   (let [bd (body-def body-spec)
-        bod (.createBody *world* bd)]
+        bod (.createBody world bd)]
     (doseq [fspec fixture-specs]
       (fixture! bod fspec))
     bod))
@@ -228,19 +216,17 @@ maps to be passed to the `fixture-def` function."
 
 (defn bodyseq
   "Lazy seq of all bodies in the world, or a body list"
-  ([]
-     (bodyseq (.getBodyList *world*)))
-  ([^Body body]
-     (lazy-seq (when body (cons body (bodyseq (.getNext body)))))))
+  ([^World world]
+     (bodyseq world (.getBodyList world)))
+  ([world ^Body body]
+     (lazy-seq (when body (cons body (bodyseq world (.getNext body)))))))
 
 (defn fixtureseq
-  "Lazy seq of fixtures on a body or (concatenated) all in the world"
-  ([^Body body]
-     (letfn [(nextstep [^Fixture fl]
-               (when fl (cons fl (nextstep (.getNext fl)))))]
-       (lazy-seq (nextstep (.getFixtureList body)))))
-  ([]
-     (mapcat fixtureseq (bodyseq))))
+  "Lazy seq of fixtures on a body."
+  [^Body body]
+  (letfn [(nextstep [^Fixture fl]
+            (when fl (cons fl (nextstep (.getNext fl)))))]
+    (lazy-seq (nextstep (.getFixtureList body)))))
 
 (defn fixture
   "Often a body will only have one fixture. This is a convenience
@@ -340,8 +326,8 @@ the object center (in world coordinates)."
                   (v-add cent (polar-xy r a))))
       :polygon (let [n (.getVertexCount ^PolygonShape shp)]
                  (take n (map v2xy (.getVertices ^PolygonShape shp))))
-      :edge [(v2xy (.m_vertex1 shp))
-             (v2xy (.m_vertex2 shp))])))
+      :edge [(v2xy (.m_vertex1 ^EdgeShape shp))
+             (v2xy (.m_vertex2 ^EdgeShape shp))])))
 
 (defn world-coords
   "World coordinates of polygon vertices. Approximated for circles."
@@ -406,16 +392,18 @@ mass. This wakes up the body."
   (.setAwake body false))
 
 (defprotocol Destroyable
-  "Abstraction for JBox2D objects which can be destroyed"
-  (destroy! [this] "Remove object from the World permanantly."))
+  "Abstraction for JBox2D objects which can be destroyed."
+  (destroy! [this]
+    "Remove object from the World permanantly. Destroying a body
+    automatically deletes all associated shapes and joints."))
 
 (extend-protocol Destroyable
   Body
-  (destroy! [this] (.destroyBody *world* this))
+  (destroy! [this] (.destroyBody (.getWorld this) this))
   Joint
-  (destroy! [this] (.destroyJoint *world* this))
+  (destroy! [this] (.destroyJoint (.getWorld (.getBodyA this)) this))
   Fixture
-  (destroy! [this] (.destroyFixture (body this) this)))
+  (destroy! [this] (.destroyFixture (.getBody this) this)))
 
 ;; ### Spatial queries
 
@@ -434,24 +422,24 @@ mass. This wakes up the body."
 (defn query-aabb
   "Return a vector of (up to a given number of) fixtures overlapping
 an Axis-Aligned Bounding Box"
-  ([^AABB bb]
+  ([world ^AABB bb]
      (query-aabb bb 1000000))
-  ([^AABB bb max-take]
+  ([^World world ^AABB bb max-take]
      (let [fxx (atom [])
            cb (reify QueryCallback
                 (reportFixture [_ fixt]
                   (swap! fxx conj fixt)
                   ;; return false to end search
                   (< (count @fxx) max-take)))]
-       (.queryAABB *world* cb bb)
+       (.queryAABB world cb bb)
        @fxx)))
 
 (defn query-at-point
   "Return a vector of fixtures overlapping the given point. The point
 is tested to be inside each shape, not just within its bounding box."
-  ([pt]
-     (query-at-point pt 1000000))
-  ([[x y] max-take]
+  ([world pt]
+     (query-at-point world pt 1000000))
+  ([^World world [x y] max-take]
      (let [bb (aabb [(- x 0.001) (- y 0.001)]
                     [(+ x 0.001) (+ y 0.001)])
            fxx (atom [])
@@ -462,7 +450,7 @@ is tested to be inside each shape, not just within its bounding box."
                     (swap! fxx conj fixt))
                   ;; return false to end search
                   (< (count @fxx) max-take)))]
-       (.queryAABB *world* cb bb)
+       (.queryAABB world cb bb)
        @fxx)))
 
 (defn raycast
@@ -470,13 +458,13 @@ is tested to be inside each shape, not just within its bounding box."
 in an ordered seq. Each element of the seq looks like `[fixture point
 normal fraction]`, giving details of the intersection point and its
 fraction along the ray."
-  [start-pt end-pt]
+  [^World world start-pt end-pt]
   (let [fxx (atom [])
         cb (reify RayCastCallback
              (reportFixture [_ fixt pt norm frac]
                (swap! fxx conj [fixt pt norm frac])
                1.0))]
-    (.raycast *world* cb start-pt end-pt)
+    (.raycast world cb start-pt end-pt)
     (sort-by #(nth % 3) @fxx)))
 
 ;; ## Contacts

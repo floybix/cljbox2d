@@ -30,15 +30,15 @@ See the ball bounce (requires some imagination...)
 
 ```clojure
 (use 'cljbox2d.core)
-(reset-world! (new-world))
-(def ground (body! {:type :static}
+(def world (new-world))
+(def ground (body! world {:type :static}
                    {:shape (edge [-40 0] [40 0])}))
-(def ball (body! {:position [0 10]}
+(def ball (body! world {:position [0 10]}
                  {:shape (circle 1), :restitution 0.5}))
 ;; let it go
 (dotimes [i 10]
   (println (position ball))
-  (step! (/ 1 3)))
+  (step! world (/ 1 3)))
 
 ;  [0.0 10.0]
 ;  [0.0 8.888889]

@@ -1,8 +1,8 @@
 (ns cljbox2d.joints
   "Core API for joints."
-  (:use [cljbox2d.core :only [*world* vec2 v2xy angular-velocity]])
-  (:use [cljbox2d.vec2d :only [in-pi-pi]])
-  (:import (org.jbox2d.dynamics Body)
+  (:require [cljbox2d.core :refer [vec2 v2xy angular-velocity]]
+            [cljbox2d.vec2d :refer [in-pi-pi]])
+  (:import (org.jbox2d.dynamics World Body)
            (org.jbox2d.dynamics.joints Joint JointType
                                        ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
@@ -41,7 +41,7 @@ rotation with a joint limit that specifies a lower and upper
 angle. You can use a motor to drive the relative rotation about the
 shared point. A maximum motor torque is provided so that infinite
 forces are not generated."
-  [body1 body2 anchor
+  [^World world body1 body2 anchor
    {:keys [enable-motor motor-speed max-motor-torque
            enable-limit lower-angle upper-angle
            collide-connected user-data]
@@ -58,7 +58,7 @@ forces are not generated."
     (set! (.upperAngle jd) upper-angle)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))
+    (.createJoint world jd)))
 
 (defn prismatic-joint!
   "Prismatic joint definition. This requires defining a line of motion
@@ -67,7 +67,7 @@ points and a local axis so that the initial configuration can violate
 the constraint slightly. The joint translation is zero when the local
 anchor points coincide in world space. Using local anchors and a local
 axis helps when saving and loading a game."
-  [body1 body2 anchor axis
+  [^World world body1 body2 anchor axis
    {:keys [enable-motor motor-speed max-motor-force
            enable-limit lower-trans upper-trans
            collide-connected user-data]
@@ -84,7 +84,7 @@ axis helps when saving and loading a game."
     (set! (.upperTranslation jd) upper-trans)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))
+    (.createJoint world jd)))
 
 (defn distance-joint!
   "Distance joint. This requires defining an anchor point
@@ -94,7 +94,7 @@ can violate the constraint slightly. This helps when saving and
 loading a game.
 *Note* however that this initialisation function uses world points.
 For `:damping-ratio` 0 = no damping; 1 = critical damping."
-  [body1 body2 anchor1 anchor2
+  [^World world body1 body2 anchor1 anchor2
    {:keys [frequency-hz damping-ratio
            collide-connected user-data]
     :or {frequency-hz 0, damping-ratio 0,
@@ -105,13 +105,13 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))
+    (.createJoint world jd)))
 
 (defn constant-volume-joint!
   "Constant Volume joint. Connects a group a bodies together so they
 maintain a constant volume within them. Uses Distance joints
 internally."
-  [bodies
+  [^World world bodies
    {:keys [frequency-hz damping-ratio
            collide-connected user-data]
     :or {frequency-hz 0, damping-ratio 0,
@@ -123,12 +123,12 @@ internally."
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))
+    (.createJoint world jd)))
 
 (defn mouse-joint!
   "Mouse joint.
    By convention `body1` is ground and `body2` is the selection"
-  [body1 body2 target
+  [^World world body1 body2 target
    {:keys [max-force
            frequency-hz damping-ratio
            collide-connected user-data]
@@ -144,19 +144,19 @@ internally."
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))
+    (.createJoint world jd)))
 
 (defn weld-joint!
   "Weld joint. This requires defining a common anchor point
 on both bodies. This initialisation function takes a world point."
-  [body1 body2 anchor
+  [^World world body1 body2 anchor
    {:keys [collide-connected user-data]
     :or {collide-connected false}}]
   (let [jd (WeldJointDef.)]
     (.initialize jd body1 body2 (vec2 anchor))
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint *world* jd)))
+    (.createJoint world jd)))
 
 ;; ## Query of joints
 
@@ -166,11 +166,14 @@ on both bodies. This initialisation function takes a world point."
   (lazy-seq (when joint (cons joint (jointseq* (.getNext joint))))))
 
 (defn jointseq
-  "Lazy seq of all joints in the world or connected to a body"
-  ([]
-     (jointseq* (.getJointList *world*)))
-  ([^Body body]
-     (jointseq* (.getJointList body))))
+  "Lazy seq of all joints connected to a body"
+  [^Body body]
+  (jointseq* (.getJointList body)))
+
+(defn alljointseq
+  "Lazy seq of all joints in the world."
+  [^World world]
+  (jointseq* (.getJointList world)))
 
 (defn body-a
   "Return bodyA for a joint"
