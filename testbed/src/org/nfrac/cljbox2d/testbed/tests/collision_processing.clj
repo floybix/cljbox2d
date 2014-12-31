@@ -1,24 +1,23 @@
 (ns org.nfrac.cljbox2d.testbed.tests.collision-processing
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.CollisionProcessing"
-  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [the-world
-                                                        dt-secs]]
+  (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
-            [quil.core :as quil]))
-
-(def things (atom {}))
+            [quil.core :as quil]
+            [quil.middleware]))
 
 (defn scale-vv
   "Scale a vector of vertices around [0 0]."
   [vv s]
   (map (fn [[x y]] [(* x s) (* y s)]) vv))
 
-(defn setup-world! []
+(defn setup []
+  (quil/frame-rate 30)
   (let [world (new-world)
         ground (body! world {:type :static}
                       {:shape (edge [-50 0] [50 0])})
         rand-pos (fn [] [(+ -5 (rand 10))
-                         (+ 2 (rand 33))])
+                        (+ 2 (rand 33))])
         tri-vv [[-1 0] [1 0] [0 2]]
         tri-small (body! world {:position (rand-pos)}
                          {:shape (polygon tri-vv)})
@@ -32,14 +31,15 @@
                           {:shape (circle 1)})
         circ-big (body! world {:position (rand-pos)}
                         {:shape (circle 2)})]
-    (reset! the-world world)
-    (reset! things {:objs [tri-small tri-big
-                           rect-small rect-big
-                           circ-small circ-big]})))
+    (assoc bed/initial-state
+      :world world
+      :contact-buffer (bed/set-buffering-contact-listener! world))))
 
-(defn post-step! []
+(defn post-step
+  [state]
   ;; process the buffer of contact points
-  (let [to-nuke (for [[fixt-a fixt-b _ _] @bed/contact-buffer]
+  (let [cbuffer (:contact-buffer state)
+        to-nuke (for [[fixt-a fixt-b _ _] @cbuffer]
                   (let [body-a (body fixt-a)
                         body-b (body fixt-b)
                         mass-a (mass body-a)
@@ -47,19 +47,20 @@
                     (when (and (pos? mass-a) (pos? mass-b))
                       (if (< mass-a mass-b) body-a body-b))))]
     (doseq [b (remove nil? (distinct to-nuke))]
-      (destroy! b)))
-  (reset! bed/contact-buffer []))
+      (destroy! b))
+    (reset! cbuffer [])
+    state))
 
-(defn setup []
-  (quil/frame-rate (/ 1 @dt-secs))
-  (setup-world!)
-  (bed/set-buffering-contact-listener! @the-world))
+(defn step
+  [state]
+  (if (:paused? state)
+    state
+    (-> (update-in state [:world] step! (:dt-secs state))
+        (post-step))))
 
-(defn draw []
-  (when-not @bed/paused?
-    (step! @the-world @dt-secs)
-    (post-step!))
-  (bed/draw-world @the-world)
+(defn draw
+  [state]
+  (bed/draw state)
   (quil/fill 255)
   (quil/text "Larger bodies destroy smaller bodies on contact."
              10 10))
@@ -70,9 +71,11 @@
   (quil/defsketch test-sketch
     :title "Collision Processing"
     :setup setup
+    :update step
     :draw draw
     :key-typed bed/key-press
     :mouse-pressed bed/mouse-pressed
     :mouse-released bed/mouse-released
     :mouse-dragged bed/mouse-dragged
-    :size [600 500]))
+    :size [600 500]
+    :middleware [quil.middleware/fun-mode]))

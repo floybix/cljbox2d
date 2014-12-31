@@ -1,18 +1,39 @@
 (ns org.nfrac.cljbox2d.testbed.tests.sensor-test
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SensorTest"
-  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [the-world
-                                                        dt-secs]]
+  (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
             [cljbox2d.vec2d :refer [v-scale]]
-            [quil.core :as quil])
+            [quil.core :as quil]
+            [quil.middleware])
   (:import (org.jbox2d.callbacks ContactListener)))
 
-(def sensor (atom nil))
+(defn sensor-touching-listener
+  "Checks for any bodies touching the given sensor fixture, setting
+   boolean key :touching? in their body user-data."
+  [sensor-fixt]
+  (reify ContactListener
+    (beginContact [_ contact]
+      (let [fixt-a (.getFixtureA contact)
+            fixt-b (.getFixtureB contact)
+            bod (cond
+                 (= fixt-a sensor-fixt) (body fixt-b)
+                 (= fixt-b sensor-fixt) (body fixt-a))]
+        (when bod
+          (swap! (user-data bod) assoc :touching? true))))
+    (endContact [_ contact]
+      (let [fixt-a (.getFixtureA contact)
+            fixt-b (.getFixtureB contact)
+            bod (cond
+                 (= fixt-a sensor-fixt) (body fixt-b)
+                 (= fixt-b sensor-fixt) (body fixt-a))]
+        (when bod
+          (swap! (user-data bod) assoc :touching? false))))
+    (postSolve [_ contact impulse])
+    (preSolve [_ contact omanifold])))
 
-(def balls (atom []))
-
-(defn setup-world! []
+(defn setup []
+  (quil/frame-rate 30)
   (let [world (new-world)
         ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
@@ -21,55 +42,33 @@
         ballseq (for [i (range 7)
                       :let [x (+ -10 (* i 3))]]
                   (body! world {:position [x 20]
-                                :user-data (atom {:touching false})}
+                                :user-data (atom {:touching? false})}
                          {:shape (circle 1)}))]
-    (reset! sensor sens)
-    (reset! balls (doall ballseq))
-    (reset! the-world world)))
+    (.setContactListener world (sensor-touching-listener sens))
+    (assoc bed/initial-state
+      :world world
+      ::things {:balls (doall ballseq) :sensor sens})))
 
-(defn sensor-touching-listener
-  []
-  (reify ContactListener
-    (beginContact [_ contact]
-      (let [fixt-a (.getFixtureA contact)
-            fixt-b (.getFixtureB contact)
-            bod (cond
-                 (= fixt-a @sensor) (body fixt-b)
-                 (= fixt-b @sensor) (body fixt-a))]
-        (when bod
-          (swap! (user-data bod) assoc-in [:touching] true))))
-    (endContact [_ contact]
-      (let [fixt-a (.getFixtureA contact)
-            fixt-b (.getFixtureB contact)
-            bod (cond
-                 (= fixt-a @sensor) (body fixt-b)
-                 (= fixt-b @sensor) (body fixt-a))]
-        (when bod
-          (swap! (user-data bod) assoc-in [:touching] false))))
-    (postSolve [_ contact impulse])
-    (preSolve [_ contact omanifold])))
-
-(defn post-step! []
+(defn post-step
+  [state]
   ;; process the buffer of contact points
-  (let [cent (center @sensor)]
-    (doseq [b @balls
-            :when (:touching @(user-data b))
+  (let [sens (:sensor (::things state))
+        cent (center sens)]
+    (doseq [b (:balls (::things state))
+            :when (:touching? @(user-data b))
             :let [pt (position b)
                   d (map - cent pt)
                   d-unit (v-scale d)
                   forc (v-scale d-unit 100)]]
-      (apply-force! b forc pt))))
+      (apply-force! b forc pt))
+    state))
 
-(defn setup []
-  (quil/frame-rate (/ 1 @dt-secs))
-  (setup-world!)
-  (.setContactListener @the-world (sensor-touching-listener)))
-
-(defn draw []
-  (when-not @bed/paused?
-    (step! @the-world @dt-secs)
-    (post-step!))
-  (bed/draw-world @the-world))
+(defn step
+  [state]
+  (if (:paused? state)
+    state
+    (-> (update-in state [:world] step! (:dt-secs state))
+        (post-step))))
 
 (defn -main
   "Run the test sketch."
@@ -77,9 +76,11 @@
   (quil/defsketch test-sketch
     :title "Sensor Test"
     :setup setup
-    :draw draw
+    :update step
+    :draw bed/draw
     :key-typed bed/key-press
     :mouse-pressed bed/mouse-pressed
     :mouse-released bed/mouse-released
     :mouse-dragged bed/mouse-dragged
-    :size [600 500]))
+    :size [600 500]
+    :middleware [quil.middleware/fun-mode]))

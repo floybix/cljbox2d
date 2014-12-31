@@ -25,19 +25,13 @@
            (org.jbox2d.callbacks ContactListener)
            (org.jbox2d.collision WorldManifold)))
 
-(def the-world (atom nil))
-
-(def dt-secs (atom (/ 1 30.0)))
-
-(def paused? "Whether to simulate or not." (atom false))
-
-(def camera
-  "Defines the current view (location and scale) in world coordinates (m)"
-  (atom {:width 60 :height 40 :x-left -30 :y-bottom -10}))
-
-(def mousej
-  "Current mouse joint; see `left-mouse-pressed` etc."
-  (atom nil))
+(def initial-state
+  {:world nil
+   :dt-secs (/ 1 30.0)
+   :paused? false
+   ;; the current view (location and scale) in world coordinates (m)
+   :camera {:width 60 :height 40 :x-left -30 :y-bottom -10}
+   :mouse-joint nil})
 
 ;; ## Drawing
 
@@ -45,19 +39,17 @@
   "A scaling factor on world coordinates to give pixels.
 Fits the camera bounds into the window, expanding these
 bounds if necessary to ensure an isometric aspect ratio."
-  ([]
-     (world-to-px-scale (quil/width) (quil/height)))
-  ([px-width px-height]
-     (let [cam @camera
-           xscale (/ px-width (:width cam))
+  ([cam]
+     (world-to-px-scale cam (quil/width) (quil/height)))
+  ([cam px-width px-height]
+     (let [xscale (/ px-width (:width cam))
            yscale (/ px-height (:height cam))]
        (min xscale yscale))))
 
 (defn world-to-px
   "Convert a point in Box2d world coordinates to quil pixels."
-  [[x y]]
-  (let [cam @camera
-        scale (world-to-px-scale)
+  [cam [x y]]
+  (let [scale (world-to-px-scale cam)
         x-left (:x-left cam)
         y-bottom (:y-bottom cam)
         y-top (+ y-bottom (:height cam))]
@@ -67,9 +59,8 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 (defn px-to-world
   "Convert a point in quil pixels to Box2d world coordinates."
-  [[xp yp]]
-  (let [cam @camera
-        scale (world-to-px-scale)
+  [cam [xp yp]]
+  (let [scale (world-to-px-scale cam)
         x-left (:x-left cam)
         y-bottom (:y-bottom cam)
         y-top (+ y-bottom (:height cam))]
@@ -96,62 +87,63 @@ bounds if necessary to ensure an isometric aspect ratio."
     [100 255 100]
     [255 200 200]))
 
-(defn draw-world
+(defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
-  [^World world]
-  (setup-style)
-  (joint-style)
-  (doseq [jt (alljointseq world)
-          :let [typ (joint-type jt)
-                body-a (body-a jt)
-                body-b (body-b jt)]]
-    (case typ
-      :revolute (let [anch (anchor-a jt)
-                      center-a (center body-a)
-                      center-b (center body-b)]
-                  (quil/line (world-to-px anch) (world-to-px center-a))
-                  (quil/line (world-to-px anch) (world-to-px center-b)))
-      :distance (let [anch-a (anchor-a jt)
-                      anch-b (anchor-b jt)]
-                  (quil/line (world-to-px anch-a) (world-to-px anch-b)))
-      :mouse (let [anch-b (anchor-b jt)
-                   targ (v2xy (.getTarget jt))]
-               (quil/line (world-to-px anch-b) (world-to-px targ)))
-      :otherwise-ignore-it
-      ))
-  (doseq [body (bodyseq world)
-          :let [ud (user-data body)
-                ud (when (instance? clojure.lang.IDeref ud) (deref ud))
-                rgb (or (:rgb ud)
-                        (default-rgb body))
-                color (apply quil/color rgb)
-                alpha (if (= :static (body-type body)) 127
-                          (if (awake? body) 191 127))]]
-    (quil/stroke color)
-    (quil/fill color alpha)
-    (doseq [fx (fixtureseq body)]
-      (case (shape-type fx)
-        :circle (let [[x y] (world-to-px (center fx))
-                      radius-px (* (radius fx) (world-to-px-scale))]
-                  (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
-        (:edge
-         :polygon) (let [pts (world-coords fx)
-                         px-pts (map world-to-px pts)]
-                     (quil/begin-shape)
-                     (doseq [[x y] px-pts] (quil/vertex x y))
-                     (quil/end-shape :close))))))
+  [state]
+  (let [^World world (:world state)
+        cam (:camera state)
+        ->px (partial world-to-px cam)]
+    (setup-style)
+    (joint-style)
+    (doseq [jt (alljointseq world)
+            :let [typ (joint-type jt)
+                  body-a (body-a jt)
+                  body-b (body-b jt)]]
+      (case typ
+        :revolute (let [anch (anchor-a jt)
+                        center-a (center body-a)
+                        center-b (center body-b)]
+                    (quil/line (->px anch) (->px center-a))
+                    (quil/line (->px anch) (->px center-b)))
+        :distance (let [anch-a (anchor-a jt)
+                        anch-b (anchor-b jt)]
+                    (quil/line (->px anch-a) (->px anch-b)))
+        :mouse (let [anch-b (anchor-b jt)
+                     targ (v2xy (.getTarget jt))]
+                 (quil/line (->px anch-b) (->px targ)))
+        :otherwise-ignore-it
+        ))
+    (doseq [body (bodyseq world)
+            :let [ud (user-data body)
+                  ud (when (instance? clojure.lang.IDeref ud) (deref ud))
+                  rgb (or (:rgb ud)
+                          (default-rgb body))
+                  color (apply quil/color rgb)
+                  alpha (if (= :static (body-type body)) 127
+                            (if (awake? body) 191 127))]]
+      (quil/stroke color)
+      (quil/fill color alpha)
+      (doseq [fx (fixtureseq body)]
+        (case (shape-type fx)
+          :circle (let [[x y] (->px (center fx))
+                        radius-px (* (radius fx) (world-to-px-scale cam))]
+                    (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
+          (:edge
+           :polygon) (let [pts (world-coords fx)
+                           px-pts (map ->px pts)]
+                       (quil/begin-shape)
+                       (doseq [[x y] px-pts] (quil/vertex x y))
+                       (quil/end-shape :close)))))))
 
 ;; ## contact / collision handling
 
-(def contact-buffer
-  "Holds a sequence of contacts for the last time step, each
-represented as `[fixture-a fixture-b points normal]`."
-  (atom []))
-
 (defn set-buffering-contact-listener!
-  "A ContactListener which populates `contact-buffer`."
+  "A ContactListener which populates `contact-buffer`.
+   Returns an atom which will be populated with a sequence of
+   contacts, each given as `[fixture-a fixture-b points normal]`."
   [^World world]
-  (let [world-manifold (WorldManifold.)
+  (let [contact-buffer (atom [])
+        world-manifold (WorldManifold.)
         lstnr (reify ContactListener
                 (beginContact [_ _])
                 (endContact [_ _])
@@ -170,97 +162,89 @@ represented as `[fixture-a fixture-b points normal]`."
                         (swap! contact-buffer conj
                                [fixt-a fixt-b pts normal])
                         )))))]
-    (.setContactListener world lstnr)))
+    (.setContactListener world lstnr)
+    contact-buffer))
     
 ;; ## input event handling
 
-(defn mouse-world
-  "Current mouse position in world coordinates."
-  []
-  (px-to-world [(quil/mouse-x) (quil/mouse-y)]))
-
-(defn pmouse-world
-  "Previous time-step mouse position in world coordinates."
-  []
-  (px-to-world [(quil/pmouse-x) (quil/pmouse-y)]))
-
 (defn left-mouse-pressed
   "Checks for fixtures at the mouse position. If one is found, creates
-a mouse joint attached to its body, which allows it to be dragged
-around."
-  []
-  (when-not @mousej
-    (let [pt (mouse-world)
-          world @the-world
-          fixt (first (query-at-point world pt 1))]
-      (when fixt
+   a mouse joint attached to its body, which allows it to be dragged
+   around."
+  [state event]
+  (if (:mouse-joint state)
+    state
+    (let [pt (px-to-world (:camera state) [(:x event) (:y event)])
+          world (:world state)]
+      (if-let [fixt (first (query-at-point world pt 1))]
         (let [bod (body fixt)
               ground-body (first (filter #(= :static (body-type %))
                                          (bodyseq world)))
               mj (mouse-joint! world ground-body bod pt
                                {:max-force (* 1000 (mass bod))})]
-          (reset! mousej mj)
-          (wake! bod))))))
+          (wake! bod)
+          (assoc state :mouse-joint mj))
+        state))))
 
 (defn mouse-pressed
   "Dispatches according to the mouse button."
-  []
-  (case (quil/mouse-button)
-    :left (left-mouse-pressed)
-    :otherwise-ignore-it))
+  [state event]
+  (case (:button event)
+    :left (left-mouse-pressed state event)
+    state))
 
 (defn mouse-released
   "Destroys the active mouse joint if it exists."
-  []
-  (when @mousej
-    (do (destroy! @mousej)
-        (reset! mousej nil))))
+  [state event]
+  (when-let [jt (:mouse-joint state)]
+    (destroy! jt))
+  (assoc state :mouse-joint nil))
 
 (defn left-mouse-dragged
   "Updates the mouse joint target point."
-  []
-  (when-let [jt ^MouseJoint @mousej]
-    (let [pt (mouse-world)]
-      (.setTarget jt (vec2 pt)))))
+  [state event]
+  (when-let [jt ^MouseJoint (:mouse-joint state)]
+    (let [pt (px-to-world (:camera state) [(:x event) (:y event)])]
+      (.setTarget jt (vec2 pt))))
+  state)
 
 (defn right-mouse-dragged
   "Shifts the current view (camera)"
-  []
-  (let [[x y] (mouse-world)
-        [ox oy] (pmouse-world)
-        dx (- x ox)
-        dy (- y oy)]
-    (swap! camera (partial merge-with +)
-           {:x-left (- dx) :y-bottom (- dy)})))
+  [state event]
+  (let [[x y] (px-to-world (:camera state) [(:x event) (:y event)])
+        [px py] (px-to-world (:camera state) [(:p-x event) (:p-y event)])
+        dx (- x px)
+        dy (- y py)]
+    (update-in state [:camera] (partial merge-with +)
+               {:x-left (- dx) :y-bottom (- dy)})))
 
 (defn mouse-dragged
   "Dispatches according to the mouse button."
-  []
-  (case (quil/mouse-button)
-    :right (right-mouse-dragged)
-    :left (left-mouse-dragged)
-    :otherwise-ignore-it))
+  [state event]
+  (case (:button event)
+    :right (right-mouse-dragged state event)
+    :left (left-mouse-dragged state event)
+    state))
 
 (defn zoom-camera
   "Factor multiplies the visible world distance."
-  [factor]
-  (swap! camera
-         (fn [{:keys [width height x-left y-bottom]}]
-           (let [cent-x (+ x-left (/ width 2))
-                 cent-y (+ y-bottom (/ height 2))
-                 new-width (* width factor)
-                 new-height (* height factor)]
-             {:width new-width
-              :height new-height
-              :x-left (- cent-x (/ new-width 2))
-              :y-bottom (- cent-y (/ new-height 2))}))))
+  [camera factor]
+  (let [{:keys [width height x-left y-bottom]} camera
+        cent-x (+ x-left (/ width 2))
+        cent-y (+ y-bottom (/ height 2))
+        new-width (* width factor)
+        new-height (* height factor)]
+    {:width new-width
+     :height new-height
+     :x-left (- cent-x (/ new-width 2))
+     :y-bottom (- cent-y (/ new-height 2))}))
 
 (defn key-press
   "Standard actions for key events"
-  []
-  (case (quil/raw-key)
-    \  (swap! paused? not)
-    \. (step! @the-world @dt-secs)
-    \= (zoom-camera (/ 1 1.5))
-    \- (zoom-camera 1.5)
-    :otherwise-ignore-it))
+  [state event]
+  (case (:raw-key event)
+    \  (update-in state [:paused?] not)
+    \. (update-in state [:world] step! (:dt-secs state))
+    \= (update-in state [:camera] zoom-camera (/ 1 1.5))
+    \- (update-in state [:camera] zoom-camera 1.5)
+    state))

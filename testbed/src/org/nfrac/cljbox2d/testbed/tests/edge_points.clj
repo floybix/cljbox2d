@@ -1,13 +1,14 @@
 (ns org.nfrac.cljbox2d.testbed.tests.edge-points
   "An example of cljbox2d.core/edge-point"
-  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [the-world
-                                                        dt-secs]]
+  (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
             [cljbox2d.joints :refer :all]
             [cljbox2d.vec2d :refer [TWOPI PI poly-flip-x angle*]]
-            [quil.core :as quil]))
+            [quil.core :as quil]
+            [quil.middleware]))
 
-(defn setup-world! []
+(defn setup []
+  (quil/frame-rate 30)
   (let [world (new-world)
         ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
@@ -45,16 +46,14 @@
                                             {:enable-motor true
                                              :motor-speed (/ PI 2)
                                              :max-motor-torque 100}))))]
-    (reset! the-world world)))
+    (assoc bed/initial-state
+      :world world)))
 
-(defn setup []
-  (quil/frame-rate (/ 1 @dt-secs))
-  (setup-world!))
-
-(defn draw []
-  (when-not @bed/paused?
-    (step! @the-world @dt-secs))
-  (bed/draw-world @the-world))
+(defn step
+  [state]
+  (if (:paused? state)
+    state
+    (update-in state [:world] step! (:dt-secs state))))
 
 (defn -main
   "Run the test sketch."
@@ -62,9 +61,11 @@
   (quil/defsketch test-sketch
     :title "Edge points"
     :setup setup
-    :draw draw
+    :update step
+    :draw bed/draw
     :key-typed bed/key-press
     :mouse-pressed bed/mouse-pressed
     :mouse-released bed/mouse-released
     :mouse-dragged bed/mouse-dragged
-    :size [600 500]))
+    :size [600 500]
+    :middleware [quil.middleware/fun-mode]))

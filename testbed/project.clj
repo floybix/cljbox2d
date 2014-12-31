@@ -4,5 +4,5 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[cljbox2d "0.3.0-SNAPSHOT"]
-                 [quil "1.6.0"]
+                 [quil "2.2.4"]
                  [org.clojure/clojure "1.6.0"]])

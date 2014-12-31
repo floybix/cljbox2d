@@ -1,16 +1,15 @@
 (ns org.nfrac.cljbox2d.testbed.tests.slider-crank
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SliderCrankTest"
-  (:require [org.nfrac.cljbox2d.testbed :as bed :refer [the-world
-                                                        dt-secs]]
+  (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
             [cljbox2d.joints :refer :all]
             [cljbox2d.vec2d :refer [PI]]
-            [quil.core :as quil]))
+            [quil.core :as quil]
+            [quil.middleware]))
 
-(def things (atom {}))
-
-(defn setup-world! []
+(defn setup []
+  (quil/frame-rate 30)
   (let [world (new-world)
         ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
@@ -32,27 +31,33 @@
                                      :enable-motor true})
         payload (body! world {:position [0 23]}
                        {:shape (box 1.5 1.5) :density 2})]
-    (reset! the-world world)
-    (reset! things {:crank-j crank-j
-                    :piston-pj piston-pj})))
+    (assoc bed/initial-state
+      :world world
+      ::things {:crank-j crank-j
+                :piston-pj piston-pj})))
 
-(defn my-key-press []
-  (let [cj (:crank-j @things)
-        pj (:piston-pj @things)]
-    (case (quil/raw-key)
-      \f (enable-motor! pj (not (motor-enabled? pj)))
-      \m (enable-motor! cj (not (motor-enabled? cj)))
+(defn my-key-press
+  [state event]
+  (let [things (::things state)
+        cj (:crank-j things)
+        pj (:piston-pj things)]
+    (case (:raw-key event)
+      \f (do (enable-motor! pj (not (motor-enabled? pj)))
+             state)
+      \m (do (enable-motor! cj (not (motor-enabled? cj)))
+             state)
       ;; otherwise pass on to testbed
-      (bed/key-press))))
+      (bed/key-press state event))))
 
-(defn setup []
-  (quil/frame-rate (/ 1 @dt-secs))
-  (setup-world!))
+(defn step
+  [state]
+  (if (:paused? state)
+    state
+    (update-in state [:world] step! (:dt-secs state))))
 
-(defn draw []
-  (when-not @bed/paused?
-    (step! @the-world @dt-secs))
-  (bed/draw-world @the-world)
+(defn draw
+  [state]
+  (bed/draw state)
   (quil/fill 255)
   (quil/text "Keys: (f) toggle friction, (m) toggle motor"
              10 10))
@@ -63,9 +68,11 @@
   (quil/defsketch test-sketch
     :title "Slider Crank"
     :setup setup
+    :update step
     :draw draw
     :key-typed my-key-press
     :mouse-pressed bed/mouse-pressed
     :mouse-released bed/mouse-released
     :mouse-dragged bed/mouse-dragged
-    :size [600 500]))
+    :size [600 500]
+    :middleware [quil.middleware/fun-mode]))

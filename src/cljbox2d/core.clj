@@ -38,11 +38,13 @@
 
 (defn step!
   "Simulate the world for a time step given in seconds.
-   Note that Box2D objects are locked during simulation."
+   Note that Box2D objects are locked during simulation.
+   Returns the world (although it remains a mutable object)."
   ([world dt]
      (step! world dt 8 3))
   ([^World world dt velocity-iterations position-iterations]
-     (.step world dt velocity-iterations position-iterations)))
+     (.step world dt velocity-iterations position-iterations)
+     world))
 
 (defn gravity!
   "Sets the gravity vector."

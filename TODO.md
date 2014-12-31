@@ -35,10 +35,6 @@
   * Cantilever
 * testbed draw circle angle
 * testbed restart 'r'
-* move testbed from quil to seesaw?
-  * more functional paradigm
-  * but need to queue inputs to sync with timestep
-  * GUI widgets to pause, step, restart etc
 * need a library of shape functions?
   * e.g. transform polygons
   * counter-clockwise, convex construction
