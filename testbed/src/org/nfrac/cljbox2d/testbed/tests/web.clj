@@ -26,9 +26,9 @@
                                   ground-y (if is-top 20 0)
                                   off-x (if is-right 0.5 -0.5)
                                   off-y (if is-top 0.5 -0.5)]]
-                        (distance-joint! world ground nd
-                                         [ground-x ground-y]
-                                         [(+ x off-x) (+ y off-y)]
+                        (distance-joint! world
+                                         ground [ground-x ground-y]
+                                         nd [(+ x off-x) (+ y off-y)]
                                          {:frequency-hz 4
                                           :damping-ratio 0.5}))
         inner-joints (for [i (range 4)
@@ -38,9 +38,9 @@
                                  [x2 y2] (position n2)
                                  off-x1 (* -0.5 (compare x1 x2))
                                  off-y1 (* -0.5 (compare y1 y2))]]
-                       (distance-joint! world n1 n2
-                                        [(+ x1 off-x1) (+ y1 off-y1)]
-                                        [(- x2 off-x1) (- y2 off-y1)]
+                       (distance-joint! world
+                                        n1 [(+ x1 off-x1) (+ y1 off-y1)]
+                                        n2 [(- x2 off-x1) (- y2 off-y1)]
                                         {:frequency-hz 4
                                          :damping-ratio 0.5}))]
     (assoc bed/initial-state

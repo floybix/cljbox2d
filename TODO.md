@@ -1,8 +1,10 @@
 
+* (create!) for bodydef or jointdef or {}bodydef+fixturedefs
+* (body) - includes fixturedefs
+* (revolute-joint)
+
+
 * use euclidian.math.vector
-* update to JBox2D 2.2.1.1
-  * RopeJoint
-  * chain shape
 * bring in from uglyboids:
   * buffered-contact-listener
   * set-velocity
@@ -23,16 +25,13 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * OneSided
-  * TheoJansenWalker
+  * EdgeShapes
   * Chain
-  * Box2D: Bridge
-  * Box2D: Pinball
-  * Box2D: Car
-  * Box2D: ConveyorBelt
-  * Raycast
-  * Pulleys
-  * Cantilever
+  * CharacterCollision
+  * CollisionFiltering
+  * RopeJoint
+  * ConveyorBelt
+  * ApplyForce
 * testbed draw circle angle
 * testbed restart 'r'
 * need a library of shape functions?

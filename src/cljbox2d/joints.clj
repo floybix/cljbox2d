@@ -6,6 +6,7 @@
            (org.jbox2d.dynamics.joints Joint JointType
                                        ConstantVolumeJoint ConstantVolumeJointDef
                                        DistanceJoint DistanceJointDef
+                                       RopeJoint RopeJointDef
                                        MouseJoint MouseJointDef
                                        PrismaticJoint PrismaticJointDef
                                        RevoluteJoint RevoluteJointDef
@@ -17,6 +18,7 @@
   joint-types
   {:constant-volume JointType/CONSTANT_VOLUME
    :distance JointType/DISTANCE
+   :rope JointType/ROPE
    :mouse JointType/MOUSE
    :prismatic JointType/PRISMATIC
    :revolute JointType/REVOLUTE
@@ -94,7 +96,7 @@ can violate the constraint slightly. This helps when saving and
 loading a game.
 *Note* however that this initialisation function uses world points.
 For `:damping-ratio` 0 = no damping; 1 = critical damping."
-  [^World world body1 body2 anchor1 anchor2
+  [^World world body1 anchor1 body2 anchor2
    {:keys [frequency-hz damping-ratio
            collide-connected user-data]
     :or {frequency-hz 0, damping-ratio 0,
@@ -103,6 +105,22 @@ For `:damping-ratio` 0 = no damping; 1 = critical damping."
     (.initialize jd body1 body2 (vec2 anchor1) (vec2 anchor2))
     (set! (.frequencyHz jd) frequency-hz)
     (set! (.dampingRatio jd) damping-ratio)
+    (set! (.collideConnected jd) collide-connected)
+    (set! (.userData jd) user-data)
+    (.createJoint world jd)))
+
+(defn rope-joint!
+  "A rope joint requires two body-local anchor points and a maximum length."
+  [^World world body1 anchor1 body2 anchor2
+   {:keys [max-length
+           collide-connected user-data]
+    :or {max-length 1.0
+         collide-connected false}}]
+  (let [jd (RopeJointDef.)]
+    (set! (.bodyA jd) body1)
+    (set! (.bodyB jd) body2)
+    (.set (.localAnchorA jd) (vec2 anchor1))
+    (.set (.localAnchorB jd) (vec2 anchor2))
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
     (.createJoint world jd)))
