@@ -26,9 +26,10 @@
                               :fixed-rotation true}
                        {:shape (circle 0.5)
                         :group-index -2}))
-        cvj (constant-volume-joint! world nodes
-                                    {:frequency-hz 10
-                                     :damping-ratio 1})
+        cvj (joint! {:type :constant-volume
+                     :bodies nodes
+                     :frequency-hz 10
+                     :damping-ratio 1})
         falling-box (body! world {:position [cx (+ cy 15)]}
                            {:shape (box 3 1.5 [cx (+ cy 15)])})]
     (assoc bed/initial-state

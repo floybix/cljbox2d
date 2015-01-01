@@ -15,16 +15,19 @@
                       {:shape (edge [-40 0] [40 0])})
         w 100
         ball (body! world {:position [0 20]
-                     :angular-velocity w
-                     :linear-velocity [(* -8 w) 0]}
+                           :angular-velocity w
+                           :linear-velocity [(* -8 w) 0]}
                     {:shape (circle 0.5) :density 5})
-        joint (revolute-joint! world ground ball [0 12]
-                               {:motor-speed (- PI)
-                                :max-motor-torque 10000
-                                :lower-angle (/ (- PI) 4)
-                                :upper-angle (/ PI 2)
-                                :enable-limit true
-                                :collide-connected true})]
+        joint (joint! {:type :revolute
+                       :body-a ground
+                       :body-b ball
+                       :anchor [0 12]
+                       :motor-speed (- PI)
+                       :max-motor-torque 10000
+                       :lower-angle (/ (- PI) 4)
+                       :upper-angle (/ PI 2)
+                       :enable-limit true
+                       :collide-connected true})]
     (assoc bed/initial-state
       :world world
       ::things {:ball ball :joint joint})))

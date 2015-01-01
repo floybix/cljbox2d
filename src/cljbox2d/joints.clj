@@ -35,23 +35,57 @@
 
 ;; ## Creation of joints
 
-(defn revolute-joint!
-  "A revolute joint constrains two bodies to share a common point
-while they are free to rotate about the point. The relative rotation
-about the shared point is the joint angle. You can limit the relative
-rotation with a joint limit that specifies a lower and upper
-angle. You can use a motor to drive the relative rotation about the
-shared point. A maximum motor torque is provided so that infinite
-forces are not generated."
-  [^World world body1 body2 anchor
-   {:keys [enable-motor motor-speed max-motor-torque
+(defmulti joint!
+  "Creates a joint from a spec map according to its `:type` key. In
+   most cases the map must contain `:body-a` and `:body-b`.
+
+   * `:revolute` joint constrains two bodies to share a common point
+     while they are free to rotate about the point. The relative
+     rotation about the shared point is the joint angle. You can limit
+     the relative rotation with a joint limit that specifies a lower
+     and upper angle. You can use a motor to drive the relative
+     rotation about the shared point. A maximum motor torque is
+     provided so that infinite forces are not generated.
+
+   * `:prismatic` joint. This requires defining a line of motion using
+     an axis and an anchor point. The definition uses local anchor
+     points and a local axis so that the initial configuration can
+     violate the constraint slightly. The joint translation is zero
+     when the local anchor points coincide in world space. Using local
+     anchors and a local axis helps when saving and loading a game.
+
+   * `:distance` joint. This requires defining an anchor point on both
+     bodies and the non-zero length of the distance joint. The
+     definition uses local anchor points so that the initial
+     configuration can violate the constraint slightly. This helps
+     when saving and loading a game. *Note* however that this
+     initialisation function uses world points. For `:damping-ratio` 0
+     = no damping; 1 = critical damping.`
+
+   * `:rope` joint requires two body-local anchor points and a maximum
+     length.
+
+   * `:constant-volume` joint. Connects a group a bodies together so
+     they maintain a constant volume within them. Uses Distance joints
+     internally.
+
+   * `:mouse` joint. By convention `body-a` is ground and `body-b` is
+     the selection.
+
+   * `:weld` joint. This requires defining a common anchor point on
+     both bodies. This initialisation function takes a world point."
+  :type)
+
+(defmethod joint! :revolute
+  [{:keys [body-a body-b anchor
+           enable-motor motor-speed max-motor-torque
            enable-limit lower-angle upper-angle
            collide-connected user-data]
     :or {enable-motor false, motor-speed 0, max-motor-torque 10000,
          enable-limit false, lower-angle 0, upper-angle 360,
          collide-connected false}}]
   (let [jd (RevoluteJointDef.)]
-    (.initialize jd body1 body2 (vec2 anchor))
+    (.initialize jd body-a body-b (vec2 anchor))
     (set! (.enableMotor jd) enable-motor)
     (set! (.motorSpeed jd) motor-speed)
     (set! (.maxMotorTorque jd) max-motor-torque)
@@ -60,24 +94,18 @@ forces are not generated."
     (set! (.upperAngle jd) upper-angle)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defn prismatic-joint!
-  "Prismatic joint definition. This requires defining a line of motion
-using an axis and an anchor point. The definition uses local anchor
-points and a local axis so that the initial configuration can violate
-the constraint slightly. The joint translation is zero when the local
-anchor points coincide in world space. Using local anchors and a local
-axis helps when saving and loading a game."
-  [^World world body1 body2 anchor axis
-   {:keys [enable-motor motor-speed max-motor-force
+(defmethod joint! :prismatic
+  [{:keys [body-a body-b anchor axis
+           enable-motor motor-speed max-motor-force
            enable-limit lower-trans upper-trans
            collide-connected user-data]
     :or {enable-motor false, motor-speed 0, max-motor-force 10000,
          enable-limit false, lower-trans -10, upper-trans 10,
          collide-connected false}}]
   (let [jd (PrismaticJointDef.)]
-    (.initialize jd body1 body2 (vec2 anchor) (vec2 axis))
+    (.initialize jd body-a body-b (vec2 anchor) (vec2 axis))
     (set! (.enableMotor jd) enable-motor)
     (set! (.motorSpeed jd) motor-speed)
     (set! (.maxMotorForce jd) max-motor-force)
@@ -86,51 +114,38 @@ axis helps when saving and loading a game."
     (set! (.upperTranslation jd) upper-trans)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defn distance-joint!
-  "Distance joint. This requires defining an anchor point
-on both bodies and the non-zero length of the distance joint. The
-definition uses local anchor points so that the initial configuration
-can violate the constraint slightly. This helps when saving and
-loading a game.
-*Note* however that this initialisation function uses world points.
-For `:damping-ratio` 0 = no damping; 1 = critical damping."
-  [^World world body1 anchor1 body2 anchor2
-   {:keys [frequency-hz damping-ratio
+(defmethod joint! :distance
+  [{:keys [body-a anchor-a body-b anchor-b
+           frequency-hz damping-ratio
            collide-connected user-data]
     :or {frequency-hz 0, damping-ratio 0,
          collide-connected false}}]
   (let [jd (DistanceJointDef.)]
-    (.initialize jd body1 body2 (vec2 anchor1) (vec2 anchor2))
+    (.initialize jd body-a body-b (vec2 anchor-a) (vec2 anchor-b))
     (set! (.frequencyHz jd) frequency-hz)
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defn rope-joint!
-  "A rope joint requires two body-local anchor points and a maximum length."
-  [^World world body1 anchor1 body2 anchor2
-   {:keys [max-length
+(defmethod joint! :rope
+  [{:keys [body-a anchor-a body-b anchor-b max-length
            collide-connected user-data]
     :or {max-length 1.0
          collide-connected false}}]
   (let [jd (RopeJointDef.)]
-    (set! (.bodyA jd) body1)
-    (set! (.bodyB jd) body2)
-    (.set (.localAnchorA jd) (vec2 anchor1))
-    (.set (.localAnchorB jd) (vec2 anchor2))
+    (set! (.bodyA jd) body-a)
+    (set! (.bodyB jd) body-b)
+    (.set (.localAnchorA jd) (vec2 anchor-a))
+    (.set (.localAnchorB jd) (vec2 anchor-b))
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defn constant-volume-joint!
-  "Constant Volume joint. Connects a group a bodies together so they
-maintain a constant volume within them. Uses Distance joints
-internally."
-  [^World world bodies
-   {:keys [frequency-hz damping-ratio
+(defmethod joint! :constant-volume
+  [{:keys [bodies frequency-hz damping-ratio
            collide-connected user-data]
     :or {frequency-hz 0, damping-ratio 0,
          collide-connected false}}]
@@ -141,40 +156,35 @@ internally."
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body (first bodies)) jd)))
 
-(defn mouse-joint!
-  "Mouse joint.
-   By convention `body1` is ground and `body2` is the selection"
-  [^World world body1 body2 target
-   {:keys [max-force
+(defmethod joint! :mouse
+  [{:keys [body-a body-b target max-force
            frequency-hz damping-ratio
            collide-connected user-data]
     :or {max-force 1000,
          frequency-hz 5, damping-ratio 0.7,
          collide-connected false}}]
   (let [jd (MouseJointDef.)]
-    (set! (.bodyA jd) body1)
-    (set! (.bodyB jd) body2)
+    (set! (.bodyA jd) body-a)
+    (set! (.bodyB jd) body-b)
     (.set (.target jd) (vec2 target))
     (set! (.maxForce jd) max-force)
     (set! (.frequencyHz jd) frequency-hz)
     (set! (.dampingRatio jd) damping-ratio)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defn weld-joint!
-  "Weld joint. This requires defining a common anchor point
-on both bodies. This initialisation function takes a world point."
-  [^World world body1 body2 anchor
-   {:keys [collide-connected user-data]
+(defmethod joint! :weld
+  [{:keys [body-a body-b anchor
+           collide-connected user-data]
     :or {collide-connected false}}]
   (let [jd (WeldJointDef.)]
-    (.initialize jd body1 body2 (vec2 anchor))
+    (.initialize jd body-a body-b (vec2 anchor))
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
-    (.createJoint world jd)))
+    (.createJoint (.getWorld ^Body body-a) jd)))
 
 ;; ## Query of joints
 

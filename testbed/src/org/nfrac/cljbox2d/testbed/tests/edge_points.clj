@@ -42,10 +42,13 @@
                          (let [b (body! world {:position pt}
                                         {:shape (rod [0 0] angle 1 0.2)
                                          :group-index -2})]
-                           (revolute-joint! world hub2 b pt
-                                            {:enable-motor true
-                                             :motor-speed (/ PI 2)
-                                             :max-motor-torque 100}))))]
+                           (joint! {:type :revolute
+                                    :body-a hub2
+                                    :body-b b
+                                    :anchor pt
+                                    :enable-motor true
+                                    :motor-speed (/ PI 2)
+                                    :max-motor-torque 100}))))]
     (assoc bed/initial-state
       :world world)))
 

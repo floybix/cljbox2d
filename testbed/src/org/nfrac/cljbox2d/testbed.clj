@@ -18,7 +18,7 @@
                                    awake? wake! v2xy vec2]]
             [cljbox2d.joints :refer [alljointseq joint-type
                                      body-a body-b anchor-a anchor-b
-                                     mouse-joint!]]
+                                     joint!]]
             [quil.core :as quil])
   (:import (org.jbox2d.dynamics World)
            (org.jbox2d.dynamics.joints MouseJoint)
@@ -180,8 +180,11 @@ bounds if necessary to ensure an isometric aspect ratio."
         (let [bod (body fixt)
               ground-body (first (filter #(= :static (body-type %))
                                          (bodyseq world)))
-              mj (mouse-joint! world ground-body bod pt
-                               {:max-force (* 1000 (mass bod))})]
+              mj (joint! {:type :mouse
+                          :body-a ground-body
+                          :body-b bod
+                          :target pt
+                          :max-force (* 1000 (mass bod))})]
           (wake! bod)
           (assoc state :mouse-joint mj))
         state))))

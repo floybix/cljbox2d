@@ -15,20 +15,33 @@
                       {:shape (edge [-40 0] [40 0])})
         crank (body! world {:position [0 7]}
                      {:shape (box 0.5 2.0) :density 2})
-        crank-j (revolute-joint! world ground crank [0 5]
-                              {:motor-speed PI
-                               :max-motor-torque 10000
-                               :enable-motor true})
+        crank-j (joint! {:type :revolute
+                         :body-a ground
+                         :body-b crank
+                         :anchor [0 5]
+                         :motor-speed PI
+                         :max-motor-torque 10000
+                         :enable-motor true})
         follow (body! world {:position [0 13]}
                       {:shape (box 0.5 4.0) :density 2})
-        follow-j (revolute-joint! world crank follow [0 9]
-                                  {:enable-motor false})
+        follow-j (joint! {:type :revolute
+                          :body-a crank
+                          :body-b follow
+                          :anchor [0 9]
+                          :enable-motor false})
         piston (body! world {:position [0 17]}
                       {:shape (box 1.5 1.5) :density 2})
-        piston-rj (revolute-joint! world follow piston [0 17] {})
-        piston-pj (prismatic-joint! world ground piston [0 17] [0 1]
-                                    {:max-motor-force 1000
-                                     :enable-motor true})
+        piston-rj (joint! {:type :revolute
+                           :body-a follow
+                           :body-b piston
+                           :anchor [0 17]})
+        piston-pj (joint! {:type :prismatic
+                           :body-a ground
+                           :body-b piston
+                           :anchor [0 17]
+                           :axis [0 1]
+                           :max-motor-force 1000
+                           :enable-motor true})
         payload (body! world {:position [0 23]}
                        {:shape (box 1.5 1.5) :density 2})]
     (assoc bed/initial-state
