@@ -25,11 +25,9 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * EdgeShapes
-  * Chain
-  * CharacterCollision
   * CollisionFiltering
-  * RopeJoint
+  * EdgeShapes
+  * CharacterCollision
   * ConveyorBelt
   * ApplyForce
 * testbed draw circle angle

@@ -16,17 +16,17 @@
                   :density 20
                   :friction 0.2}
         y 25.0
-        links (reduce (fn [prev-body i]
-                        (let [b (body! world {:position [(+ 0.5 i) y]}
-                                       link-fd)]
-                          (joint! {:type :revolute
-                                   :body-a prev-body
-                                   :body-b b
-                                   :anchor [i y]
-                                   :collide-connected false})
-                          b))
-                      ground
-                      (range 30))]
+        linktip (reduce (fn [prev-body i]
+                          (let [b (body! world {:position [(+ 0.5 i) y]}
+                                         link-fd)]
+                            (joint! {:type :revolute
+                                     :body-a prev-body
+                                     :body-b b
+                                     :anchor [i y]
+                                     :collide-connected false})
+                            b))
+                        ground
+                        (range 30))]
     (assoc bed/initial-state
       :world world)))
 

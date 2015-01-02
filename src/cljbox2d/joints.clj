@@ -140,6 +140,7 @@
     (set! (.bodyB jd) body-b)
     (.set (.localAnchorA jd) (vec2 anchor-a))
     (.set (.localAnchorB jd) (vec2 anchor-b))
+    (set! (.maxLength jd) max-length)
     (set! (.collideConnected jd) collide-connected)
     (set! (.userData jd) user-data)
     (.createJoint (.getWorld ^Body body-a) jd)))
