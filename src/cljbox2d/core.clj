@@ -149,18 +149,21 @@ collision group.
 
 `:user-data` should be an atom holding a map."
   [{:keys [shape density friction restitution is-sensor
-           group-index user-data]
-    :or {density 1, friction 0.3, restitution 0.3,
-         is-sensor false, group-index 0}}]
-  (let [fd (FixtureDef.)
-        ff (.filter fd)]
+           group-index category-bits mask-bits
+           user-data]
+    :or {density 1, friction 0.3, restitution 0.3, is-sensor false
+         group-index 0, category-bits 0x0001, mask-bits 0xFFFF}}]
+  (let [fd (FixtureDef.)]
     (set! (.shape fd) shape)
     (set! (.density fd) density)
     (set! (.friction fd) friction)
     (set! (.restitution fd) restitution)
     (set! (.isSensor fd) is-sensor)
-    (set! (.groupIndex ff) group-index)
     (set! (.userData fd) user-data)
+    (let [ff (.filter fd)]
+      (set! (.groupIndex ff) group-index)
+      (set! (.categoryBits ff) category-bits)
+      (set! (.maskBits ff) mask-bits))
     fd))
 
 (defn fixture!

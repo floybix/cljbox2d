@@ -20,7 +20,6 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * CollisionFiltering
   * Raycast
   * PolyShapes
   * BodyTypes
