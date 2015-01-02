@@ -38,7 +38,7 @@
 (defmulti joint!*
   :type)
 
-(defmulti localspec
+(defmulti initspec
   "Augments the joint specification map to define body-local anchors,
    axes, etc. from given initial world values (e.g. `:world-anchor`)."
   :type)
@@ -83,13 +83,13 @@
    * `:weld` joint. This requires defining a common anchor point on
      both bodies. This initialisation function takes a world point."
   [spec]
-  (joint!* (localspec spec)))
+  (joint!* (initspec spec)))
 
-(defmethod localspec :default
+(defmethod initspec :default
   [spec]
   spec)
 
-(defmethod localspec :revolute
+(defmethod initspec :revolute
   [{:keys [body-a body-b world-anchor]
     :as spec}]
   (if (:anchor-a spec) ;; prefer local spec
@@ -124,7 +124,7 @@
     (set! (.userData jd) user-data)
     (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defmethod localspec :prismatic
+(defmethod initspec :prismatic
   [{:keys [body-a body-b world-anchor world-axis]
     :as spec}]
   (if (:anchor-a spec) ;; prefer local spec
@@ -161,7 +161,7 @@
     (set! (.userData jd) user-data)
     (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defmethod localspec :distance
+(defmethod initspec :distance
   [{:keys [body-a body-b world-anchor-a world-anchor-b]
     :as spec}]
   (if (:anchor-a spec) ;; prefer local spec
@@ -236,7 +236,7 @@
     (set! (.userData jd) user-data)
     (.createJoint (.getWorld ^Body body-a) jd)))
 
-(defmethod localspec :weld
+(defmethod initspec :weld
   [{:keys [body-a body-b world-anchor]
     :as spec}]
   (if (:anchor-a spec) ;; prefer local spec
