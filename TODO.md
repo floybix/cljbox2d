@@ -20,11 +20,11 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * Raycast
   * PolyShapes
   * BodyTypes
   * CharacterCollision
   * OneSided
+  * Continuous
   * ConveyorBelt
   * ApplyForce
 * testbed draw circle angle

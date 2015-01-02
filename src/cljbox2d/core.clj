@@ -457,19 +457,21 @@ is tested to be inside each shape, not just within its bounding box."
        (.queryAABB world cb bb)
        @fxx)))
 
-(defn raycast
+(defrecord RaycastContact [fixture point normal fraction])
+
+(defn raycast-all
   "Raycast from start-pt to end-pt, returning the intersected fixtures
-in an ordered seq. Each element of the seq looks like `[fixture point
-normal fraction]`, giving details of the intersection point and its
-fraction along the ray."
+   in an unordered sequence. Each element is a map (record) with keys
+   `:fixture` `:point` `:normal` `:fraction`, giving details of the
+   intersection point and its position fraction along the ray."
   [^World world start-pt end-pt]
   (let [fxx (atom [])
         cb (reify RayCastCallback
              (reportFixture [_ fixt pt norm frac]
-               (swap! fxx conj [fixt pt norm frac])
+               (swap! fxx conj (RaycastContact. fixt (v2xy pt) (v2xy norm) frac))
                1.0))]
-    (.raycast world cb start-pt end-pt)
-    (sort-by #(nth % 3) @fxx)))
+    (.raycast world cb (vec2 start-pt) (vec2 end-pt))
+    @fxx))
 
 ;; ## Contacts
 
@@ -485,11 +487,12 @@ fraction along the ray."
       (.getWorldManifold contact world-manifold)
       (let [fixt-a (.getFixtureA contact)
             fixt-b (.getFixtureB contact)
-            -points (.points world-manifold)
-            pts (map v2xy (take pcount -points))
+            pts (map v2xy (take pcount (.points world-manifold)))
             normal (v2xy (.normal world-manifold))]
-        {:fixture-a fixt-a :fixture-b fixt-b
-         :points pts :normal normal}))))
+        {:fixture-a fixt-a
+         :fixture-b fixt-b
+         :points pts
+         :normal normal}))))
 
 (defn contacts
   "Lazy seq of contacts on this body. Each contact is a map as defined
