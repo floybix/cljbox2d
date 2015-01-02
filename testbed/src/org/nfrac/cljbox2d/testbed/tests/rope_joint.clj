@@ -31,7 +31,7 @@
                             (joint! {:type :revolute
                                      :body-a prev-body
                                      :body-b b
-                                     :anchor [i y]
+                                     :world-anchor [i y]
                                      :collide-connected false})
                             b))
                         ground

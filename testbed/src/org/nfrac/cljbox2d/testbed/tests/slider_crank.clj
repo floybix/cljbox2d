@@ -18,7 +18,7 @@
         crank-j (joint! {:type :revolute
                          :body-a ground
                          :body-b crank
-                         :anchor [0 5]
+                         :world-anchor [0 5]
                          :motor-speed PI
                          :max-motor-torque 10000
                          :enable-motor true})
@@ -27,19 +27,19 @@
         follow-j (joint! {:type :revolute
                           :body-a crank
                           :body-b follow
-                          :anchor [0 9]
+                          :world-anchor [0 9]
                           :enable-motor false})
         piston (body! world {:position [0 17]}
                       {:shape (box 1.5 1.5) :density 2})
         piston-rj (joint! {:type :revolute
                            :body-a follow
                            :body-b piston
-                           :anchor [0 17]})
+                           :world-anchor [0 17]})
         piston-pj (joint! {:type :prismatic
                            :body-a ground
                            :body-b piston
-                           :anchor [0 17]
-                           :axis [0 1]
+                           :world-anchor [0 17]
+                           :world-axis [0 1]
                            :max-motor-force 1000
                            :enable-motor true})
         payload (body! world {:position [0 23]}

@@ -12,17 +12,16 @@
   (let [world (new-world)
         ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
-        link-fd {:shape (box 0.6 0.125)
-                  :density 20
-                  :friction 0.2}
         y 25.0
         linktip (reduce (fn [prev-body i]
                           (let [b (body! world {:position [(+ 0.5 i) y]}
-                                         link-fd)]
+                                         {:shape (box 0.6 0.125)
+                                          :density 20
+                                          :friction 0.2})]
                             (joint! {:type :revolute
                                      :body-a prev-body
                                      :body-b b
-                                     :anchor [i y]
+                                     :world-anchor [i y]
                                      :collide-connected false})
                             b))
                         ground

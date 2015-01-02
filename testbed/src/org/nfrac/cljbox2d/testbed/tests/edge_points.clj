@@ -45,7 +45,7 @@
                            (joint! {:type :revolute
                                     :body-a hub2
                                     :body-b b
-                                    :anchor pt
+                                    :world-anchor pt
                                     :enable-motor true
                                     :motor-speed (/ PI 2)
                                     :max-motor-torque 100}))))]

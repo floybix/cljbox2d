@@ -1,9 +1,4 @@
 
-* (create!) for bodydef or jointdef or {}bodydef+fixturedefs
-* (body) - includes fixturedefs
-* (revolute-joint)
-
-
 * use euclidian.math.vector
 * bring in from uglyboids:
   * buffered-contact-listener
@@ -26,8 +21,11 @@
   * filter (getFilterData)
 * more testbed tests
   * CollisionFiltering
-  * EdgeShapes
+  * Raycast
+  * PolyShapes
+  * BodyTypes
   * CharacterCollision
+  * OneSided
   * ConveyorBelt
   * ApplyForce
 * testbed draw circle angle

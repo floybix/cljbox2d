@@ -28,9 +28,9 @@
                                   off-y (if is-top 0.5 -0.5)]]
                         (joint! {:type :distance
                                  :body-a ground
-                                 :anchor-a [ground-x ground-y]
                                  :body-b nd
-                                 :anchor-b [(+ x off-x) (+ y off-y)]
+                                 :world-anchor-a [ground-x ground-y]
+                                 :world-anchor-b [(+ x off-x) (+ y off-y)]
                                  :frequency-hz 4
                                  :damping-ratio 0.5}))
         inner-joints (for [i (range 4)
@@ -43,8 +43,8 @@
                        (joint! {:type :distance
                                 :body-a n1
                                 :body-b n2
-                                :anchor-a [(+ x1 off-x1) (+ y1 off-y1)]
-                                :anchor-b [(- x2 off-x1) (- y2 off-y1)]
+                                :world-anchor-a [(+ x1 off-x1) (+ y1 off-y1)]
+                                :world-anchor-b [(- x2 off-x1) (- y2 off-y1)]
                                 :frequency-hz 4
                                 :damping-ratio 0.5}))]
     (assoc bed/initial-state

@@ -21,7 +21,7 @@
         joint (joint! {:type :revolute
                        :body-a ground
                        :body-b ball
-                       :anchor [0 12]
+                       :world-anchor [0 12]
                        :motor-speed (- PI)
                        :max-motor-torque 10000
                        :lower-angle (/ (- PI) 4)

@@ -198,10 +198,9 @@ directly, instead use `(body!)`.
     bd))
 
 (defn body!
-  "Creates a Body together with its Fixtures. The second argument is a
-   body specification map to be passed to the `body-def` function. Any
-   remaining arguments are fixture specification maps to be passed to
-   the `fixture-def` function."
+  "Creates a Body together with its Fixtures. The `body-spec` map is
+   passed to the `body-def` function. Each of the `fixture-specs` are
+   passed to the `fixture-def` function."
   [^World world body-spec & fixture-specs]
   (let [bd (body-def body-spec)
         bod (.createBody world bd)]
