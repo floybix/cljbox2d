@@ -38,11 +38,9 @@
         prev-angle (:angle rc)
         angle (+ prev-angle (* 0.25 (/ PI 180)))
         end-point (v-add eye (polar-xy length angle))
-        all-hits (->> (raycast-all (:world state) eye end-point)
-                      (remove #(= 0 (:shape-idx (user-data (body (:fixture %)))))))
-        hits (if (= (:mode rc) :closest)
-               (take 1 (sort-by :fraction all-hits))
-               all-hits)]
+        hits (raycast (:world state) eye end-point (:mode rc)
+                      :ignore (fn [fixt]
+                                (= 0 (:shape-idx (user-data (body fixt))))))]
     (assoc state ::raycast
            (assoc rc
              :angle angle
@@ -70,12 +68,10 @@
                     "Mode = " mode)
                10 10)
     (when (or (empty? hits)
-              (= mode :multiple))
+              (= mode :all))
       (quil/line (->px eye)
                  (->px (:end-point rc))))    
-    (doseq [hit (if (= mode :closest)
-                  (take 1 hits)
-                  hits)]
+    (doseq [hit hits]
       (quil/line (->px eye) (->px (:point hit)))
       (let [[x-px y-px] (->px (:point hit))]
         (quil/ellipse x-px y-px 5 5)))))
@@ -101,8 +97,8 @@
         (create-body state idx))
       \m (let [mode (:mode (::raycast state))
                new-mode (case mode
-                          :closest :multiple
-                          :multiple :closest)]
+                          :closest :all
+                          :all :closest)]
            (assoc-in state [::raycast :mode] new-mode))
       \d (do (doseq [b (::bodies state)] (destroy! b))
              (assoc state ::bodies []))

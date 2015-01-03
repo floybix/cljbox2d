@@ -20,13 +20,13 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * PolyShapes
-  * BodyTypes
+  * Continuous
   * CharacterCollision
   * OneSided
-  * Continuous
   * ConveyorBelt
+  * BodyTypes
   * ApplyForce
+  * PolyShapes
 * testbed draw circle angle
 * testbed restart 'r'
 * need a library of shape functions?

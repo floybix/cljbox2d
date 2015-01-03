@@ -459,17 +459,27 @@ is tested to be inside each shape, not just within its bounding box."
 
 (defrecord RaycastContact [fixture point normal fraction])
 
-(defn raycast-all
-  "Raycast from start-pt to end-pt, returning the intersected fixtures
-   in an unordered sequence. Each element is a map (record) with keys
-   `:fixture` `:point` `:normal` `:fraction`, giving details of the
-   intersection point and its position fraction along the ray."
-  [^World world start-pt end-pt]
-  (let [fxx (atom [])
+(defn raycast
+  "Raycast from start-pt to end-pt, returning a sequence of fixture
+   intersections, each a map (record) with keys `:fixture` `:point`
+   `:normal` `:fraction`. If `mode` is `:all`, all intersections are
+   returned in no particular order. If mode is `:closest`, only the
+   closest intersection is returned in a single-element list, or an
+   empty list if none exist. If an `:ignore` function is given,
+   fixtures returning logical true from it are ignored."
+   [^World world start-pt end-pt mode & {:keys [ignore]
+                                         :or {ignore (constantly false)}}]
+  (let [fxx (atom ())
         cb (reify RayCastCallback
              (reportFixture [_ fixt pt norm frac]
-               (swap! fxx conj (RaycastContact. fixt (v2xy pt) (v2xy norm) frac))
-               1.0))]
+               (if (ignore fixt)
+                 -1
+                 (let [x (RaycastContact. fixt (v2xy pt) (v2xy norm) frac)]
+                   (case mode
+                     :all (do (swap! fxx conj x)
+                              1.0)
+                     :closest (do (reset! fxx [x])
+                                  frac))))))]
     (.raycast world cb (vec2 start-pt) (vec2 end-pt))
     @fxx))
 
