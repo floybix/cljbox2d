@@ -21,9 +21,7 @@
                                      joint!]]
             [quil.core :as quil])
   (:import (org.jbox2d.dynamics World)
-           (org.jbox2d.dynamics.joints MouseJoint)
-           (org.jbox2d.callbacks ContactListener)
-           (org.jbox2d.collision WorldManifold)))
+           (org.jbox2d.dynamics.joints MouseJoint)))
 
 (def initial-state
   {:world nil
@@ -135,36 +133,6 @@ bounds if necessary to ensure an isometric aspect ratio."
                        (doseq [[x y] px-pts] (quil/vertex x y))
                        (quil/end-shape :close)))))))
 
-;; ## contact / collision handling
-
-(defn set-buffering-contact-listener!
-  "A ContactListener which populates `contact-buffer`.
-   Returns an atom which will be populated with a sequence of
-   contacts, each given as `[fixture-a fixture-b points normal]`."
-  [^World world]
-  (let [contact-buffer (atom [])
-        world-manifold (WorldManifold.)
-        lstnr (reify ContactListener
-                (beginContact [_ _])
-                (endContact [_ _])
-                (postSolve [_ _ _])
-                (preSolve [_ contact _]
-                  (let [manifold (.getManifold contact)
-                        pcount (.pointCount manifold)]
-                    (when (pos? pcount)
-                      ;; mutates its argument:
-                      (.getWorldManifold contact world-manifold)
-                      (let [fixt-a (.getFixtureA contact)
-                            fixt-b (.getFixtureB contact)
-                            -points (.points world-manifold)
-                            pts (map v2xy (take pcount -points))
-                            normal (v2xy (.normal world-manifold))]
-                        (swap! contact-buffer conj
-                               [fixt-a fixt-b pts normal])
-                        )))))]
-    (.setContactListener world lstnr)
-    contact-buffer))
-    
 ;; ## input event handling
 
 (defn left-mouse-pressed

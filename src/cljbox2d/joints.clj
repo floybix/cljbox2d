@@ -224,7 +224,7 @@
            collide-connected user-data]
     :or {max-force 1000,
          frequency-hz 5, damping-ratio 0.7,
-         collide-connected false}}]
+         collide-connected true}}]
   (let [jd (MouseJointDef.)]
     (set! (.bodyA jd) body-a)
     (set! (.bodyB jd) body-b)

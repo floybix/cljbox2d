@@ -13,7 +13,7 @@
            (org.jbox2d.dynamics World Body BodyDef BodyType Fixture FixtureDef)
            (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape EdgeShape ShapeType MassData)
-           (org.jbox2d.callbacks QueryCallback RayCastCallback)
+           (org.jbox2d.callbacks QueryCallback RayCastCallback ContactListener)
            (org.jbox2d.dynamics.joints Joint)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)))
 
@@ -248,6 +248,7 @@ function to pull out the first fixture from a body."
   (loc-center [this] "Center of mass in local coordinates.")
   (position [this] [this loc-pt] "World coordinates of a local point, default [0 0].")
   (to-local [this pt] "Local coordinates of a world point.")
+  (to-local-vect [this vect] "Local vector of a world vector.")
   (edge-point* [this angle frac origin-pt] "World coordinates a
    fraction of the way to the edge of a shape in a given direction
    from an origin point. Prefer the high-level `edge-point`.")
@@ -271,6 +272,8 @@ function to pull out the first fixture from a body."
        (v2xy (.getWorldPoint this (vec2 loc-pt)))))
   (to-local [this pt]
     (v2xy (.getLocalPoint this (vec2 pt))))
+  (to-local-vect [this vect]
+    (v2xy (.getLocalVector this (vec2 vect))))
   (edge-point* [this angle frac origin-pt]
     ;; take the edge point from all fixtures having
     ;; greatest dot product with the (unit) angle vector.
@@ -298,6 +301,8 @@ function to pull out the first fixture from a body."
        (position (body this) loc-pt)))
   (to-local [this pt]
     (to-local (body this) pt))
+  (to-local-vect [this vect]
+    (to-local-vect (body this) vect))
   (edge-point* [this angle frac origin-pt]
     (let [vv (world-coords this)
           on-edge (edge-point-from-vertices vv angle origin-pt)]
@@ -353,6 +358,11 @@ the object center (in world coordinates)."
      (v2xy (.getLinearVelocity body)))
   ([^Body body loc-pt]
      (v2xy (.getLinearVelocityFromLocalPoint body (vec2 loc-pt)))))
+
+(defn linear-velocity-world
+  "Linear velocity of a point on the body in world coordinates. In m/s."
+  ([^Body body world-pt]
+     (v2xy (.getLinearVelocityFromWorldPoint body (vec2 world-pt)))))
 
 (defn angular-velocity
   "Angular velocity of a body in radians/second."
@@ -457,7 +467,7 @@ is tested to be inside each shape, not just within its bounding box."
        (.queryAABB world cb bb)
        @fxx)))
 
-(defrecord RaycastContact [fixture point normal fraction])
+(defrecord RaycastContactData [fixture point normal fraction])
 
 (defn raycast
   "Raycast from start-pt to end-pt, returning a sequence of fixture
@@ -474,7 +484,7 @@ is tested to be inside each shape, not just within its bounding box."
              (reportFixture [_ fixt pt norm frac]
                (if (ignore fixt)
                  -1
-                 (let [x (RaycastContact. fixt (v2xy pt) (v2xy norm) frac)]
+                 (let [x (RaycastContactData. fixt (v2xy pt) (v2xy norm) frac)]
                    (case mode
                      :all (do (swap! fxx conj x)
                               1.0)
@@ -484,6 +494,8 @@ is tested to be inside each shape, not just within its bounding box."
     @fxx))
 
 ;; ## Contacts
+
+(defrecord ContactData [fixture-a fixture-b points normal])
 
 (defn contact-data
   "Returns a map with keys :fixture-a :fixture-b :points :normal
@@ -499,12 +511,37 @@ is tested to be inside each shape, not just within its bounding box."
             fixt-b (.getFixtureB contact)
             pts (map v2xy (take pcount (.points world-manifold)))
             normal (v2xy (.normal world-manifold))]
-        {:fixture-a fixt-a
-         :fixture-b fixt-b
-         :points pts
-         :normal normal}))))
+        (ContactData. fixt-a fixt-b pts normal)))))
 
-(defn contacts
+(defn set-buffering-contact-listener!
+  "Sets a ContactListener on the world which stores contacts.
+   Returns an atom which will be populated with a sequence of
+   `contact-data` records."
+  [^World world]
+  (let [contact-buffer (atom ())
+        lstnr (reify ContactListener
+                (beginContact [_ _])
+                (endContact [_ _])
+                (postSolve [_ _ _])
+                (preSolve [_ contact _]
+                  (if-let [cd (contact-data contact)]
+                    (swap! contact-buffer conj cd))))]
+    (.setContactListener world lstnr)
+    contact-buffer))
+
+(defn set-contact-pre-solve!
+  "Sets a ContactListener on the world with the given pre-solve, a
+   function of the Contact object."
+  [^World world pre-solve]
+  (let [lstnr (reify ContactListener
+                (beginContact [_ _])
+                (endContact [_ _])
+                (postSolve [_ _ _])
+                (preSolve [_ contact _]
+                  (pre-solve contact)))]
+    (.setContactListener world lstnr)))
+
+(defn current-contacts
   "Lazy seq of contacts on this body. Each contact is a map as defined
 by the `contact-data` function. Contacts without actual contact
 points (i.e. created only due to overlapping bounding boxes) are
@@ -522,5 +559,5 @@ excluded."
   [^Body bod]
   (let [bodies (mapcat #(list (body (:fixture-a %))
                               (body (:fixture-b %)))
-                       (contacts bod))]
+                       (current-contacts bod))]
     (set (remove #(= bod %) bodies))))

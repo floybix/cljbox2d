@@ -33,22 +33,22 @@
                         {:shape (circle 2)})]
     (assoc bed/initial-state
       :world world
-      :contact-buffer (bed/set-buffering-contact-listener! world))))
+      :contact-buffer (set-buffering-contact-listener! world))))
 
 (defn post-step
   [state]
   ;; process the buffer of contact points
   (let [cbuffer (:contact-buffer state)
-        to-nuke (for [[fixt-a fixt-b _ _] @cbuffer]
-                  (let [body-a (body fixt-a)
-                        body-b (body fixt-b)
+        to-nuke (for [{:keys [fixture-a fixture-b]} @cbuffer]
+                  (let [body-a (body fixture-a)
+                        body-b (body fixture-b)
                         mass-a (mass body-a)
                         mass-b (mass body-b)]
                     (when (and (pos? mass-a) (pos? mass-b))
                       (if (< mass-a mass-b) body-a body-b))))]
     (doseq [b (remove nil? (distinct to-nuke))]
       (destroy! b))
-    (reset! cbuffer [])
+    (swap! cbuffer empty)
     state))
 
 (defn step

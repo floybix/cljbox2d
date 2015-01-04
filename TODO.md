@@ -1,4 +1,4 @@
-
+* could we extend some sort of Lookup/Editable protocol to JBox2D objects?
 * use euclidian.math.vector
 * bring in from uglyboids:
   * buffered-contact-listener
@@ -20,13 +20,11 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * Continuous
-  * CharacterCollision
-  * OneSided
   * ConveyorBelt
-  * BodyTypes
+  * OneSided
   * ApplyForce
-  * PolyShapes
+  * Car
+  * Buoyancy
 * testbed draw circle angle
 * testbed restart 'r'
 * need a library of shape functions?
