@@ -20,7 +20,7 @@
                  (= fixt-a sensor-fixt) (body fixt-b)
                  (= fixt-b sensor-fixt) (body fixt-a))]
         (when bod
-          (swap! (user-data bod) assoc :touching? true))))
+          (swap! (user-data bod) assoc :touching? true :rgb [255 0 0]))))
     (endContact [_ contact]
       (let [fixt-a (.getFixtureA contact)
             fixt-b (.getFixtureB contact)
@@ -28,9 +28,9 @@
                  (= fixt-a sensor-fixt) (body fixt-b)
                  (= fixt-b sensor-fixt) (body fixt-a))]
         (when bod
-          (swap! (user-data bod) assoc :touching? false))))
-    (postSolve [_ contact impulse])
-    (preSolve [_ contact omanifold])))
+          (swap! (user-data bod) assoc :touching? false :rgb nil))))
+    (preSolve [_ contact _])
+    (postSolve [_ contact _])))
 
 (defn setup []
   (quil/frame-rate 30)

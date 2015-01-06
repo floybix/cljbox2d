@@ -81,9 +81,10 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 (defn default-rgb
   [body]
-  (if (= :static (body-type body))
-    [100 255 100]
-    [255 200 200]))
+  (case (body-type body)
+    :static [100 255 100]
+    :kinematic [100 100 255]
+    :dynamic [255 200 200]))
 
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."

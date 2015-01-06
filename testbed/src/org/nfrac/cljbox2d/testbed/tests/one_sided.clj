@@ -6,7 +6,7 @@
             [cljbox2d.vec2d :refer [y-val]]
             [quil.core :as quil]
             [quil.middleware])
-  (:import (org.jbox2d.dynamics.contacts Contact)))
+  (:import (org.jbox2d.callbacks ContactListener)))
 
 (defn setup []
   (quil/frame-rate 60)
@@ -21,20 +21,24 @@
                             :linear-velocity [0 -50]}
                      {:shape (circle 0.5)
                       :density 20})]
-    (set-contact-pre-solve!
+    (.setContactListener
      world
-     (fn [^Contact contact]
-       (let [{:keys [fixture-a fixture-b points]} (contact-data contact)]
-         ;; check if one of the fixtures is the platform
-         (when (or (= platform (body fixture-a))
-                   (= platform (body fixture-b)))
-           ;; if any points are below the platform top surface, cancel contact
-           (when (some (fn [point]
-                         ;; contact more than 5cm inside platform?
-                         (< (y-val (to-local platform point))
-                            (- plat-face-local-y 0.05)))
-                       points)
-             (.setEnabled contact false))))))
+     (reify ContactListener
+       (beginContact [_ _])
+       (endContact [_ _])
+       (postSolve [_ _ _])
+       (preSolve [_ contact _]
+         (let [{:keys [fixture-a fixture-b points]} (contact-data contact)]
+           ;; check if one of the fixtures is the platform
+           (when (or (= platform (body fixture-a))
+                     (= platform (body fixture-b)))
+             ;; if any points are below the platform top surface, cancel contact
+             (when (some (fn [point]
+                           ;; contact more than 5cm inside platform?
+                           (< (y-val (to-local platform point))
+                              (- plat-face-local-y 0.05)))
+                         points)
+               (.setEnabled contact false)))))))
     (assoc bed/initial-state
       :world world
       ;; note the initial collision is missed with dt-secs 1/30

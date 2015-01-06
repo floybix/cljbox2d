@@ -391,6 +391,14 @@ mass. This wakes up the body."
   [^Body body impulse pt]
   (.applyLinearImpulse body (vec2 impulse) (vec2 pt)))
 
+(defn linear-velocity!
+  [^Body body vel]
+  (.setLinearVelocity body (vec2 vel)))
+
+(defn angular-velocity!
+  [^Body body a-vel]
+  (.setAngularVelocity body a-vel))
+
 (defn awake?
   [^Body body]
   (.isAwake body))
@@ -528,18 +536,6 @@ is tested to be inside each shape, not just within its bounding box."
                     (swap! contact-buffer conj cd))))]
     (.setContactListener world lstnr)
     contact-buffer))
-
-(defn set-contact-pre-solve!
-  "Sets a ContactListener on the world with the given pre-solve, a
-   function of the Contact object."
-  [^World world pre-solve]
-  (let [lstnr (reify ContactListener
-                (beginContact [_ _])
-                (endContact [_ _])
-                (postSolve [_ _ _])
-                (preSolve [_ contact _]
-                  (pre-solve contact)))]
-    (.setContactListener world lstnr)))
 
 (defn current-contacts
   "Lazy seq of contacts on this body. Each contact is a map as defined

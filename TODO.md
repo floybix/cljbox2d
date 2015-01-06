@@ -1,8 +1,5 @@
-* could we extend some sort of Lookup/Editable protocol to JBox2D objects?
+
 * use euclidian.math.vector
-* bring in from uglyboids:
-  * buffered-contact-listener
-  * set-velocity
 * fully qualify namespace org.nfrac.cljbox2d
 * edge-point-local
 * in joint! give :limits []
@@ -10,10 +7,6 @@
   * (fixture-spec) returns map from Fixture
   * (body-spec) returns map from Body
 * how to detect unmatched keys in argument maps?
-* how to provide arbitrary contact handlers?
-* testbed: set a default contact handler that:
-  * buffers contacts (preSolve)
-  * stores touching status for sensors (beginContact) (endContact)
 * fixture functions:
   * isSensor
   * get/set friction, density, restitution etc
@@ -21,7 +14,6 @@
   * filter (getFilterData)
 * more testbed tests
   * ConveyorBelt
-  * OneSided
   * ApplyForce
   * Car
   * Buoyancy
