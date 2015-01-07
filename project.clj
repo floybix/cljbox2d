@@ -1,4 +1,4 @@
-(defproject cljbox2d "0.3.0-SNAPSHOT"
+(defproject org.nfrac/cljbox2d "0.3.0-SNAPSHOT"
   :description "A clojure wrapper for JBox2D, for 2D physics simulation."
   :url "https://github.com/floybix/cljbox2d/"
   :license {:name "Eclipse Public License"

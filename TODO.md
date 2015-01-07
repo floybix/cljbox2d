@@ -13,7 +13,6 @@
   * test point inside fixture
   * filter (getFilterData)
 * more testbed tests
-  * ConveyorBelt
   * ApplyForce
   * Car
   * Buoyancy
