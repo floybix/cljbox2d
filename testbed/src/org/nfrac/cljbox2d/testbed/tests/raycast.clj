@@ -40,7 +40,7 @@
         end-point (v-add eye (polar-xy length angle))
         hits (raycast (:world state) eye end-point (:mode rc)
                       :ignore (fn [fixt]
-                                (= 0 (:shape-idx (user-data (body fixt))))))]
+                                (= 0 (:shape-idx (user-data (body-of fixt))))))]
     (assoc state ::raycast
            (assoc rc
              :angle angle

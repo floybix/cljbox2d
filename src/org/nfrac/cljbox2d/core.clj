@@ -36,7 +36,7 @@
 
 (defn new-world
   "Returns a new Box2D world. Gravity defaults to [0 -10] m/s^2."
-  ([]
+  (^org.jbox2d.dynamics.World []
      (new-world [0 -10]))
   ([gravity]
      (World. (vec2 gravity))))
@@ -214,7 +214,8 @@ by default centered at [0 0]"
 
 (defn fixture!
   "Creates a Fixture on an existing Body. The second argument is a
-fixture specification map to be passed to the `fixture-def` function."
+   fixture specification map to be passed to the `fixture-def`
+   function."
   [^Body body fixture-spec]
   (.createFixture body (fixture-def fixture-spec)))
 
@@ -222,7 +223,7 @@ fixture specification map to be passed to the `fixture-def` function."
 
 (defn body-def
   "A BodyDef, which holds properties but not shapes. Do not call this
-directly, instead use `(body!)`."
+   directly, instead use `(body!)`."
   [{:keys [type position angle bullet fixed-rotation
            angular-damping linear-damping
            angular-velocity linear-velocity
@@ -257,7 +258,7 @@ directly, instead use `(body!)`."
 
 ;; ## Query of objects
 
-(defn ^Body body
+(defn ^Body body-of
   "Get the body to which a fixture belongs"
   [^Fixture fixt]
   (.getBody fixt))
@@ -276,7 +277,7 @@ directly, instead use `(body!)`."
             (when fl (cons fl (nextstep (.getNext fl)))))]
     (lazy-seq (nextstep (.getFixtureList body)))))
 
-(defn fixture
+(defn fixture-of
   "Often a body will only have one fixture. This is a convenience
 function to pull out the first fixture from a body."
   [^Body body]
@@ -338,13 +339,13 @@ function to pull out the first fixture from a body."
       (v2xy (.center md))))
   (position
     ([this]
-       (position (body this)))
+       (position (body-of this)))
     ([this loc-pt]
-       (position (body this) loc-pt)))
+       (position (body-of this) loc-pt)))
   (to-local [this pt]
-    (to-local (body this) pt))
+    (to-local (body-of this) pt))
   (to-local-vect [this vect]
-    (to-local-vect (body this) vect))
+    (to-local-vect (body-of this) vect))
   (edge-point* [this angle frac origin-pt]
     (let [vv (world-coords this)
           on-edge (edge-point-from-vertices vv angle origin-pt)]
@@ -594,8 +595,8 @@ excluded."
 (defn contacting
   "Set of other bodies that the given body is currently contacting."
   [^Body bod]
-  (let [bodies (mapcat #(list (body (:fixture-a %))
-                              (body (:fixture-b %)))
+  (let [bodies (mapcat #(list (body-of (:fixture-a %))
+                              (body-of (:fixture-b %)))
                        (current-contacts bod))]
     (set (remove #(= bod %) bodies))))
 

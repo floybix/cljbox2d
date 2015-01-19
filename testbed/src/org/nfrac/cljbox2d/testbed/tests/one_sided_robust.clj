@@ -14,8 +14,8 @@
 (defn handle-one-way-contact!
   [^Contact contact platform local-top-y]
   (let [{:keys [fixture-a fixture-b points]} (contact-data contact)
-        body-a (body fixture-a)
-        body-b (body fixture-b)
+        body-a (body-of fixture-a)
+        body-b (body-of fixture-b)
         other-body (cond
                     (= body-a platform) body-b
                     (= body-b platform) body-a)]

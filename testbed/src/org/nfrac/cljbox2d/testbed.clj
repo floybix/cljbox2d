@@ -11,7 +11,7 @@
   In this namespace are drawing functions and input event handlers."
   (:require [org.nfrac.cljbox2d.core
              :refer [step! bodyseq fixtureseq body-type shape-type joint-type
-                     body center world-coords radius mass query-at-point
+                     body-of center world-coords radius mass query-at-point
                      destroy! user-data awake? wake! v2xy vec2
                      joint! alljointseq body-a body-b anchor-a anchor-b]]
             [quil.core :as quil])
@@ -108,8 +108,7 @@ bounds if necessary to ensure an isometric aspect ratio."
         ))
     (doseq [body (bodyseq world)
             :let [ud (user-data body)
-                  ud (when (instance? clojure.lang.IDeref ud) (deref ud))
-                  rgb (or (:rgb ud)
+                  rgb (or (::rgb ud)
                           (default-rgb body))
                   color (apply quil/color rgb)
                   alpha (if (= :static (body-type body)) 64
@@ -140,7 +139,7 @@ bounds if necessary to ensure an isometric aspect ratio."
     (let [pt (px-to-world (:camera state) [(:x event) (:y event)])
           world (:world state)]
       (if-let [fixt (first (query-at-point world pt 1))]
-        (let [bod (body fixt)
+        (let [bod (body-of fixt)
               ground-body (first (filter #(= :static (body-type %))
                                          (bodyseq world)))
               mj (joint! {:type :mouse

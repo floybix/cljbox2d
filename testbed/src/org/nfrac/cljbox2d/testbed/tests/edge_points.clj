@@ -20,7 +20,7 @@
         ;; (because we are adding fixtures to the body)
         hub (body! world {:position [0 10]}
                    {:shape (polygon shell-v)})
-        fx (fixture hub)
+        fx (fixture-of hub)
         spokes (doall (for [angle angles
                             :let [pt (edge-point fx angle)
                                   locpt (to-local hub pt)]]

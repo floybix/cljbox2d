@@ -40,8 +40,8 @@
   ;; process the buffer of contact points
   (let [cbuffer (:contact-buffer state)
         to-nuke (for [{:keys [fixture-a fixture-b]} @cbuffer]
-                  (let [body-a (body fixture-a)
-                        body-b (body fixture-b)
+                  (let [body-a (body-of fixture-a)
+                        body-b (body-of fixture-b)
                         mass-a (mass body-a)
                         mass-b (mass body-b)]
                     (when (and (pos? mass-a) (pos? mass-b))

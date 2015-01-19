@@ -30,8 +30,8 @@
        (preSolve [_ contact _]
          (let [{:keys [fixture-a fixture-b points]} (contact-data contact)]
            ;; check if one of the fixtures is the platform
-           (when (or (= platform (body fixture-a))
-                     (= platform (body fixture-b)))
+           (when (or (= platform (body-of fixture-a))
+                     (= platform (body-of fixture-b)))
              ;; if any points are below the platform top surface, cancel contact
              (when (some (fn [point]
                            ;; contact more than 5cm inside platform?

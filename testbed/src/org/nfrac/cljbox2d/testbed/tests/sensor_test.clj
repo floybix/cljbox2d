@@ -17,18 +17,18 @@
       (let [fixt-a (.getFixtureA contact)
             fixt-b (.getFixtureB contact)
             bod (cond
-                 (= fixt-a sensor-fixt) (body fixt-b)
-                 (= fixt-b sensor-fixt) (body fixt-a))]
+                 (= fixt-a sensor-fixt) (body-of fixt-b)
+                 (= fixt-b sensor-fixt) (body-of fixt-a))]
         (when bod
-          (swap! (user-data bod) assoc :touching? true :rgb [255 0 0]))))
+          (vary-user-data bod #(assoc % ::touching? true ::bed/rgb [255 0 0])))))
     (endContact [_ contact]
       (let [fixt-a (.getFixtureA contact)
             fixt-b (.getFixtureB contact)
             bod (cond
-                 (= fixt-a sensor-fixt) (body fixt-b)
-                 (= fixt-b sensor-fixt) (body fixt-a))]
+                 (= fixt-a sensor-fixt) (body-of fixt-b)
+                 (= fixt-b sensor-fixt) (body-of fixt-a))]
         (when bod
-          (swap! (user-data bod) assoc :touching? false :rgb nil))))
+          (vary-user-data bod #(assoc % ::touching? false ::bed/rgb nil)))))
     (preSolve [_ contact _])
     (postSolve [_ contact _])))
 
@@ -42,7 +42,7 @@
         ballseq (for [i (range 7)
                       :let [x (+ -10 (* i 3))]]
                   (body! world {:position [x 20]
-                                :user-data (atom {:touching? false})}
+                                :user-data {::touching? false}}
                          {:shape (circle 1)}))]
     (.setContactListener world (sensor-touching-listener sens))
     (assoc bed/initial-state
@@ -55,7 +55,7 @@
   (let [sens (:sensor (::things state))
         cent (center sens)]
     (doseq [b (:balls (::things state))
-            :when (:touching? @(user-data b))
+            :when (::touching? (user-data b))
             :let [pt (position b)
                   d (map - cent pt)
                   d-unit (v-scale d)

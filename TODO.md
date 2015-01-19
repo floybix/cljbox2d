@@ -1,6 +1,4 @@
 
-* body => body-of
-
 * use euclidian.math.vector
 * edge-point-local
 * in joint! give :limits []

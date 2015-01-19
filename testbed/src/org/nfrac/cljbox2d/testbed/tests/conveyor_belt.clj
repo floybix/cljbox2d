@@ -29,8 +29,8 @@
        (preSolve [_ contact _]
          (let [{:keys [fixture-a fixture-b]} (contact-data contact)]
            ;; check if one of the fixtures is the platform
-           (when (or (= platform (body fixture-a))
-                     (= platform (body fixture-b)))
+           (when (or (= platform (body-of fixture-a))
+                     (= platform (body-of fixture-b)))
              (.setTangentSpeed contact 5))))))
     (assoc bed/initial-state
       :world world)))
