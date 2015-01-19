@@ -3,7 +3,6 @@
    org.jbox2d.testbed.tests.SliderCrankTest"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
-            [cljbox2d.joints :refer :all]
             [cljbox2d.vec2d :refer [PI]]
             [quil.core :as quil]
             [quil.middleware]))

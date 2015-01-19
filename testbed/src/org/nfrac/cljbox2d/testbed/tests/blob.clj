@@ -3,7 +3,6 @@
    org.jbox2d.testbed.tests.BlobTest4"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
-            [cljbox2d.joints :refer [joint!]]
             [cljbox2d.vec2d :refer [TWOPI polar-xy]]
             [quil.core :as quil]
             [quil.middleware]))

@@ -15,13 +15,13 @@
                                    fixtureseq body-type shape-type body
                                    center world-coords radius mass
                                    query-at-point destroy! user-data
-                                   awake? wake! v2xy vec2]]
-            [cljbox2d.joints :refer [alljointseq joint-type
-                                     body-a body-b anchor-a anchor-b
-                                     joint!]]
+                                   awake? wake! v2xy vec2
+                                   ;; joints:
+                                   alljointseq joint-type
+                                   body-a body-b anchor-a anchor-b
+                                   joint!]]
             [quil.core :as quil])
-  (:import (org.jbox2d.dynamics World)
-           (org.jbox2d.dynamics.joints MouseJoint)))
+  (:import (org.jbox2d.dynamics.joints MouseJoint)))
 
 (def initial-state
   {:world nil
@@ -89,7 +89,7 @@ bounds if necessary to ensure an isometric aspect ratio."
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
   [state]
-  (let [^World world (:world state)
+  (let [world (:world state)
         cam (:camera state)
         ->px (partial world-to-px cam)]
     (setup-style)
@@ -108,7 +108,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                         anch-b (anchor-b jt)]
                     (quil/line (->px anch-a) (->px anch-b)))
         :mouse (let [anch-b (anchor-b jt)
-                     targ (v2xy (.getTarget jt))]
+                     targ (v2xy (.getTarget ^MouseJoint jt))]
                  (quil/line (->px anch-b) (->px targ)))
         :otherwise-ignore-it
         ))
@@ -118,8 +118,8 @@ bounds if necessary to ensure an isometric aspect ratio."
                   rgb (or (:rgb ud)
                           (default-rgb body))
                   color (apply quil/color rgb)
-                  alpha (if (= :static (body-type body)) 127
-                            (if (awake? body) 191 127))]]
+                  alpha (if (= :static (body-type body)) 64
+                            (if (awake? body) 128 64))]]
       (quil/stroke color)
       (quil/fill color alpha)
       (doseq [fx (fixtureseq body)]

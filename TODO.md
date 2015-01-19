@@ -1,4 +1,6 @@
 
+* body => body-of
+
 * use euclidian.math.vector
 * fully qualify namespace org.nfrac.cljbox2d
 * edge-point-local

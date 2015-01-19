@@ -3,7 +3,6 @@
    org.jbox2d.testbed.tests.CollisionFiltering"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
-            [cljbox2d.joints :refer [joint!]]
             [quil.core :as quil]
             [quil.middleware]))
 

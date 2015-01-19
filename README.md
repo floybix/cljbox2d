@@ -19,10 +19,11 @@ Get [Leiningen](https://github.com/technomancy/leiningen) first.
 Some ports of the Box2D / JBox2D testbed tests:
 
 <pre>
-lein run -m cljbox2d.tests.blob
-lein run -m cljbox2d.tests.collision-processing
-lein run -m cljbox2d.tests.sensor-test
-lein run -m cljbox2d.tests.edge-points
+cd testbed/
+lein run -m org.nfrac.cljbox2d.testbed.tests.blob
+lein run -m org.nfrac.cljbox2d.testbed.tests.collision-processing
+lein run -m org.nfrac.cljbox2d.testbed.tests.rope-joint
+lein run -m org.nfrac.cljbox2d.testbed.tests.raycast
 ...etc...
 </pre>
 

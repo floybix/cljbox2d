@@ -3,7 +3,6 @@
    org.jbox2d.testbed.tests.RopeTest"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
             [cljbox2d.core :refer :all]
-            [cljbox2d.joints :refer :all]
             [quil.core :as quil]
             [quil.middleware]))
 
