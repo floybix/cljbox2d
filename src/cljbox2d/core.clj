@@ -137,17 +137,39 @@ by default centered at [0 0]"
     (.set shape va (count vertices))
     shape))
 
+;; ### Userdata (like metadata)
+
+(defprotocol UserData
+  (user-data [this])
+  (set-user-data! [this x]))
+
+(extend-protocol UserData
+  Body
+  (user-data [this] (.getUserData this))
+  (set-user-data! [this x] (.setUserData this x))
+  Fixture
+  (user-data [this] (.getUserData this))
+  (set-user-data! [this x] (.setUserData this x))
+  Joint
+  (user-data [this] (.getUserData this))
+  (set-user-data! [this x] (.setUserData this x)))
+
+(defn vary-user-data
+  "Alters the userdata attached to the object by applying `f` to any
+   existing value or the empty map. Returns `this`."
+  [this f]
+  (set-user-data! this (f (or (user-data this) {})))
+  this)
+
 ;; ### Fixtures
 
 (defn fixture-def
   "A FixtureDef: a shape with some physical properties. Do not call
-this directly, instead use `(body!)` or `(fixture!)`.
+   this directly, instead use `(body!)` or `(fixture!)`.
 
-`:group-index` allows a certain group of objects to never
-collide (negative) or always collide (positive). Zero means no
-collision group.
-
-`:user-data` should be an atom holding a map."
+   `:group-index` allows a certain group of objects to never
+   collide (negative) or always collide (positive). Zero means no
+   collision group."
   [{:keys [shape density friction restitution is-sensor
            group-index category-bits mask-bits
            user-data]
@@ -176,9 +198,7 @@ fixture specification map to be passed to the `fixture-def` function."
 
 (defn body-def
   "A BodyDef, which holds properties but not shapes. Do not call this
-directly, instead use `(body!)`.
-
-`:user-data` should be an atom holding a map."
+directly, instead use `(body!)`."
   [{:keys [type position angle bullet fixed-rotation
            angular-damping linear-damping
            angular-velocity linear-velocity
@@ -251,8 +271,7 @@ function to pull out the first fixture from a body."
   (to-local-vect [this vect] "Local vector of a world vector.")
   (edge-point* [this angle frac origin-pt] "World coordinates a
    fraction of the way to the edge of a shape in a given direction
-   from an origin point. Prefer the high-level `edge-point`.")
-  (user-data [this] "Returns the user data item. By convention this should be an atom holding a map."))
+   from an origin point. Prefer the high-level `edge-point`."))
 
 (declare world-coords local-coords)
 
@@ -281,7 +300,6 @@ function to pull out the first fixture from a body."
                    (edge-point* fx angle frac origin-pt))]
       (apply max-key #(v-mag (v-sub % origin-pt))
              (remove nil? fx-pts))))
-  (user-data [this] (.getUserData this))
 
   Fixture
   (mass [this]
@@ -307,8 +325,7 @@ function to pull out the first fixture from a body."
     (let [vv (world-coords this)
           on-edge (edge-point-from-vertices vv angle origin-pt)]
       (if (nil? on-edge) nil
-          (v-interp origin-pt on-edge frac))))
-  (user-data [this] (.getUserData this)))
+          (v-interp origin-pt on-edge frac)))))
 
 (defn edge-point
   "World coordinates on the edge of an object in a given direction
