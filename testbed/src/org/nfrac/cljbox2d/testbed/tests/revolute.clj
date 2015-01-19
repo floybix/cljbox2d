@@ -2,10 +2,11 @@
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.RevoluteTest"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
-            [cljbox2d.vec2d :refer [PI]]
+            [org.nfrac.cljbox2d.core :refer :all]
             [quil.core :as quil]
             [quil.middleware]))
+
+(def PI Math/PI)
 
 (defn setup []
   (quil/frame-rate 30)

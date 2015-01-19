@@ -30,7 +30,7 @@ lein run -m org.nfrac.cljbox2d.testbed.tests.raycast
 See the ball bounce (requires some imagination...)
 
 ```clojure
-(use 'cljbox2d.core)
+(use 'org.nfrac.cljbox2d.core)
 (def world (new-world))
 (def ground (body! world {:type :static}
                    {:shape (edge [-40 0] [40 0])}))

@@ -1,4 +1,4 @@
-(ns cljbox2d.vec2d
+(ns org.nfrac.cljbox2d.vec2d
   "2D geometric point and vector helpers.
    All in terms of clojure vectors [x y].")
 

@@ -2,8 +2,8 @@
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.RayCastTest"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
-            [cljbox2d.vec2d :refer [polar-xy v-add TWOPI PI]]
+            [org.nfrac.cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.vec2d :refer [polar-xy v-add TWOPI PI]]
             [quil.core :as quil]
             [quil.middleware])
   (:import (org.jbox2d.callbacks ContactListener)))

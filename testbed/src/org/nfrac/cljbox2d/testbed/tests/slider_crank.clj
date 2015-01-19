@@ -2,8 +2,8 @@
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SliderCrankTest"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
-            [cljbox2d.vec2d :refer [PI]]
+            [org.nfrac.cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.vec2d :refer [PI]]
             [quil.core :as quil]
             [quil.middleware]))
 

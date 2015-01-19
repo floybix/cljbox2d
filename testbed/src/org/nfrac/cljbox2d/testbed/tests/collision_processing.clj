@@ -2,7 +2,7 @@
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.CollisionProcessing"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.core :refer :all]
             [quil.core :as quil]
             [quil.middleware]))
 

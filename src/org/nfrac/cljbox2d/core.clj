@@ -1,11 +1,12 @@
-(ns cljbox2d.core
+(ns org.nfrac.cljbox2d.core
   "[cljbox2d](https://github.com/floybix/cljbox2d/), a 2D physics engine.
 
    A clojure wrapper for [JBox2D](http://www.jbox2d.org/), which is a
    close Java port of Erin Catto's excellent C++
    [Box2D](http://www.box2d.org/) physics engine."
-  (:require [cljbox2d.vec2d :refer [polar-xy v-add v-sub v-interp v-dist PI TWOPI
-                                    in-pi-pi edge-point-from-vertices v-mag]])
+  (:require [org.nfrac.cljbox2d.vec2d
+             :refer [polar-xy v-add v-sub v-interp v-dist PI TWOPI
+                     in-pi-pi edge-point-from-vertices v-mag]])
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics World Body BodyDef BodyType Fixture FixtureDef)
            (org.jbox2d.collision AABB WorldManifold)

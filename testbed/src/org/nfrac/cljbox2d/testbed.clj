@@ -8,18 +8,12 @@
   issues. In a real application you might want to run the drawing and
   physics in separate threads.
 
-  In this namespace we have drawing functions, some vars/atoms for
-  hooking in to the testbed, a default contact listener, and default
-  input event handlers."
-  (:require [cljbox2d.core :refer [step! bodyseq
-                                   fixtureseq body-type shape-type body
-                                   center world-coords radius mass
-                                   query-at-point destroy! user-data
-                                   awake? wake! v2xy vec2
-                                   ;; joints:
-                                   alljointseq joint-type
-                                   body-a body-b anchor-a anchor-b
-                                   joint!]]
+  In this namespace are drawing functions and input event handlers."
+  (:require [org.nfrac.cljbox2d.core
+             :refer [step! bodyseq fixtureseq body-type shape-type joint-type
+                     body center world-coords radius mass query-at-point
+                     destroy! user-data awake? wake! v2xy vec2
+                     joint! alljointseq body-a body-b anchor-a anchor-b]]
             [quil.core :as quil])
   (:import (org.jbox2d.dynamics.joints MouseJoint)))
 

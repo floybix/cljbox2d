@@ -2,8 +2,8 @@
   "A translation of Daniel Murphy's
    org.jbox2d.testbed.tests.SensorTest"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
-            [cljbox2d.vec2d :refer [v-scale]]
+            [org.nfrac.cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.vec2d :refer [v-scale]]
             [quil.core :as quil]
             [quil.middleware])
   (:import (org.jbox2d.callbacks ContactListener)))

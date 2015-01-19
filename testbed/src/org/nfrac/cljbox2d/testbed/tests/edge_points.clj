@@ -1,8 +1,8 @@
 (ns org.nfrac.cljbox2d.testbed.tests.edge-points
   "An example of cljbox2d.core/edge-point"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
-            [cljbox2d.vec2d :refer [TWOPI PI poly-flip-x angle*]]
+            [org.nfrac.cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.vec2d :refer [TWOPI PI poly-flip-x angle*]]
             [quil.core :as quil]
             [quil.middleware]))
 

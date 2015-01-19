@@ -1,8 +1,8 @@
 (ns org.nfrac.cljbox2d.testbed.tests.one-sided-robust
   "Based on http://www.iforce2d.net/b2dtut/one-way-walls"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
-            [cljbox2d.core :refer :all]
-            [cljbox2d.vec2d :refer [y-val v-sub]]
+            [org.nfrac.cljbox2d.core :refer :all]
+            [org.nfrac.cljbox2d.vec2d :refer [y-val v-sub]]
             [quil.core :as quil]
             [quil.middleware])
   (:import (org.jbox2d.callbacks ContactListener)
