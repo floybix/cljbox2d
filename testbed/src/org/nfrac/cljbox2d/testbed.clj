@@ -1,5 +1,5 @@
 (ns org.nfrac.cljbox2d.testbed
-  "Provides the scaffolding to run Box2D simulations with visual
+  "Provides some scaffolding to run Box2D simulations with visual
   animation and interactive inputs (via mouse and keyboard). This is
   built on the Processing framework through the clojure wrapper
   [quil](https://github.com/quil/quil). Box2D timesteps are run
@@ -127,7 +127,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                        (doseq [[x y] px-pts] (quil/vertex x y))
                        (quil/end-shape :close)))))))
 
-;; ## input event handling
+;; ## input event handlers
 
 (defn left-mouse-pressed
   "Checks for fixtures at the mouse position. If one is found, creates
