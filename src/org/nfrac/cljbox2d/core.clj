@@ -10,7 +10,8 @@
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics World Body BodyDef BodyType Fixture FixtureDef)
            (org.jbox2d.collision AABB WorldManifold)
-           (org.jbox2d.collision.shapes PolygonShape CircleShape EdgeShape ShapeType MassData)
+           (org.jbox2d.collision.shapes PolygonShape CircleShape EdgeShape
+                                        ChainShape ShapeType MassData)
            (org.jbox2d.callbacks QueryCallback RayCastCallback ContactListener)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)
            (org.jbox2d.dynamics.joints Joint JointType
@@ -129,9 +130,27 @@
     (.set shape (vec2 pt1) (vec2 pt2))
     shape))
 
+(defn edge-chain
+  "Creates a chain of edge shapes, assumed not self-intersecting, left
+   open at the ends."
+  [vertices]
+  (let [shape (ChainShape.)
+        va (into-array Vec2 (map vec2 vertices))]
+    (.createChain shape va (count vertices))
+    shape))
+
+(defn edge-loop
+  "Creates a loop of edge shapes, assumed not self-intersecting, where
+   the last point joins back to the first point."
+  [vertices]
+  (let [shape (ChainShape.)
+        va (into-array Vec2 (map vec2 vertices))]
+    (.createLoop shape va (count vertices))
+    shape))
+
 (defn box
   "Create a box shape from half-width, half-height,
-by default centered at [0 0]"
+   by default centered at [0 0]"
   ([hx hy]
      (let [shape (PolygonShape.)]
        (.setAsBox shape hx hy)
@@ -378,7 +397,9 @@ the object center (in world coordinates)."
       :polygon (let [n (.getVertexCount ^PolygonShape shp)]
                  (take n (map v2xy (.getVertices ^PolygonShape shp))))
       :edge [(v2xy (.m_vertex1 ^EdgeShape shp))
-             (v2xy (.m_vertex2 ^EdgeShape shp))])))
+             (v2xy (.m_vertex2 ^EdgeShape shp))]
+      :chain (let [n (.m_count ^ChainShape shp)]
+               (take n (map v2xy (.m_vertices ^ChainShape shp)))))))
 
 (defn world-coords
   "World coordinates of polygon vertices. Approximated for circles."
