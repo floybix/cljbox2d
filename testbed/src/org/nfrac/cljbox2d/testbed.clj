@@ -73,59 +73,70 @@ bounds if necessary to ensure an isometric aspect ratio."
     (quil/stroke blue)
     (quil/fill blue 127)))
 
-(defn default-rgb
+(defn default-color
   [body]
   (case (body-type body)
-    :static [100 255 100]
-    :kinematic [100 100 255]
-    :dynamic [255 200 200]))
+    :static (quil/color 100 255 100)
+    :kinematic (quil/color 100 100 255)
+    :dynamic (quil/color 255 200 200)))
+
+(defn draw-body
+  [body ->px px-scale]
+  (when-let [[-r -g -b] (::rgb (user-data body))]
+    (let [color (quil/color -r -g -b)]
+      (quil/stroke color)
+      (quil/fill color 64)))
+  (doseq [fx (fixtureseq body)]
+    (case (shape-type fx)
+      :circle (let [[x y] (->px (center fx))
+                    radius-px (* (radius fx) px-scale)]
+                (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
+      (:edge
+       :chain) (doseq [[pt1 pt2] (partition 2 1 (map ->px (world-coords fx)))]
+                 (quil/line pt1 pt2))
+      :polygon
+      (let [pts (world-coords fx)
+            px-pts (map ->px pts)]
+        (quil/begin-shape)
+        (doseq [[x y] px-pts] (quil/vertex x y))
+        (quil/end-shape :close)))))
+
+(defn draw-joint
+  [jt ->px]
+  (let [typ (joint-type jt)
+        body-a (body-a jt)
+        body-b (body-b jt)]
+    (case typ
+      :revolute (let [anch (anchor-a jt)
+                      center-a (center body-a)
+                      center-b (center body-b)]
+                  (quil/line (->px anch) (->px center-a))
+                  (quil/line (->px anch) (->px center-b)))
+      :mouse (let [anch-b (anchor-b jt)
+                   targ (v2xy (.getTarget ^MouseJoint jt))]
+               (quil/line (->px anch-b) (->px targ)))
+      ;; default:
+      (let [anch-a (anchor-a jt)
+            anch-b (anchor-b jt)]
+        (quil/line (->px anch-a) (->px anch-b))))))
 
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
   [state]
   (let [world (:world state)
         cam (:camera state)
-        ->px (partial world-to-px cam)]
+        ->px (partial world-to-px cam)
+        px-scale (world-to-px-scale cam)]
     (setup-style)
     (joint-style)
-    (doseq [jt (alljointseq world)
-            :let [typ (joint-type jt)
-                  body-a (body-a jt)
-                  body-b (body-b jt)]]
-      (case typ
-        :revolute (let [anch (anchor-a jt)
-                        center-a (center body-a)
-                        center-b (center body-b)]
-                    (quil/line (->px anch) (->px center-a))
-                    (quil/line (->px anch) (->px center-b)))
-        :distance (let [anch-a (anchor-a jt)
-                        anch-b (anchor-b jt)]
-                    (quil/line (->px anch-a) (->px anch-b)))
-        :mouse (let [anch-b (anchor-b jt)
-                     targ (v2xy (.getTarget ^MouseJoint jt))]
-                 (quil/line (->px anch-b) (->px targ)))
-        :otherwise-ignore-it
-        ))
+    (doseq [jt (alljointseq world)]
+      (draw-joint jt ->px))
     (doseq [body (bodyseq world)
-            :let [ud (user-data body)
-                  rgb (or (::rgb ud)
-                          (default-rgb body))
-                  color (apply quil/color rgb)
-                  alpha (if (= :static (body-type body)) 64
-                            (if (awake? body) 128 64))]]
-      (quil/stroke color)
-      (quil/fill color alpha)
-      (doseq [fx (fixtureseq body)]
-        (case (shape-type fx)
-          :circle (let [[x y] (->px (center fx))
-                        radius-px (* (radius fx) (world-to-px-scale cam))]
-                    (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
-          (:edge
-           :polygon) (let [pts (world-coords fx)
-                           px-pts (map ->px pts)]
-                       (quil/begin-shape)
-                       (doseq [[x y] px-pts] (quil/vertex x y))
-                       (quil/end-shape :close)))))))
+            :let [color (default-color body)]]
+      (let [alpha 64]
+        (quil/stroke color)
+        (quil/fill color alpha))
+      (draw-body body ->px px-scale))))
 
 ;; ## input event handlers
 
