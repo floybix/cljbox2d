@@ -149,6 +149,19 @@ bounds if necessary to ensure an isometric aspect ratio."
         ->px (world-to-px-fn cam)
         px-scale (world-to-px-scale cam)]
     (setup-style)
+    (quil/text-align :right)
+    (if (::show-help? state)
+      (quil/text (str "Drag bodies to move them.\n"
+                      "Right-button drag to pan.\n"
+                      "Mouse wheel to zoom.\n"
+                      "space to pause, > to step.")
+                 (- (quil/width) 10) 10)
+      (quil/text "Press \"?\""
+                 (- (quil/width) 10) 10))
+    (quil/text (str (apply format "(%.1f, %.1f)"
+                           (px-to-world cam [(quil/mouse-x) (quil/mouse-y)])))
+               (quil/width) (quil/height))
+    (quil/text-align :left)
     (joint-style)
     (doseq [jt (alljointseq world)]
       (draw-joint jt ->px))
@@ -233,7 +246,7 @@ bounds if necessary to ensure an isometric aspect ratio."
       :height new-height)))
 
 (defn align-camera
-  "Pans camera so that the given world position [x y] is shown at the
+  "Moves camera so that the given world position [x y] is shown at the
    given pixel position."
   [camera [x y] [x-px y-px]]
   (let [[ox oy] (px-to-world camera [x-px y-px])]
@@ -252,6 +265,7 @@ bounds if necessary to ensure an isometric aspect ratio."
   "Standard actions for key events"
   [state event]
   (case (:raw-key event)
+    (\/ \?) (update-in state [::show-help?] not)
     \  (update-in state [:paused?] not)
     \. (update-in state [:world] step! (:dt-secs state))
     \= (update-in state [:camera] zoom-camera (/ 1 1.25))

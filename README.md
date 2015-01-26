@@ -55,6 +55,6 @@ See the ball bounce (requires some imagination...)
 
 ## License
 
-Copyright © 2012 Felix Andrews
+Copyright © 2012-2015 Felix Andrews
 
 Distributed under the Eclipse Public License, the same as Clojure.
