@@ -14,15 +14,18 @@
                      body-of center world-coords radius mass query-at-point
                      destroy! user-data awake? wake! v2xy vec2
                      joint! alljointseq body-a body-b anchor-a anchor-b]]
+            [org.nfrac.cljbox2d.vec2d :refer [v-add]]
             [quil.core :as quil])
   (:import (org.jbox2d.dynamics.joints MouseJoint)))
+
+(defrecord Camera [width height center])
 
 (def initial-state
   {:world nil
    :dt-secs (/ 1 30.0)
    :paused? false
    ;; the current view (location and scale) in world coordinates (m)
-   :camera {:width 60 :height 40 :x-left -30 :y-bottom -10}
+   :camera (map->Camera {:width 60 :height 40 :center [0 10]})
    :mouse-joint nil})
 
 ;; ## Drawing
@@ -38,27 +41,45 @@ bounds if necessary to ensure an isometric aspect ratio."
            yscale (/ px-height (:height cam))]
        (min xscale yscale))))
 
+(defn world-to-px-fn
+  "Returns a function to convert a point in Box2d world coordinates to
+   quil pixels."
+  [cam]
+  (let [scale (world-to-px-scale cam)
+        [cx cy] (:center cam)
+        x-left (- cx (* 0.5 (:width cam)))
+        y-bottom (- cy (* 0.5 (:height cam)))
+        y-top (+ y-bottom (:height cam))]
+    (fn [[x y]]
+      [(* (- x x-left) scale)
+       ;; quil has flipped y (0px at top)
+       (* (- y-top y) scale)])))
+
 (defn world-to-px
   "Convert a point in Box2d world coordinates to quil pixels."
   [cam [x y]]
+  (let [f (world-to-px-fn cam)]
+    (f [x y])))
+
+(defn px-to-world-fn
+  "Returns a function to convert a point in quil pixels to Box2d world
+   coordinates."
+  [cam]
   (let [scale (world-to-px-scale cam)
-        x-left (:x-left cam)
-        y-bottom (:y-bottom cam)
+        [cx cy] (:center cam)
+        x-left (- cx (* 0.5 (:width cam)))
+        y-bottom (- cy (* 0.5 (:height cam)))
         y-top (+ y-bottom (:height cam))]
-    [(* (- x x-left) scale)
-     ;; quil has flipped y (0px at top)
-     (* (- y-top y) scale)]))
+    (fn [[xp yp]]
+      [(+ (/ xp scale) x-left)
+       ;; quil has flipped y (0px at top)
+       (- y-top (/ yp scale))])))
 
 (defn px-to-world
   "Convert a point in quil pixels to Box2d world coordinates."
   [cam [xp yp]]
-  (let [scale (world-to-px-scale cam)
-        x-left (:x-left cam)
-        y-bottom (:y-bottom cam)
-        y-top (+ y-bottom (:height cam))]
-    [(+ (/ xp scale) x-left)
-     ;; quil has flipped y (0px at top)
-     (- y-top (/ yp scale))]))
+  (let [f (px-to-world-fn cam)]
+    (f [xp yp])))
 
 (defn setup-style
   "Set common drawing style attributes"
@@ -125,7 +146,7 @@ bounds if necessary to ensure an isometric aspect ratio."
   [state]
   (let [world (:world state)
         cam (:camera state)
-        ->px (partial world-to-px cam)
+        ->px (world-to-px-fn cam)
         px-scale (world-to-px-scale cam)]
     (setup-style)
     (joint-style)
@@ -191,8 +212,7 @@ bounds if necessary to ensure an isometric aspect ratio."
         [px py] (px-to-world (:camera state) [(:p-x event) (:p-y event)])
         dx (- x px)
         dy (- y py)]
-    (update-in state [:camera] (partial merge-with +)
-               {:x-left (- dx) :y-bottom (- dy)})))
+    (update-in state [:camera :center] v-add [(- dx) (- dy)])))
 
 (defn mouse-dragged
   "Dispatches according to the mouse button."
@@ -205,15 +225,28 @@ bounds if necessary to ensure an isometric aspect ratio."
 (defn zoom-camera
   "Factor multiplies the visible world distance."
   [camera factor]
-  (let [{:keys [width height x-left y-bottom]} camera
-        cent-x (+ x-left (/ width 2))
-        cent-y (+ y-bottom (/ height 2))
+  (let [{:keys [width height]} camera
         new-width (* width factor)
         new-height (* height factor)]
-    {:width new-width
-     :height new-height
-     :x-left (- cent-x (/ new-width 2))
-     :y-bottom (- cent-y (/ new-height 2))}))
+    (assoc camera
+      :width new-width
+      :height new-height)))
+
+(defn align-camera
+  "Pans camera so that the given world position [x y] is shown at the
+   given pixel position."
+  [camera [x y] [x-px y-px]]
+  (let [[ox oy] (px-to-world camera [x-px y-px])]
+    (update-in camera [:center] v-add [(- x ox) (- y oy)])))
+
+(defn mouse-wheel
+  [state rotation]
+  (let [[x-px y-px] [(quil/mouse-x) (quil/mouse-y)]
+        [x y] (px-to-world (:camera state) [x-px y-px])
+        factor (if (pos? rotation) 1.16 (/ 1.16))]
+    (-> state
+        (update-in [:camera] zoom-camera factor)
+        (update-in [:camera] align-camera [x y] [x-px y-px]))))
 
 (defn key-press
   "Standard actions for key events"
@@ -221,6 +254,6 @@ bounds if necessary to ensure an isometric aspect ratio."
   (case (:raw-key event)
     \  (update-in state [:paused?] not)
     \. (update-in state [:world] step! (:dt-secs state))
-    \= (update-in state [:camera] zoom-camera (/ 1 1.5))
-    \- (update-in state [:camera] zoom-camera 1.5)
+    \= (update-in state [:camera] zoom-camera (/ 1 1.25))
+    \- (update-in state [:camera] zoom-camera 1.25)
     state))

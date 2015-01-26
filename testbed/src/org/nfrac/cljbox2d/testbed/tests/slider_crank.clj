@@ -77,14 +77,16 @@
 (defn -main
   "Run the test sketch."
   [& args]
-  (quil/defsketch test-sketch
-    :title "Slider Crank"
-    :setup setup
-    :update step
-    :draw draw
-    :key-typed my-key-press
-    :mouse-pressed bed/mouse-pressed
-    :mouse-released bed/mouse-released
-    :mouse-dragged bed/mouse-dragged
-    :size [600 500]
-    :middleware [quil.middleware/fun-mode]))
+  (quil/sketch
+   :title "Slider Crank"
+   :setup setup
+   :update step
+   :draw draw
+   :key-typed my-key-press
+   :mouse-pressed bed/mouse-pressed
+   :mouse-released bed/mouse-released
+   :mouse-dragged bed/mouse-dragged
+   :mouse-wheel bed/mouse-wheel
+   :size [600 500]
+   :features [:resizable]
+   :middleware [quil.middleware/fun-mode]))
