@@ -81,26 +81,6 @@ bounds if necessary to ensure an isometric aspect ratio."
   (let [f (px-to-world-fn cam)]
     (f [xp yp])))
 
-(defn setup-style
-  "Set common drawing style attributes"
-  []
-  (quil/background 0)
-  (quil/stroke-weight 1))
-
-(defn joint-style
-  "Set drawing style for joints"
-  []
-  (let [blue (quil/color 155 155 255)]
-    (quil/stroke blue)
-    (quil/fill blue 127)))
-
-(defn default-color
-  [body]
-  (case (body-type body)
-    :static (quil/color 100 255 100)
-    :kinematic (quil/color 100 100 255)
-    :dynamic (quil/color 255 200 200)))
-
 (defn draw-body
   [body ->px px-scale]
   (when-let [[-r -g -b] (::rgb (user-data body))]
@@ -141,14 +121,25 @@ bounds if necessary to ensure an isometric aspect ratio."
             anch-b (anchor-b jt)]
         (quil/line (->px anch-a) (->px anch-b))))))
 
+(defn default-colors
+  []
+  {:background (quil/color 0 0 0)
+   :text (quil/color 255 255 255)
+   :static (quil/color 100 255 100)
+   :kinematic (quil/color 100 100 255)
+   :dynamic (quil/color 255 200 200)
+   :joint (quil/color 155 155 255)})
+
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
   [state]
   (let [world (:world state)
         cam (:camera state)
         ->px (world-to-px-fn cam)
-        px-scale (world-to-px-scale cam)]
-    (setup-style)
+        px-scale (world-to-px-scale cam)
+        colors (::colors state (default-colors))]
+    (quil/background (:background colors))
+    (quil/fill (:text colors))
     (quil/text-align :right)
     (if (::show-help? state)
       (quil/text (str "Drag bodies to move them.\n"
@@ -160,14 +151,15 @@ bounds if necessary to ensure an isometric aspect ratio."
                  (- (quil/width) 10) 10))
     (quil/text (str (apply format "(%.1f, %.1f)"
                            (px-to-world cam [(quil/mouse-x) (quil/mouse-y)])))
-               (quil/width) (quil/height))
+               (- (quil/width) 10)
+               (- (quil/height) 5))
     (quil/text-align :left)
-    (joint-style)
+    (quil/stroke (:joint colors))
     (doseq [jt (alljointseq world)]
       (draw-joint jt ->px))
     (doseq [body (bodyseq world)
-            :let [color (default-color body)]]
-      (let [alpha 64]
+            :let [color (colors (body-type body))]]
+      (let [alpha 128]
         (quil/stroke color)
         (quil/fill color alpha))
       (draw-body body ->px px-scale))))
