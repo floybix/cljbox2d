@@ -243,12 +243,12 @@
 (defn body-def
   "A BodyDef, which holds properties but not shapes. Do not call this
    directly, instead use `(body!)`."
-  [{:keys [type position angle bullet fixed-rotation
+  [{:keys [type position angle bullet fixed-rotation gravity-scale
            angular-damping linear-damping
            angular-velocity linear-velocity
            user-data]
     :or {type :dynamic, position [0 0], angle 0,
-         bullet false, fixed-rotation false,
+         bullet false, fixed-rotation false, gravity-scale 1.0,
          angular-damping 0, linear-damping 0,
          angular-velocity 0, linear-velocity [0 0]}}]
   (let [bd (BodyDef.)]
@@ -257,6 +257,7 @@
     (set! (.angle bd) angle)
     (set! (.bullet bd) bullet)
     (set! (.fixedRotation bd) fixed-rotation)
+    (set! (.gravityScale bd) gravity-scale)
     (set! (.angularDamping bd) angular-damping)
     (set! (.linearDamping bd) linear-damping)
     (set! (.angularVelocity bd) angular-velocity)
@@ -462,6 +463,14 @@ mass. This wakes up the body."
   [^Body body a-vel]
   (.setAngularVelocity body a-vel))
 
+(defn gravity-scale
+  [^Body body]
+  (.getGravityScale body))
+
+(defn gravity-scale!
+  [^Body body z]
+  (.setGravityScale body z))
+
 (defn awake?
   [^Body body]
   (.isAwake body))
@@ -620,6 +629,19 @@ excluded."
                               (body-of (:fixture-b %)))
                        (current-contacts bod))]
     (set (remove #(= bod %) bodies))))
+
+(defn all-current-contacts
+  "Lazy seq of current contacts in the world. Each contact is a map as
+defined by the `contact-data` function. Contacts without actual
+contact points (i.e. created only due to overlapping bounding boxes)
+are excluded."
+  [^World world]
+  (letfn [(nextstep [^Contact cl]
+            (when cl
+              (if-let [cdata (contact-data cl)]
+                (cons cdata (nextstep (.getNext cl)))
+                (nextstep (.getNext cl)))))]
+    (lazy-seq (nextstep (.getContactList world)))))
 
 ;; # Joints
 
