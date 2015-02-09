@@ -1,10 +1,11 @@
 (ns org.nfrac.cljbox2d.vec2d
   "2D geometric point and vector helpers.
-   All in terms of clojure vectors [x y].")
+   All in terms of clojure vectors [x y].
+   Uses float precision for consistency with JBox2d.")
 
-(def ^:const ^{:doc "Pi (180 degrees)."} PI (. Math PI))
-(def ^:const ^{:doc "2 Pi (360 degrees)."} TWOPI (* PI 2.0))
-(def ^:const ^{:doc "Pi/2 (90 degrees)."} PI_2 (* PI 0.5))
+(def ^:const ^{:doc "Pi (180 degrees)."} PI (float Math/PI))
+(def ^:const ^{:doc "2 Pi (360 degrees)."} TWOPI (float (* PI 2.0)))
+(def ^:const ^{:doc "Pi/2 (90 degrees)."} PI_2 (float (* PI 0.5)))
 
 (def x-val first)
 (def y-val second)
@@ -17,10 +18,11 @@
 (defn in-pi-pi
   "Returns the angle expressed in the range -pi to pi."
   [angle]
-  (cond
-   (> angle PI) (in-pi-pi (- angle TWOPI))
-   (< angle (- PI)) (in-pi-pi (+ angle TWOPI))
-   :else angle))
+  (float
+   (cond
+    (> angle PI) (in-pi-pi (- angle TWOPI))
+    (< angle (- PI)) (in-pi-pi (+ angle TWOPI))
+    :else angle)))
 
 (def ^{:private true} dir-angle
   (let [m {:right           0
@@ -77,18 +79,18 @@
   "Convert polar coordinates (magnitude, angle) to cartesian
    coordinates (x, y)."
   [mag angle]
-  [(* mag (Math/cos angle))
-   (* mag (Math/sin angle))])
+  [(float (* mag (Math/cos angle)))
+   (float (* mag (Math/sin angle)))])
 
 (defn v-angle
   "Angle of a 2d geometric vector in radians in range -pi to pi."
   [[x y]]
-  (Math/atan2 y x))
+  (float (Math/atan2 y x)))
 
 (defn v-mag
   "Magnitude of a 2d geometric vector"
   [[x y]]
-  (Math/sqrt (+ (* x x) (* y y))))
+  (float (Math/sqrt (+ (* x x) (* y y)))))
 
 (defn v-scale
   "Multiply elements of a 2d vector by a scalar;
