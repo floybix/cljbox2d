@@ -24,35 +24,6 @@
     (< angle (- PI)) (in-pi-pi (+ angle TWOPI))
     :else angle)))
 
-(def ^{:private true} dir-angle
-  (let [m {:right           0
-           :top-right       (/ PI 4)
-           :bottom-right (- (/ PI 4))
-           :top             PI_2
-           :bottom       (- PI_2)
-           :top-left        (* PI (/ 3 4))
-           :bottom-left  (- (* PI (/ 3 4)))
-           :left            PI}]
-    (merge m {:r  (:right m)
-              :tr (:top-right m)
-              :br (:bottom-right m)
-              :t  (:top m)
-              :b  (:bottom m)
-              :tl (:top-left m)
-              :bl (:bottom-left m)
-              :l  (:left m)})))
-
-(defn angle*
-  "Return an angle in radians from given number in degrees, or a
-  keyword for a direction:
-  `:right (0) :top (pi/2) :left (pi) :bottom (-pi/2)`
-  `:top-right :top-left :bottom-left :bottom-right`
-  Aliases `:r :t :l :b :tr :tl :bl :br`."
-  [a]
-  (cond
-   (number? a) (in-pi-pi (* PI (/ a 180.0)))
-   (keyword? a) (a dir-angle)))
-
 (defn angle-left?
   [angle]
   (> (abs (in-pi-pi angle)) PI_2))

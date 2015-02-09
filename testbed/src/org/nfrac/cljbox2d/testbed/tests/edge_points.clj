@@ -2,9 +2,12 @@
   "An example of cljbox2d.core/edge-point"
   (:require [org.nfrac.cljbox2d.testbed :as bed]
             [org.nfrac.cljbox2d.core :refer :all]
-            [org.nfrac.cljbox2d.vec2d :refer [TWOPI PI poly-flip-x angle*]]
+            [org.nfrac.cljbox2d.vec2d :refer [TWOPI PI poly-flip-x]]
             [quil.core :as quil]
             [quil.middleware]))
+
+(def LEFT PI)
+(def RIGHT 0)
 
 (defn setup []
   (quil/frame-rate 30)
@@ -26,14 +29,14 @@
                                   locpt (to-local hub pt)]]
                         (fixture! hub
                                   {:shape (rod locpt angle 1 0.2)})))
-        eye (let [pt (edge-point fx (angle* :right) 0.9)
+        eye (let [pt (edge-point fx RIGHT 0.9)
                   locpt (to-local hub pt)]
               (fixture! hub {:shape (circle 0.7 locpt)}))
         ;; another beetle body, with radial jointed bodies.
         ;; this time we get edge-points on the whole body (2 fixtures)
         hub2 (body! world {:position [20 10]}
                     {:shape (polygon (poly-flip-x shell-v))})
-        eye2 (let [pt (edge-point hub2 (angle* :left) 1.1)
+        eye2 (let [pt (edge-point hub2 LEFT 1.1)
                    locpt (to-local hub2 pt)]
                (fixture! hub2 {:shape (circle 0.7 locpt)}))
         spokes2 (doall (for [angle angles
