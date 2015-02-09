@@ -114,7 +114,7 @@
      ;; need to reverse to keep it counter-clockwise.
      (reverse (map (fn [[x y]] [x (- y0 y)]) vv))))
 
-(defn edge-point-from-vertices
+(defn poly-edge-point
   "Finds point on edge of a convex polygon shape (given by
    counter-clockwise vertices) at a given `angle` from `origin-pt`."
   [vv angle origin-pt]

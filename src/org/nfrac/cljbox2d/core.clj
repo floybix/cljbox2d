@@ -5,8 +5,7 @@
    close Java port of Erin Catto's excellent C++
    [Box2D](http://www.box2d.org/) physics engine."
   (:require [org.nfrac.cljbox2d.vec2d
-             :refer [polar-xy v-add v-sub v-interp v-dist PI TWOPI
-                     in-pi-pi edge-point-from-vertices v-mag]])
+             :refer [polar-xy v-add v-sub v-dist in-pi-pi PI TWOPI]])
   (:import (org.jbox2d.common Vec2)
            (org.jbox2d.dynamics World Body BodyDef BodyType Fixture FixtureDef)
            (org.jbox2d.collision AABB WorldManifold)
@@ -313,10 +312,7 @@
   (loc-center [this] "Center of mass in local coordinates.")
   (position [this] [this loc-pt] "World coordinates of a local point, default [0 0].")
   (to-local [this pt] "Local coordinates of a world point.")
-  (to-local-vect [this vect] "Local vector of a world vector.")
-  (edge-point* [this angle frac origin-pt] "World coordinates a
-   fraction of the way to the edge of a shape in a given direction
-   from an origin point. Prefer the high-level `edge-point`."))
+  (to-local-vect [this vect] "Local vector of a world vector."))
 
 (declare world-coords local-coords)
 
@@ -338,13 +334,6 @@
     (v2xy (.getLocalPoint this (vec2 pt))))
   (to-local-vect [this vect]
     (v2xy (.getLocalVector this (vec2 vect))))
-  (edge-point* [this angle frac origin-pt]
-    ;; take the edge point from all fixtures having
-    ;; greatest dot product with the (unit) angle vector.
-    (let [fx-pts (for [fx (fixtureseq this)]
-                   (edge-point* fx angle frac origin-pt))]
-      (apply max-key #(v-mag (v-sub % origin-pt))
-             (remove nil? fx-pts))))
 
   Fixture
   (mass [this]
@@ -365,21 +354,7 @@
   (to-local [this pt]
     (to-local (body-of this) pt))
   (to-local-vect [this vect]
-    (to-local-vect (body-of this) vect))
-  (edge-point* [this angle frac origin-pt]
-    (let [vv (world-coords this)
-          on-edge (edge-point-from-vertices vv angle origin-pt)]
-      (if (nil? on-edge) nil
-          (v-interp origin-pt on-edge frac)))))
-
-(defn edge-point
-  "World coordinates on the edge of an object in a given direction
-   from its center. Further arguments can specify the fraction out
-   towards the edge (or outside if > 1), and an origin point other
-   than the object center (in world coordinates)."
-  ([this angle] (edge-point* this angle 1 (center this)))
-  ([this angle frac] (edge-point* this angle frac (center this)))
-  ([this angle frac origin-pt] (edge-point* this angle frac origin-pt)))
+    (to-local-vect (body-of this) vect)))
 
 (defn radius
   "Radius of a Fixture's shape."
