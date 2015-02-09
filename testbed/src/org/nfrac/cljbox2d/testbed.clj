@@ -9,11 +9,7 @@
   physics in separate threads.
 
   In this namespace are drawing functions and input event handlers."
-  (:require [org.nfrac.cljbox2d.core
-             :refer [step! bodyseq fixtureseq body-type shape-type joint-type
-                     body-of center world-coords radius mass query-at-point
-                     destroy! user-data awake? wake! v2xy vec2
-                     joint! alljointseq body-a body-b anchor-a anchor-b]]
+  (:require [org.nfrac.cljbox2d.core :refer :all]
             [org.nfrac.cljbox2d.vec2d :refer [v-add]]
             [quil.core :as quil])
   (:import (org.jbox2d.dynamics.joints MouseJoint)))
@@ -27,6 +23,44 @@
    ;; the current view (location and scale) in world coordinates (m)
    :camera (map->Camera {:width 60 :height 40 :center [0 10]})
    :mouse-joint nil})
+
+;; ## Snapshots
+
+(defn snapshot-body
+  [body]
+  {:body-type (body-type body)
+   :user-data (user-data body)
+   :center (center body)
+   :position (position body)
+   :angle (angle body)
+   :fixtures (->> (for [fixt (fixtureseq body)
+                        :let [shp-type (shape-type fixt)]]
+                    {:shape-type shp-type
+                     :radius (radius fixt)
+                     :center (loc-center fixt)
+                     :coords (when (not= :circle shp-type)
+                               (local-coords fixt))})
+                  (doall))})
+
+(defn snapshot-joint
+  [jt]
+  (let [jt-type (joint-type jt)]
+    {:joint-type jt-type
+     :anchor-a (anchor-a jt)
+     :anchor-b (anchor-b jt)
+     :center-a (when (= :revolute jt-type)
+                 (center (body-a jt)))
+     :center-b (when (= :revolute jt-type)
+                 (center (body-b jt)))}))
+
+(defn snapshot-scene
+  [world]
+  {:bodies (->> (for [body (bodyseq world)]
+                  (snapshot-body body))
+                (doall))
+   :joints (->> (for [jt (alljointseq world)]
+                  (snapshot-joint jt))
+                (doall))})
 
 ;; ## Drawing
 
@@ -61,6 +95,15 @@ bounds if necessary to ensure an isometric aspect ratio."
   (let [f (world-to-px-fn cam)]
     (f [x y])))
 
+(defn local-to-px
+  "For use in transformed (body-local) drawing context.
+   Converts a point in Box2d body-local coordinates to quil
+   pixels."
+  [px-scale [x y]]
+  [(* x px-scale)
+   ;; quil has flipped y (0px at top)
+   (- (* y px-scale))])
+
 (defn px-to-world-fn
   "Returns a function to convert a point in quil pixels to Box2d world
    coordinates."
@@ -82,44 +125,35 @@ bounds if necessary to ensure an isometric aspect ratio."
     (f [xp yp])))
 
 (defn draw-body
-  [body ->px px-scale]
-  (when-let [[-r -g -b] (::rgb (user-data body))]
-    (let [color (quil/color -r -g -b)]
-      (quil/stroke color)
-      (quil/fill color 64)))
-  (doseq [fx (fixtureseq body)]
-    (case (shape-type fx)
-      :circle (let [[x y] (->px (center fx))
-                    radius-px (* (radius fx) px-scale)]
-                (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
-      (:edge
-       :chain) (doseq [[pt1 pt2] (partition 2 1 (map ->px (world-coords fx)))]
-                 (quil/line pt1 pt2))
-      :polygon
-      (let [pts (world-coords fx)
-            px-pts (map ->px pts)]
-        (quil/begin-shape)
-        (doseq [[x y] px-pts] (quil/vertex x y))
-        (quil/end-shape :close)))))
+  [body-snap ->px px-scale]
+  (let [{:keys [position angle fixtures user-data]} body-snap
+        ->loc-px (partial local-to-px px-scale)]
+    (quil/with-translation (->px position)
+      (quil/with-rotation [(- angle)]
+        (doseq [fx-snap fixtures]
+          (let [{:keys [radius center coords shape-type]} fx-snap]
+            (case shape-type
+              :circle (let [[x y] (->loc-px center)
+                            radius-px (* radius px-scale)]
+                        (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
+              (:edge :chain) (doseq [[pt1 pt2] (partition 2 1 (map ->loc-px coords))]
+                               (quil/line pt1 pt2))
+              :polygon (do
+                         (quil/begin-shape)
+                         (doseq [[x y] (map ->loc-px coords)]
+                           (quil/vertex x y))
+                         (quil/end-shape :close)))))))))
 
 (defn draw-joint
-  [jt ->px]
-  (let [typ (joint-type jt)
-        body-a (body-a jt)
-        body-b (body-b jt)]
-    (case typ
-      :revolute (let [anch (anchor-a jt)
-                      center-a (center body-a)
-                      center-b (center body-b)]
-                  (quil/line (->px anch) (->px center-a))
-                  (quil/line (->px anch) (->px center-b)))
-      :mouse (let [anch-b (anchor-b jt)
-                   targ (v2xy (.getTarget ^MouseJoint jt))]
-               (quil/line (->px anch-b) (->px targ)))
+  [jt-snap ->px]
+  (let [{:keys [joint-type anchor-a anchor-b center-a center-b]} jt-snap]
+    (case joint-type
+      :revolute (do
+                  (quil/line (->px anchor-a) (->px center-a))
+                  (quil/line (->px anchor-a) (->px center-b)))
       ;; default:
-      (let [anch-a (anchor-a jt)
-            anch-b (anchor-b jt)]
-        (quil/line (->px anch-a) (->px anch-b))))))
+      (do
+        (quil/line (->px anchor-a) (->px anchor-b))))))
 
 (defn default-colors
   []
@@ -130,18 +164,14 @@ bounds if necessary to ensure an isometric aspect ratio."
    :dynamic (quil/color 255 200 200)
    :joint (quil/color 155 155 255)})
 
-(defn draw
-  "Draw all shapes (fixtures) and joints in the Box2D world."
-  [state]
-  (let [world (:world state)
-        cam (:camera state)
-        ->px (world-to-px-fn cam)
-        px-scale (world-to-px-scale cam)
-        colors (::colors state (default-colors))]
+(defn draw-scene
+  [scene cam colors show-help?]
+  (let [->px (world-to-px-fn cam)
+        px-scale (world-to-px-scale cam)]
     (quil/background (:background colors))
     (quil/fill (:text colors))
     (quil/text-align :right)
-    (if (::show-help? state)
+    (if show-help?
       (quil/text (str "Drag bodies to move them.\n"
                       "Right-button drag to pan.\n"
                       "Mouse wheel to zoom.\n"
@@ -155,14 +185,26 @@ bounds if necessary to ensure an isometric aspect ratio."
                (- (quil/height) 5))
     (quil/text-align :left)
     (quil/stroke (:joint colors))
-    (doseq [jt (alljointseq world)]
-      (draw-joint jt ->px))
-    (doseq [body (bodyseq world)
-            :let [color (colors (body-type body))]]
-      (let [alpha 128]
+    (doseq [jt-snap (:joints scene)]
+      (draw-joint jt-snap ->px))
+    (doseq [body-snap (:bodies scene)
+            :let [ud (:user-data body-snap)
+                  color (if-let [[-r -g -b] (::rgb ud)]
+                          (quil/color -r -g -b)
+                          (colors (:body-type body-snap)))]]
+      (let [alpha 64]
         (quil/stroke color)
         (quil/fill color alpha))
-      (draw-body body ->px px-scale))))
+      (draw-body body-snap ->px px-scale))))
+
+(defn draw
+  "Draw all shapes (fixtures) and joints in the Box2D world."
+  [state]
+  (let [world (:world state)
+        scene (snapshot-scene world)
+        cam (:camera state)
+        colors (::colors state (default-colors))]
+    (draw-scene scene cam colors (::show-help? state))))
 
 ;; ## input event handlers
 
@@ -233,9 +275,19 @@ bounds if necessary to ensure an isometric aspect ratio."
   (let [{:keys [width height]} camera
         new-width (* width factor)
         new-height (* height factor)]
-    (assoc camera
-      :width new-width
-      :height new-height)))
+    (cond
+     ;; don't zoom in closer than 1m
+     (and (< new-width 1.0)
+          (< factor 1.0))
+     camera
+     ;; don't zoom out further than 1000m
+     (and (> new-width 1000)
+          (> factor 1.0))
+     camera
+     :else
+     (assoc camera
+       :width new-width
+       :height new-height))))
 
 (defn align-camera
   "Moves camera so that the given world position [x y] is shown at the
@@ -248,7 +300,7 @@ bounds if necessary to ensure an isometric aspect ratio."
   [state rotation]
   (let [[x-px y-px] [(quil/mouse-x) (quil/mouse-y)]
         [x y] (px-to-world (:camera state) [x-px y-px])
-        factor (if (pos? rotation) 1.16 (/ 1.16))]
+        factor (if (pos? rotation) 1.02 (/ 1.02))]
     (-> state
         (update-in [:camera] zoom-camera factor)
         (update-in [:camera] align-camera [x y] [x-px y-px]))))
