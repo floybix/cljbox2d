@@ -299,7 +299,7 @@
 
 (defn fixture-of
   "Often a body will only have one fixture. This is a convenience
-function to pull out the first fixture from a body."
+   function to pull out the first fixture from a body."
   [^Body body]
   {:pre [(= 1 (count (fixtureseq body)))]}
   (first (fixtureseq body)))
@@ -374,9 +374,9 @@ function to pull out the first fixture from a body."
 
 (defn edge-point
   "World coordinates on the edge of an object in a given direction
-from its center. Further arguments can specify the fraction out
-towards the edge (or outside if > 1), and an origin point other than
-the object center (in world coordinates)."
+   from its center. Further arguments can specify the fraction out
+   towards the edge (or outside if > 1), and an origin point other
+   than the object center (in world coordinates)."
   ([this angle] (edge-point* this angle 1 (center this)))
   ([this angle frac] (edge-point* this angle frac (center this)))
   ([this angle frac origin-pt] (edge-point* this angle frac origin-pt)))
@@ -434,24 +434,24 @@ the object center (in world coordinates)."
   (.getAngularVelocity body))
 
 (defn apply-force!
-  "Apply a force in Newtons to body at a world point. If the force
-is not applied at the center of mass, it will generate a torque and
-affect the angular velocity. This wakes up the body."
+  "Apply a force in Newtons to body at a world point. If the force is
+   not applied at the center of mass, it will generate a torque and
+   affect the angular velocity. This wakes up the body."
   [^Body body force pt]
   (.applyForce body (vec2 force) (vec2 pt)))
 
 (defn apply-torque!
-  "Apply a torque in N-m, i.e. about the z-axis (out of the
-screen). This affects the angular velocity without affecting the
-linear velocity of the center of mass. This wakes up the body."
+  "Apply a torque in N-m, i.e. about the z-axis (out of the screen).
+   This affects the angular velocity without affecting the linear
+   velocity of the center of mass. This wakes up the body."
   [^Body body torque]
   (.applyTorque body torque))
 
 (defn apply-impulse!
   "Apply an impulse in N-seconds or kg-m/s at a point. This
-immediately modifies the velocity. It also modifies the angular
-velocity if the point of application is not at the center of
-mass. This wakes up the body."
+   immediately modifies the velocity. It also modifies the angular
+   velocity if the point of application is not at the center of mass.
+   This wakes up the body."
   [^Body body impulse pt]
   (.applyLinearImpulse body (vec2 impulse) (vec2 pt)))
 
@@ -515,7 +515,7 @@ mass. This wakes up the body."
 
 (defn query-aabb
   "Return a vector of (up to a given number of) fixtures overlapping
-an Axis-Aligned Bounding Box"
+   an Axis-Aligned Bounding Box"
   ([world ^AABB bb]
      (query-aabb bb 1000000))
   ([^World world ^AABB bb max-take]
@@ -530,7 +530,8 @@ an Axis-Aligned Bounding Box"
 
 (defn query-at-point
   "Return a vector of fixtures overlapping the given point. The point
-is tested to be inside each shape, not just within its bounding box."
+   is tested to be inside each shape, not just within its bounding
+   box."
   ([world pt]
      (query-at-point world pt 1000000))
   ([^World world [x y] max-take]
@@ -594,9 +595,9 @@ is tested to be inside each shape, not just within its bounding box."
         (ContactData. fixt-a fixt-b pts normal)))))
 
 (defn set-buffering-contact-listener!
-  "Sets a ContactListener on the world which stores contacts.
-   Returns an atom which will be populated with a sequence of
-   `contact-data` records."
+  "Sets a ContactListener on the world which stores contacts. Returns
+   an atom which will be populated with a sequence of `contact-data`
+   records. Consumer is responsible for resetting it."
   [^World world]
   (let [contact-buffer (atom ())
         lstnr (reify ContactListener
@@ -611,9 +612,9 @@ is tested to be inside each shape, not just within its bounding box."
 
 (defn current-contacts
   "Lazy seq of contacts on this body. Each contact is a map as defined
-by the `contact-data` function. Contacts without actual contact
-points (i.e. created only due to overlapping bounding boxes) are
-excluded."
+   by the `contact-data` function. Contacts without actual contact
+   points (i.e. created only due to overlapping bounding boxes) are
+   excluded."
   [^Body bod]
   (letfn [(nextstep [^ContactEdge cl]
             (when cl
@@ -632,9 +633,9 @@ excluded."
 
 (defn all-current-contacts
   "Lazy seq of current contacts in the world. Each contact is a map as
-defined by the `contact-data` function. Contacts without actual
-contact points (i.e. created only due to overlapping bounding boxes)
-are excluded."
+   defined by the `contact-data` function. Contacts without actual
+   contact points (i.e. created only due to overlapping bounding
+   boxes) are excluded."
   [^World world]
   (letfn [(nextstep [^Contact cl]
             (when cl
