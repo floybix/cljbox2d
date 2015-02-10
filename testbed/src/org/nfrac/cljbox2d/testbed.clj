@@ -20,47 +20,44 @@
   {:world nil
    :dt-secs (/ 1 30.0)
    :paused? false
+   :stepping? false
+   :snapshots ()
+   :keep-snapshots 1000
+   :steps-back 0
    ;; the current view (location and scale) in world coordinates (m)
    :camera (map->Camera {:width 60 :height 40 :center [0 10]})
    :mouse-joint nil})
 
-;; ## Snapshots
-
-(defn snapshot-body
-  [body]
-  {:body-type (body-type body)
-   :user-data (user-data body)
-   :center (center body)
-   :position (position body)
-   :angle (angle body)
-   :fixtures (->> (for [fixt (fixtureseq body)
-                        :let [shp-type (shape-type fixt)]]
-                    {:shape-type shp-type
-                     :radius (radius fixt)
-                     :center (loc-center fixt)
-                     :coords (when (not= :circle shp-type)
-                               (local-coords fixt))})
-                  (doall))})
-
-(defn snapshot-joint
-  [jt]
-  (let [jt-type (joint-type jt)]
-    {:joint-type jt-type
-     :anchor-a (anchor-a jt)
-     :anchor-b (anchor-b jt)
-     :center-a (when (= :revolute jt-type)
-                 (center (body-a jt)))
-     :center-b (when (= :revolute jt-type)
-                 (center (body-b jt)))}))
+;; ## Snapshots - representing state as data for drawing
 
 (defn snapshot-scene
-  [world]
-  {:bodies (->> (for [body (bodyseq world)]
-                  (snapshot-body body))
-                (doall))
-   :joints (->> (for [jt (alljointseq world)]
-                  (snapshot-joint jt))
-                (doall))})
+  [world identify changes-only?]
+  {:bodies (into {} (for [body (bodyseq world)]
+                      [(identify body)
+                       (snapshot-body body changes-only?)]))
+   :joints (into {} (for [jt (alljointseq world)]
+                      [(identify jt)
+                       (snapshot-joint jt)]))})
+
+(defn record-snapshot
+  [state]
+  (let [world (:world state)
+        scene (snapshot-scene world hash false)
+        keep-n (:keep-snapshots state)]
+    (cond-> (update-in state [:snapshots] conj scene)
+            ;; limit size of history buffer
+            (>= (count (:snapshots state)) keep-n)
+            (update-in [:snapshots] (partial take (* 0.5 keep-n)))
+            ;; when simulating forward, always display current
+            (pos? (:steps-back state))
+            (assoc :steps-back 0))))
+
+(defn step
+  [state]
+  (cond-> (update-in state [:world] step! (:dt-secs state))
+          ;; handle single stepping
+          (:stepping? state)
+          (assoc :stepping? false :paused? true)))
 
 ;; ## Drawing
 
@@ -126,7 +123,7 @@ bounds if necessary to ensure an isometric aspect ratio."
 
 (defn draw-body
   [body-snap ->px px-scale]
-  (let [{:keys [position angle fixtures user-data]} body-snap
+  (let [{:keys [position angle fixtures]} body-snap
         ->loc-px (partial local-to-px px-scale)]
     (quil/with-translation (->px position)
       (quil/with-rotation [(- angle)]
@@ -168,14 +165,14 @@ bounds if necessary to ensure an isometric aspect ratio."
   [scene cam colors show-help?]
   (let [->px (world-to-px-fn cam)
         px-scale (world-to-px-scale cam)]
-    (quil/background (:background colors))
     (quil/fill (:text colors))
     (quil/text-align :right)
     (if show-help?
       (quil/text (str "Drag bodies to move them.\n"
                       "Right-button drag to pan.\n"
-                      "Mouse wheel to zoom.\n"
-                      "space to pause, > to step.")
+                      "Mouse wheel or +/- to zoom.\n"
+                      "space to pause.\n"
+                      "</> to step, shift steps by 10.")
                  (- (quil/width) 10) 10)
       (quil/text "Press \"?\""
                  (- (quil/width) 10) 10))
@@ -185,9 +182,9 @@ bounds if necessary to ensure an isometric aspect ratio."
                (- (quil/height) 5))
     (quil/text-align :left)
     (quil/stroke (:joint colors))
-    (doseq [jt-snap (:joints scene)]
+    (doseq [jt-snap (vals (:joints scene))]
       (draw-joint jt-snap ->px))
-    (doseq [body-snap (:bodies scene)
+    (doseq [body-snap (vals (:bodies scene))
             :let [ud (:user-data body-snap)
                   color (if-let [[-r -g -b] (::rgb ud)]
                           (quil/color -r -g -b)
@@ -200,11 +197,20 @@ bounds if necessary to ensure an isometric aspect ratio."
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
   [state]
-  (let [world (:world state)
-        scene (snapshot-scene world)
+  (let [{:keys [world snapshots steps-back]} state
+        scene (or (first snapshots)
+                  (snapshot-scene world hash false))
+        rewind-scene (when (pos? steps-back)
+                       (nth snapshots steps-back nil))
         cam (:camera state)
         colors (::colors state (default-colors))]
-    (draw-scene scene cam colors (::show-help? state))))
+    (quil/background (:background colors))
+    (draw-scene scene cam colors (::show-help? state))
+    (when rewind-scene
+      (quil/fill (:background colors) 127)
+      (quil/no-stroke)
+      (quil/rect 0 0 (quil/width) (quil/height))
+      (draw-scene rewind-scene cam colors (::show-help? state)))))
 
 ;; ## input event handlers
 
@@ -311,7 +317,12 @@ bounds if necessary to ensure an isometric aspect ratio."
   (case (:raw-key event)
     (\/ \?) (update-in state [::show-help?] not)
     \  (update-in state [:paused?] not)
-    \. (update-in state [:world] step! (:dt-secs state))
+    \. (if (pos? (:steps-back state))
+         (update-in state [:steps-back] dec)
+         (assoc state :stepping? true :paused? false))
+    \> (update-in state [:steps-back] #(max 0 (- % 10)))
+    \, (update-in state [:steps-back] inc)
+    \< (update-in state [:steps-back] + 10)
     \= (update-in state [:camera] zoom-camera (/ 1 1.25))
     \- (update-in state [:camera] zoom-camera 1.25)
     state))

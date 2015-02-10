@@ -557,17 +557,18 @@
   "Returns a map with keys :fixture-a :fixture-b :points :normal
    from a JBox2D Contact class. Returns nil if no contact points exist."
   [^Contact contact]
-  (let [world-manifold (WorldManifold.) ;; TODO could pass this in
-        manifold (.getManifold contact)
-        pcount (.pointCount manifold)]
-    (when (pos? pcount)
-      ;; mutates its argument:
-      (.getWorldManifold contact world-manifold)
-      (let [fixt-a (.getFixtureA contact)
-            fixt-b (.getFixtureB contact)
-            pts (map v2xy (take pcount (.points world-manifold)))
-            normal (v2xy (.normal world-manifold))]
-        (ContactData. fixt-a fixt-b pts normal)))))
+  (when (.isTouching contact)
+    (let [world-manifold (WorldManifold.) ;; TODO could pass this in
+          manifold (.getManifold contact)
+          pcount (.pointCount manifold)]
+      (when (pos? pcount)
+        ;; mutates its argument:
+        (.getWorldManifold contact world-manifold)
+        (let [fixt-a (.getFixtureA contact)
+              fixt-b (.getFixtureB contact)
+              pts (map v2xy (take pcount (.points world-manifold)))
+              normal (v2xy (.normal world-manifold))]
+          (ContactData. fixt-a fixt-b pts normal))))))
 
 (defn set-buffering-contact-listener!
   "Sets a ContactListener on the world which stores contacts. Returns
@@ -990,3 +991,52 @@
    Multiply by the time step to get work in Joules."
   [jt]
   (* (joint-speed jt) (motor-torque jt 1.0)))
+
+;; ## Snapshots - representing state as data for drawing
+
+(defn body-moving?
+  [body]
+  (case (body-type body)
+    :static false
+    :kinematic true
+    :dynamic (awake? body)))
+
+(defn snapshot-fixture
+  [fixt]
+  (let [shp-type (shape-type fixt)
+        basic-info {:user-data (user-data fixt)
+                    :shape-type shp-type}]
+    (if (= :circle shp-type)
+      (assoc basic-info
+        :radius (radius fixt)
+        :center (loc-center fixt))
+      (assoc basic-info
+        :coords (local-coords fixt)))))
+
+(defn snapshot-body
+  [body motion-only?]
+  (let [basic-info {:user-data (user-data body)}
+        moving-info (assoc basic-info
+                      :position (position body)
+                      :angle (angle body))]
+    (if motion-only?
+      (if (body-moving? body)
+        moving-info
+        basic-info)
+      ;; return full information
+      (assoc moving-info
+        :body-type (body-type body)
+        :fixtures (->> (for [fixt (fixtureseq body)]
+                         (snapshot-fixture fixt))
+                       (doall))))))
+
+(defn snapshot-joint
+  [jt]
+  (let [jt-type (joint-type jt)]
+    {:joint-type jt-type
+     :anchor-a (anchor-a jt)
+     :anchor-b (anchor-b jt)
+     :center-a (when (= :revolute jt-type)
+                 (center (body-a jt)))
+     :center-b (when (= :revolute jt-type)
+                 (center (body-b jt)))}))

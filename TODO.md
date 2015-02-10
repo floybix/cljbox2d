@@ -1,4 +1,8 @@
 
+* buffering contact impulse from postSolve
+
+* use differ to update snapshots by diffs - better memory usage on persistent data structures
+
 * use euclidian.math.vector
 * edge-point-local
 * in joint! give :limits []

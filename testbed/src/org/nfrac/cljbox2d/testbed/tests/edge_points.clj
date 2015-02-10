@@ -71,9 +71,8 @@
 
 (defn step
   [state]
-  (if (:paused? state)
-    state
-    (update-in state [:world] step! (:dt-secs state))))
+  (-> (bed/step state)
+      (bed/record-snapshot)))
 
 (defn -main
   "Run the test sketch."
@@ -81,7 +80,7 @@
   (quil/sketch
    :title "Edge points"
    :setup setup
-   :update step
+   :update (fn [s] (if (:paused? s) s (step s)))
    :draw bed/draw
    :key-typed bed/key-press
    :mouse-pressed bed/mouse-pressed
