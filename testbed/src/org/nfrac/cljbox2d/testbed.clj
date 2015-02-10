@@ -30,19 +30,16 @@
 
 ;; ## Snapshots - representing state as data for drawing
 
-(defn snapshot-scene
-  [world identify changes-only?]
-  {:bodies (into {} (for [body (bodyseq world)]
-                      [(identify body)
-                       (snapshot-body body changes-only?)]))
-   :joints (into {} (for [jt (alljointseq world)]
-                      [(identify jt)
-                       (snapshot-joint jt)]))})
-
 (defn record-snapshot
-  [state]
+  "Generates a representation of the world for drawing and stores
+   it in the list at key `:snapshots`. At most `:keep-snapshots` are
+   kept. Argument `well-behaved?` asserts that Fixtures will not
+   change, and that static bodies will not move: they can then be
+   ignored for efficiency."
+  [state well-behaved?]
   (let [world (:world state)
-        scene (snapshot-scene world hash false)
+        prev-scene (first (:snapshots state))
+        scene (snapshot-scene world hash prev-scene well-behaved?)
         keep-n (:keep-snapshots state)]
     (cond-> (update-in state [:snapshots] conj scene)
             ;; limit size of history buffer
@@ -53,6 +50,7 @@
             (assoc :steps-back 0))))
 
 (defn step
+  "Invokes a world simulation step. Also handles single stepping."
   [state]
   (cond-> (update-in state [:world] step! (:dt-secs state))
           ;; handle single stepping
@@ -171,8 +169,8 @@ bounds if necessary to ensure an isometric aspect ratio."
       (quil/text (str "Drag bodies to move them.\n"
                       "Right-button drag to pan.\n"
                       "Mouse wheel or +/- to zoom.\n"
-                      "space to pause.\n"
-                      "</> to step, shift steps by 10.")
+                      "Press space to pause, and press\n"
+                      "</> to step in time (Shift=x10).")
                  (- (quil/width) 10) 10)
       (quil/text "Press \"?\""
                  (- (quil/width) 10) 10))
@@ -199,7 +197,8 @@ bounds if necessary to ensure an isometric aspect ratio."
   [state]
   (let [{:keys [world snapshots steps-back]} state
         scene (or (first snapshots)
-                  (snapshot-scene world hash false))
+                  ;; in case we are not recording snapshots:
+                  (snapshot-scene world hash nil false))
         rewind-scene (when (pos? steps-back)
                        (nth snapshots steps-back nil))
         cam (:camera state)

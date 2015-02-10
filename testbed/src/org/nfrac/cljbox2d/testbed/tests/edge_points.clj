@@ -23,7 +23,7 @@
         (v-interp origin-pt edge-pt frac))))
 
 (defn setup []
-  (quil/frame-rate 30)
+  (quil/frame-rate 60)
   (let [world (new-world)
         ground (body! world {:type :static}
                       {:shape (edge [-40 0] [40 0])})
@@ -67,12 +67,13 @@
                                     :motor-speed PI
                                     :max-motor-torque 100}))))]
     (assoc bed/initial-state
+      :dt-secs (/ 1 60.0)
       :world world)))
 
 (defn step
   [state]
   (-> (bed/step state)
-      (bed/record-snapshot)))
+      (bed/record-snapshot true)))
 
 (defn -main
   "Run the test sketch."

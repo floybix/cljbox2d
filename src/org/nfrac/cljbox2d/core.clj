@@ -1040,3 +1040,32 @@
                  (center (body-a jt)))
      :center-b (when (= :revolute jt-type)
                  (center (body-b jt)))}))
+
+(defn- keep-stable
+  "For use in merge-with, hopefully improving memory use by reusing
+   existing data structures, in preference to equal re-generated
+   ones."
+  [old new]
+  (if (= old new) old new))
+
+(defn snapshot-scene
+  "Returns an immutable value representation of the world for drawing,
+   with keys :bodies and :joints. These are maps keyed by an object id
+   returned by the given `identify` function, e.g. `hash`. If a
+   `prev-scene` is given then it is used as a basis: only the
+   differences are applied to form a new value (improving memory use
+   via structural sharing). Argument `well-behaved?` asserts that
+   Fixtures will not change, and that static bodies will not move:
+   they can then be ignored for efficiency."
+  [world identify prev-scene well-behaved?]
+  (let [prev-bodies (:bodies prev-scene)]
+    {:bodies (into {} (for [body (bodyseq world)
+                            :let [id (identify body)]]
+                        [id (if-let [prev (get prev-bodies id)]
+                              (merge-with keep-stable
+                                          prev
+                                          (snapshot-body body well-behaved?))
+                              (snapshot-body body false))]))
+     :joints (into {} (for [jt (alljointseq world)]
+                        [(identify jt)
+                         (snapshot-joint jt)]))}))
