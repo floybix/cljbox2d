@@ -19,6 +19,7 @@
 (def initial-state
   {:world nil
    :dt-secs (/ 1 30.0)
+   :time 0.0
    :paused? false
    :stepping? false
    :snapshots ()
@@ -28,31 +29,46 @@
    :camera (map->Camera {:width 60 :height 40 :center [0 10]})
    :mouse-joint nil})
 
-;; ## Snapshots - representing state as data for drawing
-
 (defn record-snapshot
-  "Generates a representation of the world for drawing and stores
-   it in the list at key `:snapshots`. At most `:keep-snapshots` are
+  "Generates a representation of the world for drawing and adds
+   it to the list at key `:snapshots`. At most `:keep-snapshots` are
    kept. Argument `well-behaved?` asserts that Fixtures will not
    change, and that static bodies will not move: they can then be
-   ignored for efficiency."
-  [state well-behaved?]
-  (let [world (:world state)
-        prev-scene (first (:snapshots state))
-        scene (snapshot-scene world hash prev-scene well-behaved?)
-        keep-n (:keep-snapshots state)]
-    (cond-> (update-in state [:snapshots] conj scene)
-            ;; limit size of history buffer
-            (>= (count (:snapshots state)) keep-n)
-            (update-in [:snapshots] (partial take (* 0.5 keep-n)))
-            ;; when simulating forward, always display current
-            (pos? (:steps-back state))
-            (assoc :steps-back 0))))
+   ignored for efficiency.
 
-(defn step
-  "Invokes a world simulation step. Also handles single stepping."
+   If you use this, be advised not to print out the value in state
+   key `:snapshots`.
+
+   If `more-keys` are given, referring to values in `state`, they will
+   be recorded in each snapshot entry along with the usual :bodies
+   and :joints."
+  ([state well-behaved?]
+     (record-snapshot state well-behaved? []))
+  ([state well-behaved? more-keys]
+     (let [world (:world state)
+           prev-scene (first (:snapshots state))
+           scene (cond->
+                  (snapshot-scene world hash prev-scene well-behaved?)
+                  ;; include any extra values
+                  (seq more-keys)
+                  (merge (select-keys state more-keys)))
+           keep-n (:keep-snapshots state)]
+       (cond-> (update-in state [:snapshots] conj scene)
+               ;; limit size of history buffer
+               (>= (count (:snapshots state)) keep-n)
+               (update-in [:snapshots] (partial take (* 0.9 keep-n)))
+               ;; when simulating forward, always display current
+               (pos? (:steps-back state))
+               (assoc :steps-back 0)))))
+
+(defn world-step
+  "Invokes a simulation step on `:world`. Also updates `:time` and
+   handles single stepping mode."
   [state]
   (cond-> (update-in state [:world] step! (:dt-secs state))
+          ;; keep track of time
+          :always
+          (update-in [:time] + (:dt-secs state))
           ;; handle single stepping
           (:stepping? state)
           (assoc :stepping? false :paused? true)))
@@ -160,7 +176,7 @@ bounds if necessary to ensure an isometric aspect ratio."
    :joint (quil/color 155 155 255)})
 
 (defn draw-scene
-  [scene cam colors show-help?]
+  [scene cam colors show-help? time]
   (let [->px (world-to-px-fn cam)
         px-scale (world-to-px-scale cam)]
     (quil/fill (:text colors))
@@ -169,8 +185,8 @@ bounds if necessary to ensure an isometric aspect ratio."
       (quil/text (str "Drag bodies to move them.\n"
                       "Right-button drag to pan.\n"
                       "Mouse wheel or +/- to zoom.\n"
-                      "Press space to pause, and press\n"
-                      "</> to step in time (Shift=x10).")
+                      "Press space to pause, and press \n"
+                      "</> to step in time (Shift x10).")
                  (- (quil/width) 10) 10)
       (quil/text "Press \"?\""
                  (- (quil/width) 10) 10))
@@ -179,6 +195,9 @@ bounds if necessary to ensure an isometric aspect ratio."
                (- (quil/width) 10)
                (- (quil/height) 5))
     (quil/text-align :left)
+    (when time
+      (quil/text (format "t = %.1f" time)
+                 10 (- (quil/height) 5)))
     (quil/stroke (:joint colors))
     (doseq [jt-snap (vals (:joints scene))]
       (draw-joint jt-snap ->px))
@@ -195,7 +214,7 @@ bounds if necessary to ensure an isometric aspect ratio."
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
   [state]
-  (let [{:keys [world snapshots steps-back]} state
+  (let [{:keys [world snapshots steps-back time]} state
         scene (or (first snapshots)
                   ;; in case we are not recording snapshots:
                   (snapshot-scene world hash nil false))
@@ -204,12 +223,14 @@ bounds if necessary to ensure an isometric aspect ratio."
         cam (:camera state)
         colors (::colors state (default-colors))]
     (quil/background (:background colors))
-    (draw-scene scene cam colors (::show-help? state))
+    (draw-scene scene cam colors (::show-help? state)
+                (when-not rewind-scene time))
     (when rewind-scene
       (quil/fill (:background colors) 127)
       (quil/no-stroke)
       (quil/rect 0 0 (quil/width) (quil/height))
-      (draw-scene rewind-scene cam colors (::show-help? state)))))
+      (draw-scene rewind-scene cam colors (::show-help? state)
+                  (- time (* steps-back (:dt-secs state)))))))
 
 ;; ## input event handlers
 
@@ -320,8 +341,8 @@ bounds if necessary to ensure an isometric aspect ratio."
          (update-in state [:steps-back] dec)
          (assoc state :stepping? true :paused? false))
     \> (update-in state [:steps-back] #(max 0 (- % 10)))
-    \, (update-in state [:steps-back] inc)
-    \< (update-in state [:steps-back] + 10)
+    \, (-> (update-in state [:steps-back] inc) (assoc :paused? true))
+    \< (-> (update-in state [:steps-back] + 10) (assoc :paused? true))
     \= (update-in state [:camera] zoom-camera (/ 1 1.25))
     \- (update-in state [:camera] zoom-camera 1.25)
     state))

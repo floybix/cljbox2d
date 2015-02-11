@@ -11,6 +11,11 @@
 (def length 11.0)
 (def eye [0 10])
 
+(def initial-raycast
+  {:mode :closest
+   :angle 0.0
+   :end-point eye})
+
 (def shapes
   [(polygon [[-0.5 0] [0.5 0] [0 1.5]])
    (polygon [[-0.1 0] [0.1 0] [0 1.5]])
@@ -27,39 +32,34 @@
                       {:shape (edge [-40 0] [40 0])})]
     (assoc bed/initial-state
       :world world
-      ::bodies []
-      ::raycast {:mode :closest
-                 :angle 0.0
-                 :end-point eye})))
+      ::raycast initial-raycast
+      ::bodies [])))
 
-(defn post-step
+(defn record-raycast
   [state]
-  (let [rc (::raycast state)
-        prev-angle (:angle rc)
+  (let [prev (::raycast state)
+        prev-angle (:angle prev)
         angle (+ prev-angle (* 0.25 (/ PI 180)))
         end-point (v-add eye (polar-xy length angle))
-        hits (raycast (:world state) eye end-point (:mode rc)
+        hits (raycast (:world state) eye end-point (:mode prev)
                       :ignore (fn [fixt]
-                                (= 0 (:shape-idx (user-data (body-of fixt))))))]
-    (assoc state ::raycast
-           (assoc rc
+                                (= 0 (:shape-idx (user-data (body-of fixt))))))
+        rc (assoc prev
              :angle angle
              :end-point end-point
-             :hits hits))))
+             :hits hits)]
+    (assoc state ::raycast rc)))
 
 (defn step
   [state]
-  (if (:paused? state)
-    state
-    (-> (update-in state [:world] step! (:dt-secs state))
-        (post-step))))
+  (-> (bed/world-step state)
+      (record-raycast)
+      (bed/record-snapshot true [::raycast])))
 
-(defn draw
-  [state]
-  (bed/draw state)
-  (let [cam (:camera state)
-        ->px (partial bed/world-to-px cam)
-        rc (::raycast state)
+(defn draw-additional
+  [scene ->px]
+  (let [rc (or (::raycast scene)
+               initial-raycast)
         mode (:mode rc)
         hits (:hits rc)]
     (quil/fill 255)
@@ -75,6 +75,14 @@
       (quil/line (->px eye) (->px (:point hit)))
       (let [[x-px y-px] (->px (:point hit))]
         (quil/ellipse x-px y-px 5 5)))))
+
+(defn draw
+  [state]
+  (bed/draw state)
+  (let [{:keys [snapshots steps-back camera]} state
+        scene (nth snapshots steps-back nil)
+        ->px (bed/world-to-px-fn camera)]
+    (draw-additional scene ->px)))
 
 (defn create-body
   [state index]
@@ -111,7 +119,7 @@
   (quil/sketch
    :title "Raycast"
    :setup setup
-   :update step
+   :update (fn [s] (if (:paused? s) s (step s)))
    :draw draw
    :key-typed my-key-press
    :mouse-pressed bed/mouse-pressed

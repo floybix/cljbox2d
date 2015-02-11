@@ -34,9 +34,8 @@
 
 (defn step
   [state]
-  (if (:paused? state)
-    state
-    (update-in state [:world] step! (:dt-secs state))))
+  (-> (bed/world-step state)
+      (bed/record-snapshot true)))
 
 (defn draw
   [state]
@@ -70,7 +69,7 @@
   (quil/sketch
    :title "Revolute"
    :setup setup
-   :update step
+   :update (fn [s] (if (:paused? s) s (step s)))
    :draw draw
    :key-typed my-key-press
    :mouse-pressed bed/mouse-pressed

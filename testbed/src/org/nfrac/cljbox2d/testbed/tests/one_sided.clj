@@ -46,9 +46,8 @@
 
 (defn step
   [state]
-  (if (:paused? state)
-    state
-    (update-in state [:world] step! (:dt-secs state))))
+  (-> (bed/world-step state)
+      (bed/record-snapshot true)))
 
 (defn -main
   "Run the test sketch."
@@ -56,7 +55,7 @@
   (quil/sketch
    :title "One-Sided"
    :setup setup
-   :update step
+   :update (fn [s] (if (:paused? s) s (step s)))
    :draw bed/draw
    :key-typed bed/key-press
    :mouse-pressed bed/mouse-pressed

@@ -65,10 +65,9 @@
 
 (defn step
   [state]
-  (if (:paused? state)
-    state
-    (-> (update-in state [:world] step! (:dt-secs state))
-        (post-step))))
+  (-> (bed/world-step state)
+      (post-step)
+      (bed/record-snapshot true)))
 
 (defn -main
   "Run the test sketch."
@@ -76,7 +75,7 @@
   (quil/sketch
    :title "Sensor Test"
    :setup setup
-   :update step
+   :update (fn [s] (if (:paused? s) s (step s)))
    :draw bed/draw
    :key-typed bed/key-press
    :mouse-pressed bed/mouse-pressed

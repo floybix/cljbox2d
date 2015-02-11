@@ -72,7 +72,7 @@
 
 (defn step
   [state]
-  (-> (bed/step state)
+  (-> (bed/world-step state)
       (bed/record-snapshot true)))
 
 (defn -main
