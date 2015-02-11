@@ -30,14 +30,14 @@
    :mouse-joint nil})
 
 (defn record-snapshot
-  "Generates a representation of the world for drawing and adds
+  "Generates a representation of the :world for drawing and adds
    it to the list at key `:snapshots`. At most `:keep-snapshots` are
    kept. Argument `well-behaved?` asserts that Fixtures will not
    change, and that static bodies will not move: they can then be
    ignored for efficiency.
 
-   If you use this, be advised not to print out the value in state
-   key `:snapshots`.
+   If you use this, be advised not to print out or otherwise serialise
+   the value in state key `:snapshots`.
 
    If `more-keys` are given, referring to values in `state`, they will
    be recorded in each snapshot entry along with the usual :bodies
@@ -56,10 +56,7 @@
        (cond-> (update-in state [:snapshots] conj scene)
                ;; limit size of history buffer
                (>= (count (:snapshots state)) keep-n)
-               (update-in [:snapshots] (partial take (* 0.9 keep-n)))
-               ;; when simulating forward, always display current
-               (pos? (:steps-back state))
-               (assoc :steps-back 0)))))
+               (update-in [:snapshots] (partial take (* 0.9 keep-n)))))))
 
 (defn world-step
   "Invokes a simulation step on `:world`. Also updates `:time` and
@@ -206,7 +203,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                   color (if-let [[-r -g -b] (::rgb ud)]
                           (quil/color -r -g -b)
                           (colors (:body-type body-snap)))]]
-      (let [alpha 64]
+      (let [alpha 128]
         (quil/stroke color)
         (quil/fill color alpha))
       (draw-body body-snap ->px px-scale))))
@@ -214,22 +211,21 @@ bounds if necessary to ensure an isometric aspect ratio."
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
   [state]
-  (let [{:keys [world snapshots steps-back time]} state
+  (let [{:keys [world snapshots steps-back time camera]} state
         scene (or (first snapshots)
                   ;; in case we are not recording snapshots:
                   (snapshot-scene world hash nil false))
         rewind-scene (when (pos? steps-back)
                        (nth snapshots steps-back nil))
-        cam (:camera state)
         colors (::colors state (default-colors))]
     (quil/background (:background colors))
-    (draw-scene scene cam colors (::show-help? state)
+    (draw-scene scene camera colors (::show-help? state)
                 (when-not rewind-scene time))
     (when rewind-scene
       (quil/fill (:background colors) 127)
       (quil/no-stroke)
       (quil/rect 0 0 (quil/width) (quil/height))
-      (draw-scene rewind-scene cam colors (::show-help? state)
+      (draw-scene rewind-scene camera colors (::show-help? state)
                   (- time (* steps-back (:dt-secs state)))))))
 
 ;; ## input event handlers
@@ -336,7 +332,9 @@ bounds if necessary to ensure an isometric aspect ratio."
   [state event]
   (case (:raw-key event)
     (\/ \?) (update-in state [::show-help?] not)
-    \  (update-in state [:paused?] not)
+    \  (if (:paused? state)
+         (assoc state :paused? false :steps-back 0)
+         (assoc state :paused? true))
     \. (if (pos? (:steps-back state))
          (update-in state [:steps-back] dec)
          (assoc state :stepping? true :paused? false))
