@@ -1050,22 +1050,38 @@
 
 (defn snapshot-scene
   "Returns an immutable value representation of the world for drawing,
-   with keys :bodies and :joints. These are maps keyed by an object id
-   returned by the given `identify` function, e.g. `hash`. If a
-   `prev-scene` is given then it is used as a basis: only the
-   differences are applied to form a new value (improving memory use
-   via structural sharing). Argument `well-behaved?` asserts that
-   Fixtures will not change, and that static bodies will not move:
-   they can then be ignored for efficiency."
-  [world identify prev-scene well-behaved?]
-  (let [prev-bodies (:bodies prev-scene)]
-    {:bodies (into {} (for [body (bodyseq world)
-                            :let [id (identify body)]]
-                        [id (if-let [prev (get prev-bodies id)]
-                              (merge-with keep-stable
-                                          prev
-                                          (snapshot-body body well-behaved?))
-                              (snapshot-body body false))]))
-     :joints (into {} (for [jt (alljointseq world)]
-                        [(identify jt)
-                         (snapshot-joint jt)]))}))
+   with keys :bodies and :joints. Body snapshots and joint snapshots
+   are stored in two-level nested maps, allowing bodies to be grouped
+   together. `identify` returns a 2-tuple giving the group
+   and (nested) body keys. The default case stores all bodies under a
+   single key `:all` and keys them by object hash value.
+
+   If a non-nil `prev-scene` is given then it is used as a basis: only
+   the differences are applied to form a new value, improving memory
+   use via structural sharing.
+
+   Argument `well-behaved?` asserts that Fixtures will not change, and
+   that static bodies will not move: they can then be ignored for
+   efficiency."
+  ([world prev-scene well-behaved?]
+     (snapshot-scene world prev-scene well-behaved?
+                     (juxt (constantly :all) hash)))
+  ([world prev-scene well-behaved? identify]
+     (let [prev-bodies (:bodies prev-scene)]
+       {:bodies
+        (->> (bodyseq world)
+             (reduce (fn [m body]
+                       (let [id-path (identify body)]
+                         (assoc-in m id-path
+                                   (if-let [prev (get-in prev-bodies id-path)]
+                                     (merge-with keep-stable
+                                                 prev
+                                                 (snapshot-body body well-behaved?))
+                                     (snapshot-body body false)))))
+                     {}))
+        :joints
+        (->> (alljointseq world)
+             (reduce (fn [m jt]
+                       (assoc-in m (identify jt)
+                                 (snapshot-joint jt)))
+                     {}))})))

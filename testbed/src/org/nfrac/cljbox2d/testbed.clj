@@ -48,7 +48,7 @@
      (let [world (:world state)
            prev-scene (first (:snapshots state))
            scene (cond->
-                  (snapshot-scene world hash prev-scene well-behaved?)
+                  (snapshot-scene world prev-scene well-behaved?)
                   ;; include any extra values
                   (seq more-keys)
                   (merge (select-keys state more-keys)))
@@ -196,9 +196,11 @@ bounds if necessary to ensure an isometric aspect ratio."
       (quil/text (format "t = %.1f" time)
                  10 (- (quil/height) 5)))
     (quil/stroke (:joint colors))
-    (doseq [jt-snap (vals (:joints scene))]
+    (doseq [jt-group (vals (:joints scene))
+            jt-snap (vals jt-group)]
       (draw-joint jt-snap ->px))
-    (doseq [body-snap (vals (:bodies scene))
+    (doseq [body-group (vals (:bodies scene))
+            body-snap (vals body-group)
             :let [ud (:user-data body-snap)
                   color (if-let [[-r -g -b] (::rgb ud)]
                           (quil/color -r -g -b)
@@ -214,7 +216,7 @@ bounds if necessary to ensure an isometric aspect ratio."
   (let [{:keys [world snapshots steps-back time camera]} state
         scene (or (first snapshots)
                   ;; in case we are not recording snapshots:
-                  (snapshot-scene world hash nil false))
+                  (snapshot-scene world nil false))
         rewind-scene (when (pos? steps-back)
                        (nth snapshots steps-back nil))
         colors (::colors state (default-colors))]
