@@ -6,15 +6,29 @@ A [clojure](http://clojure.org/) wrapper for
 [JBox2D](http://www.jbox2d.org/), which is a close Java port of Erin
 Catto's excellent C++ [Box2D](http://www.box2d.org/) physics engine.
 
-## API docs
+
+## API Docs
 
 See http://floybix.github.com/cljbox2d/
 
+
+## Setup
+
+Add the following the to your project.clj:
+
+[![Clojars Project](http://clojars.org/org.nfrac/cljbox2d/latest-version.svg)](http://clojars.org/org.nfrac/cljbox2d)
+
+for the [Quil](http://quil.info/)-based visual display:
+
+[![Clojars Project](http://clojars.org/org.nfrac/cljbox2d.testbed/latest-version.svg)](http://clojars.org/org.nfrac/cljbox2d.testbed)
+
+
 ## Usage
 
-Get [Leiningen](https://github.com/technomancy/leiningen) first.
-
-Some ports of the Box2D / JBox2D testbed tests:
+Start by looking at [these
+examples](https://github.com/floybix/cljbox2d/tree/master/testbed/src/org/nfrac/cljbox2d/testbed/tests),
+which are ports of the Box2D / JBox2D testbed tests. They can be run
+from source using Leiningen as:
 
 <pre>
 cd testbed/
@@ -50,6 +64,7 @@ See the ball bounce (requires some imagination...)
 ;  [0.0 2.3381777]
 ;  [0.0 1.0048437]
 ```
+
 
 ## License
 
