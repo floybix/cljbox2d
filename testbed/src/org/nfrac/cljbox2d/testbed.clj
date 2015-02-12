@@ -182,7 +182,7 @@ bounds if necessary to ensure an isometric aspect ratio."
       (quil/text (str "Drag bodies to move them.\n"
                       "Right-button drag to pan.\n"
                       "Mouse wheel or +/- to zoom.\n"
-                      "Press space to pause, and press \n"
+                      "Press space to pause, and  \n"
                       "</> to step in time (Shift x10).")
                  (- (quil/width) 10) 10)
       (quil/text "Press \"?\""

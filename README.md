@@ -6,8 +6,6 @@ A [clojure](http://clojure.org/) wrapper for
 [JBox2D](http://www.jbox2d.org/), which is a close Java port of Erin
 Catto's excellent C++ [Box2D](http://www.box2d.org/) physics engine.
 
-This is my first clojure project. Feedback would be appreciated.
-
 ## API docs
 
 See http://floybix.github.com/cljbox2d/
