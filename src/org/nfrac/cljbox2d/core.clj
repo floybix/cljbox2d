@@ -56,6 +56,11 @@
   [^World world gravity]
   (.setGravity world (vec2 gravity)))
 
+(defn gravity
+  "Gets the gravity vector."
+  [^World world]
+  (v2xy (.getGravity world)))
+
 ;; ## Enums
 
 (def ^{:private true}
