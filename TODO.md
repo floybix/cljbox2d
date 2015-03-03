@@ -1,13 +1,12 @@
 
 * buffering contact impulse from postSolve
 
-* use euclidian.math.vector
-* edge-point-local
+* perf
 * in joint! give :limits []
 * serialise worlds?
   * (fixture-spec) returns map from Fixture
   * (body-spec) returns map from Body
-* how to detect unmatched keys in argument maps?
+* detect unmatched keys in argument maps?
 * fixture functions:
   * isSensor
   * get/set friction, density, restitution etc
@@ -17,7 +16,6 @@
   * ApplyForce
   * Car
   * Buoyancy
-* testbed draw circle angle
 * testbed restart 'r'
 * need a library of shape functions?
   * e.g. transform polygons

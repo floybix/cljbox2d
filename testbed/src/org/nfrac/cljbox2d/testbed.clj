@@ -160,7 +160,8 @@ bounds if necessary to ensure an isometric aspect ratio."
             (case shape-type
               :circle (let [[x y] (->loc-px center)
                             radius-px (* radius px-scale)]
-                        (quil/ellipse x y (* 2 radius-px) (* 2 radius-px)))
+                        (quil/ellipse x y (* 2 radius-px) (* 2 radius-px))
+                        (quil/line [x y] [(+ x radius-px) y]))
               (:edge :chain) (doseq [[pt1 pt2] (partition 2 1 (map ->loc-px coords))]
                                (quil/line pt1 pt2))
               :polygon (do
