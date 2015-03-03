@@ -1,4 +1,10 @@
 
+## 0.4.1
+	* Allow vary-user-data to take variadic arguments, like vary-meta.
+	* Add gravity accessor function.
+	* Use styler side-effecting function instead of color map in testbed.
+	* Draw zero-angle line on circles.
+
 ## 0.4.0
 	* Added chain shape.
 	* Defined testbed camera with a :center position.

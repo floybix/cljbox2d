@@ -20,7 +20,7 @@
                  (= fixt-a sensor-fixt) (body-of fixt-b)
                  (= fixt-b sensor-fixt) (body-of fixt-a))]
         (when bod
-          (vary-user-data bod #(assoc % ::touching? true ::bed/rgb [255 0 0])))))
+          (vary-user-data bod assoc ::touching? true ::bed/rgb [255 0 0]))))
     (endContact [_ contact]
       (let [fixt-a (.getFixtureA contact)
             fixt-b (.getFixtureB contact)
@@ -28,7 +28,7 @@
                  (= fixt-a sensor-fixt) (body-of fixt-b)
                  (= fixt-b sensor-fixt) (body-of fixt-a))]
         (when bod
-          (vary-user-data bod #(assoc % ::touching? false ::bed/rgb nil)))))
+          (vary-user-data bod assoc ::touching? false ::bed/rgb nil))))
     (preSolve [_ contact _])
     (postSolve [_ contact _])))
 

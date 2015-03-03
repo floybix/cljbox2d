@@ -202,10 +202,12 @@
   (set-user-data! [this x] (.setUserData this x)))
 
 (defn vary-user-data
-  "Alters the userdata attached to the object by applying `f` to any
-   existing value or the empty map. Returns `this`."
-  [this f]
-  (set-user-data! this (f (or (user-data this) {})))
+  "Alters the userdata attached to `this` by applying `f` to the
+   existing value (or the empty map) with given args. Returns the
+   object."
+  [this f & args]
+  (set-user-data! this (apply f (or (user-data this) {})
+                              args))
   this)
 
 ;; ### Fixtures
