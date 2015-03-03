@@ -14,6 +14,23 @@
             [quil.core :as quil])
   (:import (org.jbox2d.dynamics.joints MouseJoint)))
 
+(defn default-styler
+  ([k]
+     (case k
+       :text (quil/fill (quil/color 255 255 255))
+       :joint (quil/fill (quil/color 155 155 255))
+       :background (do (quil/fill (quil/color 0 0 0))
+                       (quil/no-stroke))))
+  ([body-type user-data]
+     (let [clr (if-let [[-r -g -b] (::rgb user-data)]
+                 (quil/color -r -g -b)
+                 (case body-type
+                   :static (quil/color 100 255 100)
+                   :kinematic (quil/color 100 100 255)
+                   :dynamic (quil/color 255 200 200)))]
+       (quil/fill clr 127)
+       (quil/stroke clr))))
+
 (defrecord Camera [width height center])
 
 (def initial-state
@@ -163,20 +180,9 @@ bounds if necessary to ensure an isometric aspect ratio."
       (do
         (quil/line (->px anchor-a) (->px anchor-b))))))
 
-(defn default-colors
-  []
-  {:background (quil/color 0 0 0)
-   :text (quil/color 255 255 255)
-   :static (quil/color 100 255 100)
-   :kinematic (quil/color 100 100 255)
-   :dynamic (quil/color 255 200 200)
-   :joint (quil/color 155 155 255)})
-
-(defn draw-scene
-  [scene cam colors show-help? time]
-  (let [->px (world-to-px-fn cam)
-        px-scale (world-to-px-scale cam)]
-    (quil/fill (:text colors))
+(defn draw-info
+  [cam time show-help?]
+  (let [->px (world-to-px-fn cam)]
     (quil/text-align :right)
     (if show-help?
       (quil/text (str "Drag bodies to move them.\n"
@@ -194,20 +200,19 @@ bounds if necessary to ensure an isometric aspect ratio."
     (quil/text-align :left)
     (when time
       (quil/text (format "t = %.1f" time)
-                 10 (- (quil/height) 5)))
-    (quil/stroke (:joint colors))
+                 10 (- (quil/height) 5)))))
+
+(defn draw-scene
+  [scene cam style!]
+  (let [->px (world-to-px-fn cam)
+        px-scale (world-to-px-scale cam)]
+    (style! :joint)
     (doseq [jt-group (vals (:joints scene))
             jt-snap (vals jt-group)]
       (draw-joint jt-snap ->px))
     (doseq [body-group (vals (:bodies scene))
-            body-snap (vals body-group)
-            :let [ud (:user-data body-snap)
-                  color (if-let [[-r -g -b] (::rgb ud)]
-                          (quil/color -r -g -b)
-                          (colors (:body-type body-snap)))]]
-      (let [alpha 128]
-        (quil/stroke color)
-        (quil/fill color alpha))
+            body-snap (vals body-group)]
+      (style! (:body-type body-snap) (:user-data body-snap))
       (draw-body body-snap ->px px-scale))))
 
 (defn draw
@@ -219,16 +224,19 @@ bounds if necessary to ensure an isometric aspect ratio."
                   (snapshot-scene world nil false))
         rewind-scene (when (pos? steps-back)
                        (nth snapshots steps-back nil))
-        colors (::colors state (default-colors))]
-    (quil/background (:background colors))
-    (draw-scene scene camera colors (::show-help? state)
-                (when-not rewind-scene time))
+        back-time (- time (* steps-back (:dt-secs state)))
+        style! (::styler state default-styler)]
+    (style! :background)
+    (quil/background (quil/current-fill))
+    (draw-scene scene camera style!)
     (when rewind-scene
-      (quil/fill (:background colors) 127)
-      (quil/no-stroke)
+      (style! :background)
+      (quil/fill (quil/current-fill) 127)
       (quil/rect 0 0 (quil/width) (quil/height))
-      (draw-scene rewind-scene camera colors (::show-help? state)
-                  (- time (* steps-back (:dt-secs state)))))))
+      (draw-scene rewind-scene camera style!))
+    ;; overlay text
+    (style! :text)
+    (draw-info camera back-time (::show-help? state))))
 
 ;; ## input event handlers
 
