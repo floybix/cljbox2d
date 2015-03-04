@@ -1,5 +1,6 @@
 
 ## 0.4.1
+	* Record post-contact impulses in buffering-contact-listener.
 	* Allow vary-user-data to take variadic arguments, like vary-meta.
 	* Add gravity accessor function.
 	* Use styler side-effecting function instead of color map in testbed.

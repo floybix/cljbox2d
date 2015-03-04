@@ -11,7 +11,8 @@
            (org.jbox2d.collision AABB WorldManifold)
            (org.jbox2d.collision.shapes PolygonShape CircleShape EdgeShape
                                         ChainShape ShapeType MassData)
-           (org.jbox2d.callbacks QueryCallback RayCastCallback ContactListener)
+           (org.jbox2d.callbacks QueryCallback RayCastCallback ContactListener
+                                 ContactImpulse)
            (org.jbox2d.dynamics.contacts Contact ContactEdge)
            (org.jbox2d.dynamics.joints Joint JointType
                                        ConstantVolumeJoint ConstantVolumeJointDef
@@ -558,38 +559,48 @@
 
 ;; ## Contacts
 
-(defrecord ContactData [fixture-a fixture-b points normal])
+(defrecord ContactData [fixture-a fixture-b points normal
+                        normal-impulses tangent-impulses])
 
 (defn contact-data
   "Returns a map with keys :fixture-a :fixture-b :points :normal
-   from a JBox2D Contact class. Returns nil if no contact points exist."
-  [^Contact contact]
-  (when (.isTouching contact)
-    (let [world-manifold (WorldManifold.) ;; TODO could pass this in
-          manifold (.getManifold contact)
-          pcount (.pointCount manifold)]
-      (when (pos? pcount)
-        ;; mutates its argument:
-        (.getWorldManifold contact world-manifold)
-        (let [fixt-a (.getFixtureA contact)
-              fixt-b (.getFixtureB contact)
-              pts (map v2xy (take pcount (.points world-manifold)))
-              normal (v2xy (.normal world-manifold))]
-          (ContactData. fixt-a fixt-b pts normal))))))
+   :normal-impulses :tangent-impulses from a JBox2D Contact object and
+   optional ContactImpulse object. Returns nil if no contact points
+   exist."
+  ([^Contact contact]
+     (contact-data contact nil))
+  ([^Contact contact ^ContactImpulse impulses]
+     (when (.isTouching contact)
+       (let [world-manifold (WorldManifold.) ;; TODO could pass this in
+             manifold (.getManifold contact)
+             pcount (.pointCount manifold)]
+         (when (pos? pcount)
+           ;; mutates its argument:
+           (.getWorldManifold contact world-manifold)
+           (let [fixt-a (.getFixtureA contact)
+                 fixt-b (.getFixtureB contact)
+                 pts (map v2xy (take pcount (.points world-manifold)))
+                 normal (v2xy (.normal world-manifold))]
+             (ContactData. fixt-a fixt-b pts normal
+                           (when impulses
+                             (take pcount (.normalImpulses impulses)))
+                           (when impulses
+                             (take pcount (.tangentImpulses impulses))))))))))
 
 (defn set-buffering-contact-listener!
   "Sets a ContactListener on the world which stores contacts. Returns
    an atom which will be populated with a sequence of `contact-data`
-   records. Consumer is responsible for resetting it."
+   records. Consumer is responsible for emptying it."
   [^World world]
   (let [contact-buffer (atom ())
         lstnr (reify ContactListener
                 (beginContact [_ _])
                 (endContact [_ _])
-                (postSolve [_ _ _])
-                (preSolve [_ contact _]
-                  (if-let [cd (contact-data contact)]
-                    (swap! contact-buffer conj cd))))]
+                (preSolve [_ _ _])
+                (postSolve [_ contact impulses]
+                  (if-let [cd (contact-data contact impulses)]
+                    (swap! contact-buffer conj cd)))
+                )]
     (.setContactListener world lstnr)
     contact-buffer))
 
