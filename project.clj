@@ -1,4 +1,4 @@
-(defproject org.nfrac/cljbox2d "0.4.1-SNAPSHOT"
+(defproject org.nfrac/cljbox2d "0.5.0"
   :description "A clojure wrapper for JBox2D, for 2D physics simulation."
   :url "https://github.com/floybix/cljbox2d"
   :scm {:name "git"
