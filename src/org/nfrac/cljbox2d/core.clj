@@ -713,7 +713,7 @@
            collide-connected user-data]
     :or {reference-angle 0
          enable-motor false, motor-speed 0, max-motor-torque 10000,
-         enable-limit false, lower-angle 0, upper-angle 360,
+         enable-limit false, lower-angle 0, upper-angle TWOPI,
          collide-connected false}}]
   (let [jd (RevoluteJointDef.)]
     (set! (.bodyA jd) body-a)
