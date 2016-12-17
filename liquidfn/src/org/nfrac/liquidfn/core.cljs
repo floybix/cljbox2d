@@ -902,13 +902,13 @@
 (extend-protocol Limitable
 
   js/b2RevoluteJoint
-  (limit-enabled? [this] (.IsLimitEnabled this))
+  (limit-enabled? [this] (pos? (.IsLimitEnabled this)))
   (enable-limit! [this flag] (.EnableLimit this flag))
   #_(limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
   #_(limits! [this limits] (.setLimits this (first limits) (second limits)))
 
   js/b2PrismaticJoint
-  (limit-enabled? [this] (.IsLimitEnabled this))
+  (limit-enabled? [this] (pos? (.IsLimitEnabled this)))
   (enable-limit! [this flag] (.EnableLimit this flag))
   #_(limits [this] [(.getLowerLimit this) (.getUpperLimit this)])
   #_(limits! [this limits] (.setLimits this (first limits) (second limits))))
@@ -935,7 +935,7 @@
 (extend-protocol Motorised
 
   js/b2RevoluteJoint
-  (motor-enabled? [this] (.IsMotorEnabled this))
+  (motor-enabled? [this] (pos? (.IsMotorEnabled this)))
   (enable-motor! [this flag] (.EnableMotor this flag))
   (motor-speed [this] (.GetMotorSpeed this))
   (motor-speed! [this speed] (.SetMotorSpeed this speed))
@@ -945,7 +945,7 @@
   ;(max-motor-torque! [this torque] (.setMaxMotorTorque this torque))
 
   js/b2PrismaticJoint
-  (motor-enabled? [this] (.IsMotorEnabled this))
+  (motor-enabled? [this] (pos? (.IsMotorEnabled this)))
   (enable-motor! [this flag] (.EnableMotor this flag))
   (motor-speed [this] (.GetMotorSpeed this))
   (motor-speed! [this speed] (.SetMotorSpeed this speed))

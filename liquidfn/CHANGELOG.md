@@ -18,11 +18,11 @@
   - anchor-a, anchor-b.
 	- body-a, body-b for all but revolute & primatic joints.
   - reaction-force, reaction-torque missing.
+	- motor-torque, max-motor-torque, max-motor-force, power-watts
 	- joint-speed missing, use joint-angular-velocity /
 	- limits, limits! missing
-	- motor-torque, max-motor-torque, max-motor-force, power-watts
   - motor-speed missing for revolute joint.
-  - motor-speed!, motor-enabled?, limits-enabled? inexplicably broken.
+  - motor-speed! only works when the motor is off.
 - **Contacts**
 	- .isTouching check missing for contacts
   - .SetEnabled on contacts is missing.

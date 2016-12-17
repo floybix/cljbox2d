@@ -56,11 +56,15 @@
     (case (:key event)
       :l (do (lf/enable-limit! jt (not (lf/limit-enabled? jt)))
              state)
-      :m (do (lf/enable-motor! jt true #_(not (lf/motor-enabled? jt)))
+      :m (do (lf/enable-motor! jt (not (lf/motor-enabled? jt)))
              state)
-      :a (do (lf/motor-speed! jt PI)
+      ;; with liquidfun.js, motor-speed! only works when it's off:
+      ;; (also, doesn't work if you turn it off & on in same iteration)
+      :a (do (lf/enable-motor! jt false)
+             (lf/motor-speed! jt PI)
              (assoc state ::dir :countercw))
-      :d (do (lf/motor-speed! jt (- PI))
+      :d (do (lf/enable-motor! jt false)
+             (lf/motor-speed! jt (- PI))
              (assoc state ::dir :clockwise))
       ;; otherwise pass on to testbed
       (bed/key-press state event))))
