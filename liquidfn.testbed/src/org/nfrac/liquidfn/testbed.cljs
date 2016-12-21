@@ -18,6 +18,7 @@
    (case k
      :text (quil/fill (quil/color 255 255 255))
      :joint (quil/fill (quil/color 155 155 255))
+     :particles (quil/stroke (quil/color 255 255 255))
      :background (do (quil/background (quil/color 0 0 0))
                      (quil/fill (quil/color 0 0 0) 127) ;; for rewind overlay
                      (quil/no-stroke))))
@@ -216,26 +217,72 @@ bounds if necessary to ensure an isometric aspect ratio."
       (style! (:body-type body-snap) (:user-data body-snap))
       (draw-body body-snap ->px px-scale))))
 
+(defn draw-particle-system
+  [ps cam style! varying-colors?]
+  (let [px-scale (world-to-px-scale cam)
+        radius (.-radius ps)
+        r-px (* radius px-scale)
+        posbuf (.GetPositionBuffer ps)
+        colbuf (.GetColorBuffer ps)
+        np (quot (.-length posbuf) 2)
+        ;; inlined version of world-to-px
+        [cx cy] (:center cam)
+        x-left (- cx (* 0.5 (:width cam)))
+        y-bottom (- cy (* 0.5 (:height cam)))
+        y-top (+ y-bottom (:height cam))]
+    (quil/no-fill)
+    (if varying-colors?
+      (doseq [i (range np)
+              :let [x (aget posbuf (* i 2))
+                    y (aget posbuf (+ (* i 2) 1))
+                    x-px (* (- x x-left) px-scale)
+                    y-px (* (- y-top y) px-scale)]]
+                    ;[x-px y-px] (->px [x y])]]
+        (quil/stroke (aget colbuf (* i 4))
+                     (aget colbuf (+ (* i 4) 1))
+                     (aget colbuf (+ (* i 4) 2))
+                     (aget colbuf (+ (* i 4) 3)))
+        (quil/triangle (- x-px r-px) (+ y-px r-px)
+                       (+ x-px r-px) (+ y-px r-px)
+                       x-px (- y-px r-px)))
+      ;; if one color then draw as all one shape
+      (do
+        (style! :particles)
+        (quil/begin-shape :triangles)
+        (doseq [i (range np)
+                :let [x (aget posbuf (* i 2))
+                      y (aget posbuf (+ (* i 2) 1))
+                      x-px (* (- x x-left) px-scale)
+                      y-px (* (- y-top y) px-scale)]]
+          (quil/vertex (- x-px r-px) (+ y-px r-px))
+          (quil/vertex (+ x-px r-px) (+ y-px r-px))
+          (quil/vertex x-px (- y-px r-px)))
+        (quil/end-shape)))))
+
 (defn draw
   "Draw all shapes (fixtures) and joints in the Box2D world."
-  [state]
-  (let [{:keys [world snapshots steps-back time camera]} state
-        scene (or (first snapshots)
-                  ;; in case we are not recording snapshots:
-                  (lf/snapshot-scene world nil false))
-        rewind-scene (when (pos? steps-back)
-                       (nth snapshots steps-back nil))
-        back-time (- time (* steps-back (:dt-secs state)))
-        style! (::styler state default-styler)]
-    (style! :background)
-    (draw-scene scene camera style!)
-    (when rewind-scene
-      (quil/fill (quil/color 0 0 0) 127)
-      (quil/rect 0 0 (quil/width) (quil/height))
-      (draw-scene rewind-scene camera style!))
-    ;; overlay text
-    (style! :text)
-    (draw-info camera back-time (::show-help? state))))
+  ([state]
+   (draw state false))
+  ([state particle-colors?]
+   (let [{:keys [world snapshots steps-back time camera]} state
+         scene (or (first snapshots)
+                   ;; in case we are not recording snapshots:
+                   (lf/snapshot-scene world nil false))
+         rewind-scene (when (pos? steps-back)
+                        (nth snapshots steps-back nil))
+         back-time (- time (* steps-back (:dt-secs state)))
+         style! (::styler state default-styler)]
+     (style! :background)
+     (doseq [ps (lf/particle-sys-seq world)]
+       (draw-particle-system ps camera style! particle-colors?))
+     (draw-scene scene camera style!)
+     (when rewind-scene
+       (quil/fill (quil/color 0 0 0) 127)
+       (quil/rect 0 0 (quil/width) (quil/height))
+       (draw-scene rewind-scene camera style!))
+     ;; overlay text
+     (style! :text)
+     (draw-info camera back-time (::show-help? state)))))
 
 ;; ## input event handlers
 
