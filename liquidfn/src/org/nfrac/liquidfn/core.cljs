@@ -266,6 +266,180 @@
       (user-data! bod ud))
     bod))
 
+;; ### Particle Systems
+
+(def kw->particle-flag
+  {:water js/b2_waterParticle ; Water particle.
+   :zombie js/b2_zombieParticle ; Removed after next simulation step.
+   :wall js/b2_wallParticle ; Zero velocity.
+   :spring js/b2_springParticle ; With restitution from stretching.
+   :elastic js/b2_elasticParticle ; With restitution from deformation.
+   :viscous  js/b2_viscousParticle ; With viscosity.
+   :powder js/b2_powderParticle ; Without isotropic pressure.
+   :tensile js/b2_tensileParticle ; With surface tension.
+   :color-mixing js/b2_colorMixingParticle ; Mix color between contacting particles.
+   :destruction-listener js/b2_destructionListenerParticle ; Call b2DestructionListener on destruction.
+   :barrier js/b2_barrierParticle ; Prevents other particles from leaking.
+   :static-pressure js/b2_staticPressureParticle ; Less compressibility.
+   :reactive js/b2_reactiveParticle ; Makes pairs or triads with other particles.
+   :repulsive js/b2_repulsiveParticle ; With high repulsive force.
+   ;; Call b2ContactListener when this particle is about to interact with
+   ;; a rigid body or stops interacting with a rigid body.
+   ;; This results in an expensive operation compared to using
+   ;; b2_fixtureContactFilterParticle to detect collisions between
+   ;; particles.
+   :fixture-contact-listener js/b2_fixtureContactListenerParticle
+   ;; Call b2ContactListener when this particle is about to interact with
+   ;; another particle or stops interacting with another particle.
+   ;; This results in an expensive operation compared to using
+   ;; b2_particleContactFilterParticle to detect collisions between
+   ;; particles.
+   :particle-contact-listener js/b2_particleContactListenerParticle
+   ;; Call b2ContactFilter when this particle interacts with rigid bodies.
+   :fixture-contact-filter js/b2_fixtureContactFilterParticle
+   ;; Call b2ContactFilter when this particle interacts with other
+   ;; particles.
+   :particle-contact-filter js/b2_particleContactFilterParticle})
+
+(defn particle-flags
+  [kw-set]
+  (->> kw-set
+       (map kw->particle-flag)
+       (reduce bit-or)))
+
+(def kw->particle-group-flag
+  {:solid js/b2_solidParticleGroup
+   :rigid js/b2_rigidParticleGroup
+   :can-be-empty js/b2_particleGroupCanBeEmpty})
+
+(defn particle-group-flags
+  [kw-set]
+  (->> kw-set
+       (map kw->particle-group-flag)
+       (reduce bit-or)))
+
+(defn particle-color
+  [[r g b a]]
+  (js/b2ParticleColor. r g b a))
+
+(defn particle-group-def
+  [{:keys [angle angular-velocity color flags group group-flags
+           lifetime linear-velocity position-data particle-count
+           position shape strength stride]
+    :or {angle 0
+         angular-velocity 0
+         color [0 0 0 0]
+         flags #{}
+         group (js/b2ParticleGroup. nil)
+         group-flags #{}
+         lifetime 0.0
+         linear-velocity [0 0]
+         position-data nil
+         particle-count 0
+         position [0 0]
+         shape nil
+         strength 1
+         stride 0}}]
+  (let [pgd (js/b2BodyDef.)
+        flags* (particle-flags flags)
+        group-flags* (particle-group-flags group-flags)
+        color* (particle-color color)]
+    (set! (.-angle pgd) angle)
+    (set! (.-angularVelocity pgd) angular-velocity)
+    (set! (.-color pgd) color*)
+    (set! (.-flags pgd) flags*)
+    (set! (.-group pgd) group)
+    (set! (.-groupFlags pgd) group-flags*)
+    (set! (.-lifetime pgd) lifetime)
+    (set! (.-linearVelocity pgd) (vec2 linear-velocity))
+    (set! (.-positionData pgd) position-data)
+    (set! (.-particleCount pgd) particle-count)
+    (set! (.-position pgd) (vec2 position))
+    (set! (.-shape pgd) shape)
+    (set! (.-strength pgd) strength)
+    (set! (.-stride pgd) stride)
+    pgd))
+
+(defn particle-group!
+  [ps pg-spec]
+  (let [pg (.CreateParticleGroup ps (particle-group-def pg-spec))]
+    (when-let [ud (:user-data pg-spec)]
+      (user-data! pg ud))
+    pg))
+
+(defn particle-system-def
+  "Do not call this directly, instead use `(particle-system!)`."
+  [{:keys [color-mixing-strength damping-strength destroy-by-age
+           ejection-strength elastic-strength lifetime-granularity
+           powder-strength pressure-strength radius
+           repulsive-strength spring-strength
+           static-pressure-iterations static-pressure-relaxation
+           static-pressure-strength surface-tension-normal-strength
+           surface-tension-pressure-strength viscous-strength]
+    :or {color-mixing-strength 0.5
+         damping-strength 1.0
+         destroy-by-age true
+         ejection-strength 0.5
+         elastic-strength 0.25
+         lifetime-granularity (/ 1.0 60.0)
+         powder-strength 0.5
+         pressure-strength 0.05
+         radius 1.0
+         repulsive-strength 1.0
+         spring-strength 0.25
+         static-pressure-iterations 8
+         static-pressure-relaxation 0.2
+         static-pressure-strength 0.2
+         surface-tension-normal-strength 0.2
+         surface-tension-pressure-strength 0.2
+         viscous-strength 0.25}}]
+  (let [psd (js/b2ParticleSystemDef.)]
+    (set! (.-colorMixingStrength psd) color-mixing-strength)
+    (set! (.-dampingStrength psd) damping-strength)
+    (set! (.-destroyByAge psd) destroy-by-age)
+    (set! (.-ejectionStrength psd) ejection-strength)
+    (set! (.-elasticStrength psd) elastic-strength)
+    (set! (.-lifetimeGranularity psd) lifetime-granularity)
+    (set! (.-powderStrength psd) powder-strength)
+    (set! (.-pressureStrength psd) pressure-strength)
+    (set! (.-radius psd) radius)
+    (set! (.-repulsiveStrength psd) repulsive-strength)
+    (set! (.-springStrength psd) spring-strength)
+    (set! (.-staticPressureIterations psd) static-pressure-iterations)
+    (set! (.-staticPressureRelaxation psd) static-pressure-relaxation)
+    (set! (.-staticPressureStrength psd) static-pressure-strength)
+    (set! (.-surfaceTensionNormalStrength psd) surface-tension-normal-strength)
+    (set! (.-surfaceTensionPressureStrength psd) surface-tension-pressure-strength)
+    (set! (.-viscousStrength psd) viscous-strength)
+    psd))
+
+(defn particle-system!
+  "Creates a Particle System with its groups. The `psd-spec` map is
+   passed to the `particle-system-def` function. Each of the
+   `group-specs` are passed to the `particle-group-def` function."
+  [^World world psd-spec & group-specs]
+  (let [psd (particle-system-def psd-spec)
+        ps (.CreateParticleSystem world psd)]
+    (doseq [gspec group-specs]
+      (particle-group! ps gspec))
+    (when-let [ud (:user-data psd-spec)]
+      (user-data! ps ud))
+    ps))
+
+(defn particle-sys-seq
+  [world]
+  (seq (.-particleSystems world)))
+
+(defn particle-positions
+  [particle-system]
+  (let [b (.GetPositionBuffer particle-system)]
+    (partition 2 2 (es6-iterator-seq (.values b)))))
+
+(defn particle-colors
+  [particle-system]
+  (let [b (.GetColorBuffer particle-system)]
+    (partition 4 4 (es6-iterator-seq (.values b)))))
+
 ;; ## Query of objects
 
 (defn ^Body body-of
@@ -419,10 +593,10 @@
   [^Body body]
   (.getGravityScale body))
 
-;; TODO missing
+;; TODO missing for bodies (exists for particle systems)
 (defn gravity-scale!
   [^Body body z]
-  (.setGravityScale body z))
+  (.SetGravityScale body z))
 
 ;; TODO missing
 (defn awake?
@@ -452,6 +626,10 @@
 (defn destroy-fixture!
   [this]
   (.DestroyFixture (body-of this) this))
+
+(defn destroy-particle-system!
+  [this]
+  (.DestroyParticleSystem js/world this))
 
 ;; ### Spatial queries
 
@@ -1008,6 +1186,13 @@
                  (center (body-a jt)))
      :center-b (when (= :revolute jt-type)
                  (center (body-b jt)))}))
+
+(defn snapshot-particle-system
+  [ps]
+  {:user-data (user-data ps)
+   :positions (particle-positions ps)
+   :colors (particle-colors ps)
+   :radius (.-radius ps)})
 
 (defn- keep-stable
   "For use in merge-with, hopefully improving memory use by reusing
