@@ -27,7 +27,7 @@
     (assoc bed/initial-state
       :world world
       :dt-secs (/ 1 60.0)
-      :camera (bed/map->Camera {:width 10 :height 8 :center [0 2]}))))
+      :camera (bed/map->Camera {:width 6 :height 5 :center [0 2]}))))
 
 (defn step
   [state]
@@ -42,6 +42,7 @@
    :host "liquidfn"
    :setup setup
    :update (fn [s] (if (:paused? s) s (step s)))
+   ;; doesn't seem to be a way to step without drawing; manually:
    :draw #(if (zero? (mod (quil/frame-count) 2)) (bed/draw %))
    :key-typed bed/key-press
    :mouse-pressed bed/mouse-pressed

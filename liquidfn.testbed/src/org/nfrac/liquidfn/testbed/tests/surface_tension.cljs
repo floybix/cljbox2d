@@ -7,7 +7,7 @@
             [quil.middleware]))
 
 (defn setup []
-  (quil/frame-rate 30)
+  (quil/frame-rate 60)
   (let [world (lf/new-world)
         shape1 (lf/polygon [[-4 -1] [4 -1] [4 0] [-4 0]])
         shape2 (lf/polygon [[-4 -0.1] [-2 -0.1] [-2 2] [-4 2]])
@@ -34,7 +34,8 @@
                     :density 0.5})]
     (assoc bed/initial-state
       :world world
-      :camera (bed/map->Camera {:width 10 :height 8 :center [0 2]}))))
+      :dt-secs (/ 1 60.0)
+      :camera (bed/map->Camera {:width 6 :height 5 :center [0 2]}))))
 
 (defn step
   [state]
@@ -49,7 +50,8 @@
    :host "liquidfn"
    :setup setup
    :update (fn [s] (if (:paused? s) s (step s)))
-   :draw #(bed/draw % true)
+   ;; doesn't seem to be a way to step without drawing; manually:
+   :draw #(if (zero? (mod (quil/frame-count) 2)) (bed/draw % true))
    :key-typed bed/key-press
    :mouse-pressed bed/mouse-pressed
    :mouse-released bed/mouse-released

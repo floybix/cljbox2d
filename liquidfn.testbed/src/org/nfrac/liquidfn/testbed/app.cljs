@@ -5,6 +5,7 @@
             [org.nfrac.liquidfn.testbed.tests.conveyor-belt :as cb]
             [org.nfrac.liquidfn.testbed.tests.edge-points :as ep]
             [org.nfrac.liquidfn.testbed.tests.elastic-particles :as el-part]
+            [org.nfrac.liquidfn.testbed.tests.liquid-timer :as lt-part]
             [org.nfrac.liquidfn.testbed.tests.one-sided :as os]
             [org.nfrac.liquidfn.testbed.tests.particles :as part]
             [org.nfrac.liquidfn.testbed.tests.raycast :as ray]
@@ -25,6 +26,7 @@
     "cb" (cb/run)
     "ep" (ep/run)
     "el-part" (el-part/run)
+    "lt-part" (lt-part/run)
     "os" (os/run)
     "part" (part/run)
     "ray" (ray/run)
