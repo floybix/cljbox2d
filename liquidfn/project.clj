@@ -19,8 +19,8 @@
   :dependencies [[org.clojure/clojure "1.9.0-alpha11"]
                  [org.clojure/clojurescript "1.9.229"]
                  [cljsjs/liquidfun "1.1.0-0"]
-                 [org.clojure/core.async "0.2.391"
-                  :exclusions [org.clojure/tools.reader]]]
+                 [org.bytedeco.javacpp-presets/liquidfun-platform "1.1.0-1.3.2-SNAPSHOT"]
+                 [euclidean "0.2.0"]]
 
   :plugins [[lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
 
