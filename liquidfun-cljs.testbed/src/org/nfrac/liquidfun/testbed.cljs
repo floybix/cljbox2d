@@ -36,7 +36,7 @@
 
 (def initial-state
   {:world nil
-   :dt-secs (/ 1 30.0)
+   :dt-secs (/ 1 60.0)
    :time 0.0
    :paused? false
    :stepping? false
@@ -201,7 +201,8 @@ bounds if necessary to ensure an isometric aspect ratio."
                (- (quil/height) 5))
     (quil/text-align :left)
     (when time
-      (quil/text (str "t = " (-> time (* 10) int (/ 10)))
+      (quil/text (str "t = " (-> time (* 10) int (/ 10))
+                      "   fps = " (quil/current-frame-rate))
                  10 (- (quil/height) 5)))))
 
 (defn draw-scene

@@ -12,7 +12,6 @@
   (map (fn [[x y]] [(* x s) (* y s)]) vv))
 
 (defn setup []
-  (quil/frame-rate 30)
   (let [world (lf/new-world)
         ground (body! world {:type :static}
                       {:shape (lf/edge [-50 0] [50 0])})
@@ -20,17 +19,17 @@
                          (+ 2 (rand 33))])
         tri-vv [[-1 0] [1 0] [0 2]]
         tri-small (body! world {:position (rand-pos)}
-                         {:shape (lf/polygon tri-vv)})
+                         {:shape (lf/polygon tri-vv) :density 1})
         tri-big (body! world {:position (rand-pos)}
-                       {:shape (lf/polygon (scale-vv tri-vv 2))})
+                       {:shape (lf/polygon (scale-vv tri-vv 2)) :density 1})
         rect-small (body! world {:position (rand-pos)}
-                          {:shape (lf/box 1 0.5)})
+                          {:shape (lf/box 1 0.5) :density 1})
         rect-big (body! world {:position (rand-pos)}
-                        {:shape (lf/box 2 1)})
+                        {:shape (lf/box 2 1) :density 1})
         circ-small (body! world {:position (rand-pos)}
-                          {:shape (lf/circle 1)})
+                          {:shape (lf/circle 1) :density 1})
         circ-big (body! world {:position (rand-pos)}
-                        {:shape (lf/circle 2)})]
+                        {:shape (lf/circle 2) :density 1})]
     (assoc bed/initial-state
       :world world
       :contact-buffer (lf/set-buffering-contact-listener! world))))

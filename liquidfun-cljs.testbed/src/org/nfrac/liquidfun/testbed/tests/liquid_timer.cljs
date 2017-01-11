@@ -2,12 +2,11 @@
   "A translation of the LiquidFun test LiquidTimer."
   (:require [org.nfrac.liquidfun.testbed :as bed]
             [org.nfrac.liquidfun.core :as lf :refer [body! joint!
-                                                    particle-system!]]
+                                                     particle-system!]]
             [quil.core :as quil :include-macros true]
             [quil.middleware]))
 
 (defn setup []
-  (quil/frame-rate 60)
   (let [world (lf/new-world)
         shape1 (lf/polygon [[-4 -1] [4 -1] [4 0] [-4 0]])
         shape2 (lf/polygon [[-4 -0.1] [-2 -0.1] [-2 2] [-4 2]])
@@ -36,10 +35,10 @@
                      {:shape (lf/edge [0.4 0.8] [0.4 0])})
               (body! world {:type :static}
                      {:shape (lf/edge [1.2 0.8] [1.2 0])})]
-        psd (particle-system! world {:radius 0.025}
-                              {:shape (lf/box 2 0.4 [0 3.6])
-                               :flags #{:tensile :viscous}
-                               :color [255 0 0 255]})]
+        ps (particle-system! world {:radius 0.025}
+                             {:shape (lf/box 2 0.4 [0 3.6])
+                              :flags #{:tensile :viscous}
+                              :color [255 0 0 255]})]
     (assoc bed/initial-state
       :world world
       :dt-secs (/ 1 60.0)

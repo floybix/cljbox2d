@@ -206,7 +206,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                (- (quil/height) 5))
     (quil/text-align :left)
     (when time
-      (quil/text (format "t = %.1f" time)
+      (quil/text (format "t = %.1f   fps = %.1f" time (quil/current-frame-rate))
                  10 (- (quil/height) 5)))))
 
 (defn draw-scene

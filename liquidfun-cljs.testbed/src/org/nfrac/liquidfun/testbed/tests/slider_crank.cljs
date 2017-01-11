@@ -8,7 +8,6 @@
             [quil.middleware]))
 
 (defn setup []
-  (quil/frame-rate 30)
   (let [world (lf/new-world)
         ground (body! world {:type :static}
                       {:shape (lf/edge [-40 0] [40 0])})

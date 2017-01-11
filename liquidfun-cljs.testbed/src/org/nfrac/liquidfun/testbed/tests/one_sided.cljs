@@ -8,7 +8,6 @@
             [quil.middleware]))
 
 (defn setup []
-  (quil/frame-rate 60)
   (let [world (lf/new-world)
         ground (body! world {:type :static}
                       {:shape (lf/edge [-20 0] [20 0])})
@@ -37,9 +36,7 @@
                          points)
                (.SetEnabled contact false)))))}))
     (assoc bed/initial-state
-      :world world
-      ;; note the initial collision is missed with dt-secs 1/30
-      :dt-secs (/ 1 60.0))))
+      :world world)))
 
 (defn step
   [state]
