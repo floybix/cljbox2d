@@ -17,8 +17,13 @@ TODO
 Some examples can be run from source using Leiningen as:
 
 <pre>
-cd liquidfun.testbed/
-lein run
+cd liquidfun-clj.testbed/
+lein run -m org.nfrac.liquidfun.testbed.tests.sensor-test/run
+lein run -m org.nfrac.liquidfun.testbed.tests.particles/run
+lein run -m org.nfrac.liquidfun.testbed.tests.elastic-particles/run
+lein run -m org.nfrac.liquidfun.testbed.tests.rope-joint/run
+lein run -m org.nfrac.liquidfun.testbed.tests.raycast/run
+...etc...
 </pre>
 
 
