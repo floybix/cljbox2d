@@ -105,9 +105,9 @@
 
 (defn new-world
   "Returns a new Box2D world. Gravity defaults to [0 -10] m/s^2."
-  ([]
+  (^liquidfun$b2World []
    (new-world [0 -10]))
-  ([gravity]
+  (^liquidfun$b2World [gravity]
    (let [[x y] gravity]
      ($b2 World. x y))))
 
@@ -124,17 +124,6 @@
     particle-iterations]
    (.Step world dt velocity-iterations position-iterations particle-iterations)
    world))
-
-(defn gravity!
-  "Sets the gravity vector."
-  [^liquidfun$b2World world gravity]
-  (let [[x y] gravity]
-    (.SetGravity world x y)))
-
-(defn gravity
-  "Gets the gravity vector."
-  [^liquidfun$b2World world]
-  (v2xy (.GetGravity world)))
 
 ;; ## Enums
 
@@ -192,6 +181,22 @@
   "The joint type as a keyword."
   [^liquidfun$b2Joint joint]
   (joint-keywords (.GetType joint)))
+
+(defn classy-joint
+  [p]
+  (case (joint-type p)
+    :revolute ($b2 RevoluteJoint. p)
+    :prismatic ($b2 PrismaticJoint. p)
+    :distance ($b2 DistanceJoint. p)
+    :pulley ($b2 PulleyJoint. p)
+    :mouse ($b2 MouseJoint. p)
+    :gear ($b2 GearJoint. p)
+    :wheel ($b2 WheelJoint. p)
+    :weld ($b2 WeldJoint. p)
+    :friction ($b2 FrictionJoint. p)
+    :rope ($b2 RopeJoint. p)
+    :motor ($b2 MotorJoint. p)
+    p))
 
 ;; ## Creation of objects
 
@@ -269,22 +274,22 @@
 ;; ### Userdata - holds a Pointer
 
 (defprotocol UserData
-  (user-data [this] "Returns the userdata pointer, or nil.")
-  (set-user-data! [this x] "Sets the userdata pointer."))
+  (user-data ^org.bytedeco.javacpp.Pointer [this] "Returns the userdata pointer, or nil.")
+  (set-user-data! [this p] "Sets the userdata pointer."))
 
 (extend-protocol UserData
   liquidfun$b2Body
-  (user-data [this] (.GetUserData this))
-  (set-user-data! [this x] (.SetUserData this x))
+  (user-data [this] (when-let [p (.GetUserData this)] (when-not (.isNull p) p)))
+  (set-user-data! [this p] (.SetUserData this p))
   liquidfun$b2Fixture
-  (user-data [this] (.GetUserData this))
-  (set-user-data! [this x] (.SetUserData this x))
+  (user-data [this] (when-let [p (.GetUserData this)] (when-not (.isNull p) p)))
+  (set-user-data! [this p] (.SetUserData this p))
   liquidfun$b2Joint
-  (user-data [this] (.GetUserData this))
-  (set-user-data! [this x] (.SetUserData this x))
+  (user-data [this] (when-let [p (.GetUserData this)] (when-not (.isNull p) p)))
+  (set-user-data! [this p] (.SetUserData this p))
   liquidfun$b2ParticleGroup
-  (user-data [this] (.GetUserData this))
-  (set-user-data! [this x] (.SetUserData this x)))
+  (user-data [this] (when-let [p (.GetUserData this)] (when-not (.isNull p) p)))
+  (set-user-data! [this p] (.SetUserData this p)))
 
 ;; ### Fixtures
 
@@ -323,7 +328,7 @@
   "Creates a Fixture on an existing Body. The second argument is a
    fixture specification map to be passed to the `fixture-def`
    function."
-  [^liquidfun$b2Body body fixture-spec]
+  ^liquidfun$b2Fixture [^liquidfun$b2Body body fixture-spec]
   (.CreateFixture body (fixture-def fixture-spec)))
 
 ;; ### Bodies
@@ -361,7 +366,7 @@
   "Creates a Body together with its Fixtures. The `body-spec` map is
    passed to the `body-def` function. Each of the `fixture-specs` are
    passed to the `fixture-def` function."
-  [^liquidfun$b2World world body-spec & fixture-specs]
+  ^liquidfun$b2Body [^liquidfun$b2World world body-spec & fixture-specs]
   (let [bd (body-def body-spec)
         bod (.CreateBody world bd)]
     (doseq [fspec fixture-specs]
@@ -431,17 +436,13 @@
            position shape shapes strength stride user-data]
     :or {angle 0
          angular-velocity 0
-         flags #{}
-         group-flags #{}
          lifetime 0.0
          particle-count 0
          position [0 0]
          strength 1
          stride 0}}]
   (let [pgd ($b2 ParticleGroupDef.)
-        [x y] position
-        flags* (particle-flags flags)
-        group-flags* (particle-group-flags group-flags)]
+        [x y] position]
     (when shape
       (.shape pgd shape))
     (when shapes
@@ -455,11 +456,13 @@
       (.SetPosition x y)
       (.angle angle)
       (.angularVelocity angular-velocity)
-      (.flags flags*)
-      (.groupFlags group-flags*)
       (.lifetime lifetime)
       (.strength strength)
       (.stride stride))
+    (when (seq flags)
+      (.flags pgd (particle-flags flags)))
+    (when (seq group-flags)
+      (.groupFlags pgd (particle-group-flags group-flags)))
     (when-let [[x y] linear-velocity]
       (.Set (.linearVelocity pgd) x y))
     (when-let [[r g b a] color]
@@ -471,7 +474,7 @@
     pgd))
 
 (defn particle-group!
-  [^liquidfun$b2ParticleSystem ps pg-spec]
+  ^liquidfun$b2ParticleGroup [^liquidfun$b2ParticleSystem ps pg-spec]
   (.CreateParticleGroup ps (particle-group-def pg-spec)))
 
 (defn particle-system-def
@@ -525,7 +528,7 @@
   "Creates a Particle System with its groups. The `psd-spec` map is
    passed to the `particle-system-def` function. Each of the
    `group-specs` are passed to the `particle-group-def` function."
-  [^liquidfun$b2World world psd-spec & group-specs]
+  ^liquidfun$b2ParticleSystem [^liquidfun$b2World world psd-spec & group-specs]
   (let [psd (particle-system-def psd-spec)
         ps (.CreateParticleSystem world psd)]
     (doseq [gspec group-specs]
@@ -553,13 +556,6 @@
     ;; note there is also ^ByteBuffer (.asDirectBuffer b)
     (v2arr->seq b n)))
 
-(defn particle-colors
-  [^liquidfun$b2ParticleSystem ps]
-  (let [b (.GetColorBuffer ps)
-        n (.GetParticleCount ps)]
-    ;; note there is also ^ByteBuffer (.asDirectBuffer b)
-    (repeat n b)))
-
 (defn stuck-candidates
   [^liquidfun$b2ParticleSystem ps]
   (let [n (.GetStuckCandidateCount ps)]
@@ -575,16 +571,15 @@
 
 (defn particle-def
   [{:keys [color flags group lifetime velocity position user-data]
-    :or {flags #{}
-         lifetime 0.0
+    :or {lifetime 0.0
          position [0 0]}}]
   (let [pd ($b2 ParticleDef.)
-        [x y] position
-        flags* (particle-flags flags)]
+        [x y] position]
     (doto pd
       (.SetPosition x y)
-      (.flags flags*)
       (.lifetime lifetime))
+    (when (seq flags)
+      (.flags pd (particle-flags flags)))
     (when-let [[x y] velocity]
       (.Set (.velocity pd) x y))
     (when-let [[r g b a] color]
@@ -603,7 +598,7 @@
 
 (defn body-of
   "Get the body to which a fixture belongs"
-  [^liquidfun$b2Fixture fixt]
+  ^liquidfun$b2Body [^liquidfun$b2Fixture fixt]
   (.GetBody fixt))
 
 (defn bodyseq
@@ -649,10 +644,11 @@
   liquidfun$b2Body
   (to-local [this pt]
     (v2xy (.GetLocalPoint this (vec2 pt))))
-  (position [this local-pt]
+  (position
+   ([this local-pt]
     (v2xy (.GetWorldPoint this (vec2 local-pt))))
-  (position [this]
-    (v2xy (.GetPosition this)))
+   ([this]
+    (v2xy (.GetPosition this))))
   (center [this]
     (v2xy (.GetWorldCenter this)))
   (mass [this]
@@ -661,20 +657,22 @@
     (.GetAngle this))
   (angular-velocity [this]
     (.GetAngularVelocity this))
-  (linear-velocity [this]
+  (linear-velocity
+   ([this]
     (v2xy (.GetLinearVelocity this)))
-  (linear-velocity [this local-pt]
-    (v2xy (.GetLinearVelocityFromLocalPoint this (vec2 local-pt))))
+   ([this local-pt]
+    (v2xy (.GetLinearVelocityFromLocalPoint this (vec2 local-pt)))))
   (linear-velocity-world [this pt]
     (v2xy (.GetLinearVelocityFromWorldPoint this (vec2 pt))))
 
   liquidfun$b2ParticleGroup
   (to-local [this pt]
     (v2xy (liquidfun/b2MulT (.GetTransform this) (vec2 pt))))
-  (position [this local-pt]
+  (position
+   ([this local-pt]
     (v2xy (liquidfun/b2Mul (.GetTransform this) (vec2 local-pt))))
-  (position [this]
-    (v2xy (.GetPosition this)))
+   ([this]
+    (v2xy (.GetPosition this))))
   (center [this]
     (v2xy (.GetCenter this)))
   (mass [this]
@@ -683,10 +681,11 @@
     (.GetAngle this))
   (angular-velocity [this]
     (.GetAngularVelocity this))
-  (linear-velocity [this]
+  (linear-velocity
+   ([this]
     (v2xy (.GetLinearVelocity this)))
-  (linear-velocity [this local-pt]
-    (linear-velocity-world this (position this local-pt)))
+   ([this local-pt]
+    (linear-velocity-world this (position this local-pt))))
   (linear-velocity-world [this pt]
     (v2xy (.GetLinearVelocityFromWorldPoint this (vec2 pt)))))
 
@@ -720,36 +719,27 @@
   [^liquidfun$b2Fixture fixt]
   (.m_radius (.GetShape fixt)))
 
-(defprotocol Shaped
-  (local-coords [this]
-   "Local coordinates of polygon vertices. Approximated for circles."))
-
-(extend-protocol Shaped
-
-  liquidfun$b2Fixture
-  (local-coords [this]
-    (local-coords (.GetShape this)))
-
-  liquidfun$b2CircleShape
-  (local-coords [this]
-    (let [r (.m_radius this)
+(defn local-coords
+  "Local coordinates of polygon vertices. Approximated for circles."
+  [^liquidfun$b2Fixture fixt]
+  (case (shape-type fixt)
+    :circle
+    (let [this ($b2 CircleShape. (.GetShape fixt))
+          r (.m_radius this)
           cent (shape-loc-center this)]
       (for [a (range (- PI) PI (/ TWOPI 30))]
-        (v-add cent (polar-xy r a)))))
-
-  liquidfun$b2PolygonShape
-  (local-coords [this]
-    (let [n (.GetVertexCount this)]
-      (mapv (fn [i] (v2xy (.GetVertex this i))) (range n))))
-
-  liquidfun$b2EdgeShape
-  (local-coords [this]
-    [(v2xy (.m_vertex1 this))
-     (v2xy (.m_vertex2 this))])
-
-  liquidfun$b2ChainShape
-  (local-coords [this]
-    (v2arr->seq (.m_vertices this) (.m_count this))))
+        (v-add cent (polar-xy r a))))
+    :polygon
+    (let [this ($b2 PolygonShape. (.GetShape fixt))
+          n (.GetVertexCount this)]
+      (mapv (fn [i] (v2xy (.GetVertex this i))) (range n)))
+    :edge
+    (let [this ($b2 EdgeShape. (.GetShape fixt))]
+      [(v2xy (.m_vertex1 this))
+       (v2xy (.m_vertex2 this))])
+    :chain
+    (let [this ($b2 ChainShape. (.GetShape fixt))]
+      (v2arr->seq (.m_vertices this) (.m_count this)))))
 
 (defn world-coords
   "World coordinates of polygon vertices. Approximated for circles."
@@ -791,14 +781,6 @@
   [^liquidfun$b2Body body a-vel]
   (.SetAngularVelocity body a-vel))
 
-(defn gravity-scale
-  [^liquidfun$b2Body body]
-  (.GetGravityScale body))
-
-(defn gravity-scale!
-  [^liquidfun$b2Body body z]
-  (.SetGravityScale body z))
-
 (defn awake?
   [^liquidfun$b2Body body]
   (.IsAwake body))
@@ -813,19 +795,19 @@
   [^liquidfun$b2Body body]
   (.SetAwake body false))
 
-(defprotocol Destroyable
-  "Abstraction for Box2D objects which can be destroyed."
-  (destroy! [this]
-    "Remove object from the World permanantly. Destroying a body
-    automatically deletes all associated shapes and joints."))
+(defn destroy-body!
+  "Remove object from the World permanantly. Destroying a body
+  automatically deletes all associated shapes and joints."
+  [^liquidfun$b2Body this]
+  (.DestroyBody (.GetWorld this) this))
 
-(extend-protocol Destroyable
-  liquidfun$b2Body
-  (destroy! [this] (.DestroyBody (.GetWorld this) this))
-  liquidfun$b2Joint
-  (destroy! [this] (.DestroyJoint (.GetWorld (.GetBodyA this)) this))
-  liquidfun$b2Fixture
-  (destroy! [this] (.DestroyFixture (.GetBody this) this)))
+(defn destroy-joint!
+  [^liquidfun$b2Joint this]
+  (.DestroyJoint (.GetWorld (.GetBodyA this)) this))
+
+(defn destroy-fixture!
+  [^liquidfun$b2Fixture this]
+  (.DestroyFixture (.GetBody this) this))
 
 (defn destroy-particle-system!
   [^liquidfun$b2World world this]
@@ -919,10 +901,14 @@
    exist."
   ([contact]
    (contact-data contact nil))
-  ([^liquidfun$b2Contact contact ^liquidfun$b2ContactImpulse impulses]
+  ([^liquidfun$b2Contact contact impulses]
    (when (.IsTouching contact)
-     (let [world-manifold ($b2 WorldManifold.) ;; TODO could pass this in
-           manifold (.GetManifold contact)
+     (contact-data contact impulses ($b2 WorldManifold.) false)))
+  ([^liquidfun$b2Contact contact ^liquidfun$b2ContactImpulse impulses
+    ;; just to reuse memory:
+    ^liquidfun$b2WorldManifold world-manifold check-touching?]
+   (when (or (not check-touching?) (.IsTouching contact))
+     (let [manifold (.GetManifold contact)
            pcount (.pointCount manifold)]
        (when (pos? pcount)
          ;; mutates its argument:
@@ -937,18 +923,18 @@
                          (when impulses
                            (ptr->floats (.tangentImpulses impulses) pcount)))))))))
 
-(defn set-buffering-contact-listener!
-  "Sets a ContactListener on the world which stores contacts. Returns
-   an atom which will be populated with a sequence of `contact-data`
-   records. Consumer is responsible for emptying it."
-  [^liquidfun$b2World world]
-  (let [contact-buffer (atom ())
+(defn buffering-contact-listener
+  "Returns a ContactListener which stores contacts, as a tuple [listener atom].
+  The atom will be populated with a sequence of `contact-data` records. Consumer
+  is responsible for emptying it."
+  []
+  (let [a (atom ())
+        wm ($b2 WorldManifold.)
         lstnr (proxy [liquidfun$b2ContactListener] []
                 (PostSolve [contact impulses]
-                  (if-let [cd (contact-data contact impulses)]
-                    (swap! contact-buffer conj cd))))]
-    (.SetContactListener world lstnr)
-    contact-buffer))
+                  (if-let [cd (contact-data contact impulses wm true)]
+                    (swap! a conj cd))))]
+    [lstnr a]))
 
 (defn current-contacts
   "Lazy seq of contacts on this body. Each contact is a map as defined
@@ -1031,8 +1017,10 @@
 
    * `:weld` joint. This requires defining a common anchor point on
      both bodies. This initialisation function takes a world point."
-  [spec]
-  (joint-from-def! (joint-def (init-joint-spec spec))))
+  ^liquidfun$b2Joint [spec]
+  (let [jt (joint-from-def! (joint-def (init-joint-spec spec)))]
+    ;; pointer cast so that class-based dispatch works
+    (classy-joint jt)))
 
 (defmethod init-joint-spec :default
   [spec]
@@ -1183,7 +1171,8 @@
 (defn- jointseq*
   "Lazy seq of joints in a joint list"
   [^liquidfun$b2Joint joint]
-  (lazy-seq (when joint (cons joint (jointseq* (.GetNext joint))))))
+  (lazy-seq (when joint (cons (classy-joint joint)
+                              (jointseq* (.GetNext joint))))))
 
 (defn jointseq
   "Lazy seq of all joints connected to a body"
@@ -1233,12 +1222,14 @@
      (angular-velocity (body-a jt))))
 
 (defn joint-angle
-  [^liquidfun$b2RevoluteJoint jt]
-  (in-pi-pi (.GetJointAngle jt)))
+  [jt]
+  (let [jt ($b2 RevoluteJoint. jt)]
+    (in-pi-pi (.GetJointAngle jt))))
 
 (defn joint-translation
-  [^liquidfun$b2PrismaticJoint jt]
-  (.GetJointTranslation jt))
+  [jt]
+  (let [jt ($b2 PrismaticJoint. jt)]
+    (.GetJointTranslation jt)))
 
 ;; ## Limits
 
@@ -1357,13 +1348,6 @@
                  (center (body-a jt)))
      :center-b (when (= :revolute jt-type)
                  (center (body-b jt)))}))
-
-(defn snapshot-particle-system
-  [^liquidfun$b2ParticleSystem ps]
-  {:user-data (user-data ps)
-   :positions (particle-positions ps)
-   :colors (particle-colors ps)
-   :radius (.GetRadius ps)})
 
 (defn- keep-stable
   "For use in merge-with, hopefully improving memory use by reusing
