@@ -37,16 +37,6 @@
    (.Step world dt velocity-iterations position-iterations)
    world))
 
-(defn gravity!
-  "Sets the gravity vector."
-  [^World world gravity]
-  (.SetGravity world (vec2 gravity)))
-
-(defn gravity
-  "Gets the gravity vector."
-  [^World world]
-  (v2xy (.GetGravity world)))
-
 ;; ## Enums
 
 (def ^{:private true}
@@ -583,16 +573,6 @@
 (defn angular-velocity!
   [^Body body a-vel]
   (.SetAngularVelocity body a-vel))
-
-;; TODO missing
-(defn gravity-scale
-  [^Body body]
-  (.getGravityScale body))
-
-;; TODO missing for bodies (exists for particle systems)
-(defn gravity-scale!
-  [^Body body z]
-  (.SetGravityScale body z))
 
 ;; TODO missing
 (defn awake?
@@ -1182,13 +1162,6 @@
                  (center (body-a jt)))
      :center-b (when (= :revolute jt-type)
                  (center (body-b jt)))}))
-
-(defn snapshot-particle-system
-  [ps]
-  {:user-data (user-data ps)
-   :positions (particle-positions ps)
-   :colors (particle-colors ps)
-   :radius (.-radius ps)})
 
 (defn- keep-stable
   "For use in merge-with, hopefully improving memory use by reusing
