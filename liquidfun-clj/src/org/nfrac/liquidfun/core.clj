@@ -1144,6 +1144,17 @@
       (.dampingRatio damping-ratio))
     jd))
 
+(defmethod joint-def* :gear
+  [{:keys [body-a body-b joint-1 joint-2 ratio]}]
+  (let [jd ($b2 GearJointDef.)]
+    (doto jd
+      (.bodyA body-a)
+      (.bodyB body-b)
+      (.joint1 joint-1)
+      (.joint2 joint-2)
+      (.ratio ratio))
+    jd))
+
 (defmethod init-joint-spec :weld
   [{:keys [body-a body-b world-anchor]
     :as spec}]
