@@ -102,12 +102,12 @@
       (:1 :2 :3 :4 :5)
       (let [idx (dec (js/parseInt (name char)))]
         (create-body state idx))
-      \m (let [mode (:mode (::raycast state))
+      :m (let [mode (:mode (::raycast state))
                new-mode (case mode
                           :closest :all
                           :all :closest)]
            (assoc-in state [::raycast :mode] new-mode))
-      \d (do (doseq [b (::bodies state)]
+      :d (do (doseq [b (::bodies state)]
                (lf/destroy-body! b))
              (assoc state ::bodies []))
       ;; otherwise pass on to testbed
