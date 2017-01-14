@@ -481,10 +481,11 @@
   "Do not call this directly, instead use `(particle-system!)`."
   [{:keys [color-mixing-strength damping-strength destroy-by-age
            ejection-strength elastic-strength lifetime-granularity
-           powder-strength pressure-strength radius
+           max-count powder-strength pressure-strength radius
            repulsive-strength spring-strength
            static-pressure-iterations static-pressure-relaxation
-           static-pressure-strength surface-tension-normal-strength
+           static-pressure-strength strict-contact-check
+           surface-tension-normal-strength
            surface-tension-pressure-strength viscous-strength]
     :or {color-mixing-strength 0.5
          damping-strength 1.0
@@ -504,6 +505,10 @@
          surface-tension-pressure-strength 0.2
          viscous-strength 0.25}}]
   (let [psd ($b2 ParticleSystemDef.)]
+    (when max-count
+      (.maxCount psd max-count))
+    (when strict-contact-check
+      (.strictContactCheck psd strict-contact-check))
     (doto psd
       (.colorMixingStrength color-mixing-strength)
       (.dampingStrength damping-strength)
