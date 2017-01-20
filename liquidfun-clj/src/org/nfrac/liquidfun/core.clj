@@ -432,12 +432,11 @@
 
 (defn particle-group-def
   [{:keys [angle angular-velocity color flags group group-flags
-           lifetime linear-velocity particle-count
+           lifetime linear-velocity particle-count position-data
            position shape shapes strength stride user-data]
     :or {angle 0
          angular-velocity 0
          lifetime 0.0
-         particle-count 0
          position [0 0]
          strength 1
          stride 0}}]
@@ -449,8 +448,8 @@
       ;; we can't allocate PointerPointer here as will be gc'd
       ;; so require that 'shapes' is passed in as a PointerPointer
       (.shapes pgd shapes))
-    (when particle-count
-      ;; TODO need position-data
+    (when position-data
+      (.positionData pgd position-data)
       (.particleCount pgd particle-count))
     (doto pgd
       (.SetPosition x y)
@@ -479,8 +478,8 @@
 
 (defn particle-system-def
   "Do not call this directly, instead use `(particle-system!)`."
-  [{:keys [color-mixing-strength damping-strength destroy-by-age
-           ejection-strength elastic-strength lifetime-granularity
+  [{:keys [color-mixing-strength damping-strength density destroy-by-age
+           ejection-strength elastic-strength gravity-scale lifetime-granularity
            max-count powder-strength pressure-strength radius
            repulsive-strength spring-strength
            static-pressure-iterations static-pressure-relaxation
@@ -489,7 +488,9 @@
            surface-tension-pressure-strength viscous-strength]
     :or {color-mixing-strength 0.5
          damping-strength 1.0
+         density 1.0
          destroy-by-age true
+         gravity-scale 1.0
          ejection-strength 0.5
          elastic-strength 0.25
          lifetime-granularity (/ 1.0 60.0)
@@ -512,9 +513,11 @@
     (doto psd
       (.colorMixingStrength color-mixing-strength)
       (.dampingStrength damping-strength)
+      (.density density)
       (.destroyByAge destroy-by-age)
       (.ejectionStrength ejection-strength)
       (.elasticStrength elastic-strength)
+      (.gravityScale gravity-scale)
       (.lifetimeGranularity lifetime-granularity)
       (.powderStrength powder-strength)
       (.pressureStrength pressure-strength)
@@ -575,6 +578,7 @@
   (.DestroyOldestParticle ps i  call-destruction-listener?))
 
 (defn particle-def
+  ^liquidfun$b2ParticleDef
   [{:keys [color flags group lifetime velocity position user-data]
     :or {lifetime 0.0
          position [0 0]}}]
