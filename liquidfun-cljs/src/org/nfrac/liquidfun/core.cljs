@@ -432,6 +432,37 @@
   (let [b (.GetColorBuffer particle-system)]
     (partition 4 4 (es6-iterator-seq (.values b)))))
 
+(defn particle-group-seq
+  [ps]
+  (seq (.-particleGroups ps)))
+
+;; TODO missing
+#_
+(defn destroy-particle!
+  [ps i]
+  (.DestroyParticle ps i))
+
+(defn particle-def
+  [{:keys [color flags group lifetime velocity position]
+    :or {lifetime 0.0
+         position [0 0]}}]
+  (let [pd (js/b2ParticleDef.)
+        [x y] position]
+    (when color
+      (set! (.-color pd) (particle-color color)))
+    (when flags
+      (set! (.-flags pd) flags))
+    (when group
+      (set! (.-group pd) group))
+    (set! (.-lifetime pd) lifetime)
+    (set! (.-velocity pd) (vec2 velocity))
+    (set! (.-position pd) (vec2 position))
+    pd))
+
+(defn particle!
+  [ps particle-def]
+  (.CreateParticle ps particle-def))
+
 ;; ## Query of objects
 
 (defn ^Body body-of
