@@ -1,9 +1,10 @@
 # Change Log
 
 ## [Unreleased]
-- Initial version of liquidfn in clojurescript, adapted from cljbox2d.
+- Initial version of liquidfun in clojurescript, adapted from cljbox2d.
 
 ### Differences from cljbox2d:
+- Particles, obviously.
 - The js bindings refer to global state: a js var called "world".
 - There is no constant-volume-joint, that was specific to JBox2D.
 - destroy! replaced with destroy-body! destroy-joint! destroy-fixture!
