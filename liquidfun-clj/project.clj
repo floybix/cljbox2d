@@ -17,7 +17,6 @@
   :min-lein-version "2.7.1"
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha11"]
-                 [org.bytedeco.javacpp-presets/liquidfun-platform "1.1.0-1.3.2-SNAPSHOT"]
-                 [euclidean "0.2.0"]]
+                 [org.bytedeco.javacpp-presets/liquidfun-platform "1.1.0-1.3.2-SNAPSHOT"]]
 
   :source-paths ["src"])

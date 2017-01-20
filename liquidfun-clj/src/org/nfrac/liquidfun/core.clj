@@ -1,6 +1,5 @@
 (ns org.nfrac.liquidfun.core
-  (:require [euclidean.math.vector :as v]
-            [org.nfrac.liquidfun.vec2d
+  (:require [org.nfrac.liquidfun.vec2d
              :refer [polar-xy v-add v-sub v-dist in-pi-pi PI TWOPI]])
   (:import (org.bytedeco.javacpp
             IntPointer
@@ -72,7 +71,6 @@
   "Makes an immutable vector [x y] from a Vec2"
   [^liquidfun$b2Vec2 v2]
   [(.x v2) (.y v2)])
-  ;(v/vector (.x v2) (.y v2)))
 
 (defn seq->v2arr
   "Constructs a native c++ array of Vec2s from a seq of [x y]."
