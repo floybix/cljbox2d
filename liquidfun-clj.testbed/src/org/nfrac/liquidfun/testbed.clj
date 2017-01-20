@@ -84,6 +84,8 @@
   "Invokes a simulation step on `:world`. Also updates `:time` and
    handles single stepping mode."
   [state]
+  (when (nil? state)
+    (throw (Exception. "state is nil; check the quil handlers.")))
   (cond-> (update-in state [:world] lf/step! (:dt-secs state)
                      8 3 (:particle-iterations state 1))
           ;; keep track of time
@@ -206,7 +208,7 @@ bounds if necessary to ensure an isometric aspect ratio."
                (- (quil/height) 5))
     (quil/text-align :left)
     (when time
-      (quil/text (format "t = %.1f   fps = %.1f" time (quil/current-frame-rate))
+      (quil/text (format "t = %.1f   fps = %.0f" time (quil/current-frame-rate))
                  10 (- (quil/height) 5)))))
 
 (defn draw-scene
@@ -266,7 +268,7 @@ bounds if necessary to ensure an isometric aspect ratio."
               (quil/vertex x-px (- y-px r-px))
               (recur (inc i)))))
         (quil/end-shape)))
-    (.position posbuf 0)
+    (when posbuf (.position posbuf 0))
     nil))
 
 (defn draw
@@ -416,6 +418,6 @@ bounds if necessary to ensure an isometric aspect ratio."
     :> (update-in state [:steps-back] #(max 0 (- % 10)))
     :comma (-> (update-in state [:steps-back] inc) (assoc :paused? true))
     :< (-> (update-in state [:steps-back] + 10) (assoc :paused? true))
-    := (update-in state [:camera] zoom-camera (/ 1 1.25))
+    (:+ :=) (update-in state [:camera] zoom-camera (/ 1 1.25))
     :- (update-in state [:camera] zoom-camera 1.25)
     state))
