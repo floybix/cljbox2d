@@ -297,6 +297,10 @@
        (map kw->particle-flag)
        (reduce bit-or)))
 
+(defn particle-flag?
+  [^long flag-val kw]
+  (pos? (bit-and flag-val (kw->particle-flag kw))))
+
 (def kw->particle-group-flag
   {:solid js/b2_solidParticleGroup
    :rigid js/b2_rigidParticleGroup
@@ -319,9 +323,6 @@
     :or {angle 0
          angular-velocity 0
          color [0 0 0 0]
-         flags #{}
-         group (js/b2ParticleGroup. nil)
-         group-flags #{}
          lifetime 0.0
          linear-velocity [0 0]
          position-data nil
@@ -331,15 +332,16 @@
          strength 1
          stride 0}}]
   (let [pgd (js/b2ParticleGroupDef.)
-        flags* (particle-flags flags)
-        group-flags* (particle-group-flags group-flags)
         color* (particle-color color)]
+    (when flags
+      (set! (.-flags pgd) flags))
+    (when group-flags
+      (set! (.-groupFlags pgd) group-flags))
+    (when group
+      (set! (.-group pgd) group))
     (set! (.-angle pgd) angle)
     (set! (.-angularVelocity pgd) angular-velocity)
     (set! (.-color pgd) color*)
-    (set! (.-flags pgd) flags*)
-    (set! (.-group pgd) group)
-    (set! (.-groupFlags pgd) group-flags*)
     (set! (.-lifetime pgd) lifetime)
     (set! (.-linearVelocity pgd) (vec2 linear-velocity))
     (set! (.-positionData pgd) position-data)

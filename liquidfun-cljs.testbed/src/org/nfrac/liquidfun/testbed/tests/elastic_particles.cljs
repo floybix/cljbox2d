@@ -17,19 +17,19 @@
                       {:shape shape3})
         ps (particle-system! world {:radius 0.035}
                              {:shape (lf/circle 0.5 [0 3])
-                              :flags #{:spring}
-                              :group-flags #{:solid}
+                              :flags (lf/particle-flags #{:spring})
+                              :group-flags (lf/particle-group-flags #{:solid})
                               :color [255 0 0 255]}
                              {:shape (lf/circle 0.5 [-1 3])
-                              :flags #{:elastic}
-                              :group-flags #{:solid}
+                              :flags (lf/particle-flags #{:elastic})
+                              :group-flags (lf/particle-group-flags #{:solid})
                               :color [0 255 0 255]}
                              {:shape (lf/box 1 0.5)
                               :position [1 4]
                               :angle -0.5
                               :angular-velocity 2
-                              :flags #{:elastic}
-                              :group-flags #{:solid}
+                              :flags (lf/particle-flags #{:elastic})
+                              :group-flags (lf/particle-group-flags #{:solid})
                               :color [128 128 255 255]})
         cir (body! world {:position [0 8]}
                    {:shape (lf/circle 0.5)

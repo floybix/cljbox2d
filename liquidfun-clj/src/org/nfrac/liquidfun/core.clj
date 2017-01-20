@@ -412,6 +412,10 @@
        (map kw->particle-flag)
        (reduce bit-or)))
 
+(defn particle-flag?
+  [^long flag-val kw]
+  (pos? (bit-and flag-val (kw->particle-flag kw))))
+
 (def kw->particle-group-flag
   {:solid liquidfun/b2_solidParticleGroup
    :rigid liquidfun/b2_rigidParticleGroup
@@ -456,10 +460,10 @@
       (.lifetime lifetime)
       (.strength strength)
       (.stride stride))
-    (when (seq flags)
-      (.flags pgd (particle-flags flags)))
-    (when (seq group-flags)
-      (.groupFlags pgd (particle-group-flags group-flags)))
+    (when flags
+      (.flags pgd flags))
+    (when group-flags
+      (.groupFlags pgd group-flags))
     (when-let [[x y] linear-velocity]
       (.Set (.linearVelocity pgd) x y))
     (when-let [[r g b a] color]
@@ -585,8 +589,8 @@
     (doto pd
       (.SetPosition x y)
       (.lifetime lifetime))
-    (when (seq flags)
-      (.flags pd (particle-flags flags)))
+    (when flags
+      (.flags pd flags))
     (when-let [[x y] velocity]
       (.Set (.velocity pd) x y))
     (when-let [[r g b a] color]

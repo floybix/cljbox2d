@@ -104,8 +104,7 @@
         {:keys [emit-rate remainder pcolors white] :as settings} (:settings state)
         pdef ^liquidfun$b2ParticleDef (:pdef settings)
         emit-n (+ remainder (* emit-rate dt))
-        color (if (pos? (bit-and (.flags pdef)
-                                 (lf/kw->particle-flag :color-mixing)))
+        color (if (lf/particle-flag? (.flags pdef) :color-mixing)
                 (nth pcolors (mod (int (* 0.3 (:time state))) (count pcolors)))
                 white)]
     (dotimes [i (int emit-n)]

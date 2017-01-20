@@ -37,7 +37,7 @@
                      {:shape (lf/edge [1.2 0.8] [1.2 0])})]
         ps (particle-system! world {:radius 0.025}
                              {:shape (lf/box 2 0.4 [0 3.6])
-                              :flags #{:tensile :viscous}
+                              :flags (lf/particle-flags #{:tensile :viscous})
                               :color [255 0 0 255]})
         its (.CalculateReasonableParticleIterations world (/ 1 60.0))]
     (println "reasonable particle iterations:" its)

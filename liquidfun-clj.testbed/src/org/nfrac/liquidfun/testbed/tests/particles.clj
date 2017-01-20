@@ -18,8 +18,8 @@
                       {:shape shape3})
         ps (particle-system! world {:radius 0.035}
                              {:shape (lf/circle 2 [0 3])
-                              ;:flags #{:spring}
-                              ;:group-flags #{:solid}
+                              ;:flags (lf/particle-flags #{:spring})
+                              ;:group-flags (lf/particle-group-flags #{:solid})
                               :color [255 0 0 255]})
         cir (body! world {:position [0 8]}
                    {:shape (lf/circle 0.5)

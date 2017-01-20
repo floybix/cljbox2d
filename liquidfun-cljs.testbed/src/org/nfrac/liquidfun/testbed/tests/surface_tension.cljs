@@ -18,15 +18,14 @@
         ps (particle-system! world {:radius 0.035
                                     :damping-strength 0.2}
                              {:shape (lf/circle 0.5 [0 2])
-                              :flags #{:tensile :color-mixing}
+                              :flags (lf/particle-flags #{:tensile :color-mixing})
                               :color [255 0 0 255]}
                              {:shape (lf/circle 0.5 [-1 2])
-                              :flags #{:tensile :color-mixing}
-                              :group-flags #{:solid}
+                              :flags (lf/particle-flags #{:tensile :color-mixing})
                               :color [0 255 0 255]}
                              {:shape (lf/box 1 0.25)
                               :position [1 3.25]
-                              :flags #{:tensile :color-mixing}
+                              :flags (lf/particle-flags #{:tensile :color-mixing})
                               :color [0 0 255 255]})
         cir (body! world {:position [0 8]}
                    {:shape (lf/circle 0.5)
