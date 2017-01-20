@@ -31,7 +31,7 @@
         ground (body! world {:type :static}
                       {:shape (lf/edge [-40 0] [40 0])})
         id-ptrs (->> (range (count shapes))
-                     (mapv #(-> (LongPointer. 1) (.put %))))]
+                     (mapv #(-> (LongPointer. 1) (.put (long %)))))]
     (assoc bed/initial-state
       :world world
       :id-pointers id-ptrs

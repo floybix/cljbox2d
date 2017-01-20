@@ -4,7 +4,10 @@
             [org.nfrac.liquidfun.core :as lf :refer [body! joint!
                                                      particle-system!]]
             [quil.core :as quil :include-macros true]
-            [quil.middleware]))
+            [quil.middleware])
+  (:import (org.bytedeco.javacpp
+            liquidfun$b2ParticleSystem
+            liquidfun$b2ParticleDef)))
 
 (def particleLifetimeMin 90.0)
 (def particleLifetimeMax 120.0)
@@ -96,9 +99,10 @@
 (defn post-step
   [state]
   (let [dt (:dt-secs state)
-        ps (:particle-system state)
+        ps ^liquidfun$b2ParticleSystem (:particle-system state)
         length (* (.GetRadius ps) 2 faucetLength)
-        {:keys [emit-rate remainder flags pdef pcolors white]} (:settings state)
+        {:keys [emit-rate remainder pcolors white] :as settings} (:settings state)
+        pdef ^liquidfun$b2ParticleDef (:pdef settings)
         emit-n (+ remainder (* emit-rate dt))
         color (if (pos? (bit-and (.flags pdef)
                                  (lf/kw->particle-flag :color-mixing)))
@@ -139,8 +143,8 @@
 
 (defn my-key-press
   [state event]
-  (let [pdef (get-in state [:settings :pdef])
-        ps (:particle-system state)]
+  (let [pdef ^liquidfun$b2ParticleDef (get-in state [:settings :pdef])
+        ps ^liquidfun$b2ParticleSystem (:particle-system state)]
     (case (:key event)
       :w (do (.flags pdef (lf/kw->particle-flag :water))
              state)

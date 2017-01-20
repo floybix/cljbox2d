@@ -3,7 +3,11 @@
   (:require [org.nfrac.liquidfun.testbed :as bed]
             [org.nfrac.liquidfun.core :as lf :refer [body! joint!]]
             [quil.core :as quil :include-macros true]
-            [quil.middleware]))
+            [quil.middleware])
+  (:import (org.bytedeco.javacpp
+            liquidfun$b2RevoluteJoint
+            liquidfun$b2PrismaticJoint
+            liquidfun$b2GearJoint)))
 
 (def PI Math/PI)
 
@@ -98,6 +102,11 @@
   [state]
   (bed/draw state)
   (let [{:keys [j1 j2 pj gj1 gj2]} (::thing2 state)
+        j1 ^liquidfun$b2RevoluteJoint j1
+        j2 ^liquidfun$b2RevoluteJoint j2
+        pj ^liquidfun$b2PrismaticJoint pj
+        gj1 ^liquidfun$b2GearJoint gj1
+        gj2 ^liquidfun$b2GearJoint gj2
         r1 (.GetRatio gj1)
         r2 (.GetRatio gj2)]
     (quil/fill 255)
