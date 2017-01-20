@@ -723,7 +723,7 @@
   [^liquidfun$b2Fixture fixt]
   (shape-loc-center (.GetShape fixt)))
 
-(defn radius
+(defn fixture-radius
   "Radius of a Fixture's shape."
   [^liquidfun$b2Fixture fixt]
   (.m_radius (.GetShape fixt)))
@@ -1336,7 +1336,7 @@
                     :shape-type shp-type}]
     (if (= :circle shp-type)
       (assoc basic-info
-        :radius (radius fixt)
+        :radius (fixture-radius fixt)
         :center (fixture-loc-center fixt))
       (assoc basic-info
         :coords (local-coords fixt)))))

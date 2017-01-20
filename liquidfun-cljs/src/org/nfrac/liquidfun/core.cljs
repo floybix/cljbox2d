@@ -492,7 +492,7 @@
   [fixt]
   (v2xy (.-position (.-shape fixt))))
 
-(defn radius
+(defn fixture-radius
   "Radius of a Fixture's shape."
   [^Fixture fixt]
   (.-radius (.-shape fixt)))
@@ -502,7 +502,7 @@
   [^Fixture fixt]
   (let [shp (.-shape fixt)]
     (case (shape-type fixt)
-      :circle (let [r (radius fixt)
+      :circle (let [r (fixture-radius fixt)
                     cent (circle-loc-center fixt)]
                 (for [a (range (- PI) PI (/ TWOPI 30))]
                   (v-add cent (polar-xy r a))))
@@ -1130,7 +1130,7 @@
                     :shape-type shp-type}]
     (if (= :circle shp-type)
       (assoc basic-info
-        :radius (radius fixt)
+        :radius (fixture-radius fixt)
         :center (circle-loc-center fixt))
       (assoc basic-info
         :coords (local-coords fixt)))))

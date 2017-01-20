@@ -11,6 +11,8 @@
 
 (def PI Math/PI)
 
+(defn my-radius [body] (lf/fixture-radius (lf/fixture-of body)))
+
 (defn setup-first-thing
   [world ground]
   (let [b1 (body! world {:type :static
@@ -33,8 +35,8 @@
                     :body-b b3
                     :joint-1 j1
                     :joint-2 j2
-                    :ratio (/ (lf/radius (lf/fixture-of b3))
-                              (lf/radius (lf/fixture-of b1)))})]
+                    :ratio (/ (my-radius b3)
+                              (my-radius b1))})]
     {:gj gj}))
 
 (defn setup-second-thing
@@ -68,14 +70,14 @@
                      :body-b b2
                      :joint-1 j1
                      :joint-2 j2
-                     :ratio (/ (lf/radius (lf/fixture-of b2))
-                               (lf/radius (lf/fixture-of b1)))})
+                     :ratio (/ (my-radius b2)
+                               (my-radius b1))})
         gj2 (joint! {:type :gear
                      :body-a b2
                      :body-b b3
                      :joint-1 j2
                      :joint-2 pj
-                     :ratio (/ -1 (lf/radius (lf/fixture-of b2)))})]
+                     :ratio (/ -1 (my-radius b2))})]
     {:gj1 gj1
      :gj2 gj2
      :j1 j1
