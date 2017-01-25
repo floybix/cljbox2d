@@ -295,7 +295,7 @@
   [kw-set]
   (->> kw-set
        (map kw->particle-flag)
-       (reduce bit-or)))
+       (reduce bit-or 0)))
 
 (defn particle-flag?
   [^long flag-val kw]
@@ -310,7 +310,7 @@
   [kw-set]
   (->> kw-set
        (map kw->particle-group-flag)
-       (reduce bit-or)))
+       (reduce bit-or 0)))
 
 (defn particle-color
   [[r g b a]]
