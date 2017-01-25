@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>liquidfn testbed</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <link href="css/style.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <!--
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    -->
+
+    <div id="app-ui">
+      <h2>liquidfun-cljs</h2>
+      <p class="lead">
+        <a href="https://github.com/floybix/cljbox2d">project page</a>
+      </p>
+      <div>
+      Choose test:
+      <select id="liquidfun-test-select"
+        onChange="org.nfrac.liquidfun.testbed.app.test_select_handler(this.value)">
+        <option></option>
+        <option value="el-part">elastic particles</option>
+        <option value="lt-part">liquid timer</option>
+        <option value="part">particles</option>
+        <option value="st-part">surface tension</option>
+        <option>--</option>
+        <option value="chain">chain</option>
+        <option value="cf">collision filtering</option>
+        <option value="cp">collision processing</option>
+        <option value="cb">conveyor belt</option>
+        <option value="ep">edge points</option>
+        <option value="os">one-sided</option>
+        <option value="ray">raycast</option>
+        <option value="rev">revolute</option>
+        <option value="rope">rope joint</option>
+        <option value="sens">sensor</option>
+        <option value="sc">slider crank</option>
+        <option value="rest">varying restitution</option>
+        <option value="web">web</option>
+      </select>
+      </div>
+    </div>
+
+    <div>
+     <canvas id="liquidfun">
+     </canvas>
+    </div>
+
+   <script src="js/compiled/liquidfun.testbed.js" type="text/javascript"></script>
+
+  </body>
+</html>

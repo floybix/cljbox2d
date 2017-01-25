@@ -1,0 +1,9 @@
+
+#app-ui {
+  margin: 1em;
+}
+
+canvas#liquidfun {
+  margin: 1em;
+  border: 1px solid black;
+}
