@@ -6,6 +6,10 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
+  :plugins [[lein-tools-deps "0.4.1"]]
+  :middleware [lein-tools-deps.plugin/resolve-dependencies-with-deps-edn]
+  :lein-tools-deps/config {:config-files [:install :user :project]}
+
   :deploy-repositories [["releases" {:url "https://clojars.org/repo/"
                                      :creds :gpg}]]
   :pom-addition [:developers [:developer
@@ -15,9 +19,4 @@
                               [:timezone "+10"]]]
 
   :min-lein-version "2.7.1"
-
-  :dependencies [[org.clojure/clojure "1.9.0-alpha11"]
-                 [org.nfrac/liquidfun-clj "0.1.0-SNAPSHOT"]
-                 [quil "2.5.0"]]
-
-  :source-paths ["src"])
+  )

@@ -1,0 +1,6 @@
+{:deps
+ {org.nfrac/liquidfun-clj {:local/root "../liquidfun-clj"}
+  quil {:mvn/version "2.7.1"
+        :exclusions [bouncycastle/bctsp-jdk14]}
+  }
+ }
