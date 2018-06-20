@@ -1,4 +1,4 @@
-# liquidfn-cljs
+# liquidfun-cljs
 
 2D physics engine.
 
@@ -14,14 +14,14 @@ TODO
 
 ## Examples
 
-Here are some [testbed tests online](https://floybix.github.io/cljbox2d/liquidfn.testbed).
+Here are some [testbed tests online](https://floybix.github.io/cljbox2d/liquidfun.testbed).
 
-Here is [the corresponding source code](https://github.com/floybix/cljbox2d/tree/master/liquidfn.testbed/src/org/nfrac/liquidfn/testbed/tests).
+Here is [the corresponding source code](https://github.com/floybix/cljbox2d/tree/master/liquidfun-cljs.testbed/src/org/nfrac/liquidfun/testbed/tests).
 
 They can be run from source using Leiningen as:
 
 <pre>
-cd liquidfn.testbed/
+cd liquidfun-cljs.testbed/
 lein figwheel
 </pre>
 

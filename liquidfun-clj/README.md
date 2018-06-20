@@ -1,4 +1,4 @@
-# liquidfn-clj
+# liquidfun-clj
 
 2D physics engine.
 
